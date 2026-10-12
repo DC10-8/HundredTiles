@@ -18,3 +18,6 @@
 ローカルの詳細証拠: reports/source-audit-full-checks.log、reports/solution-build.log、reports/reproducible-final.log、reports/safety-mock-final.log、reports/safety-native.log、reports/safety-unity.log。これらの個人ログ自体は公開せず、この集計記録と再実行するソースを公開します。
 
 第三者の別PC、大都市の長時間運転、旧81 Tiles独自データ全体の移行、任意のMOD構成は未検証です。リリースは試験公開版のままです。
+追補: 修正版による実際のSavePanel保存が成功し、生成した.crp（SHA-256 FDF735C1A2F913E410ABEBE0BDF5115BF63503FC630F405F1425802CEF44749B）を別のゲームプロセスで再読み込みしました。所有・都市オブジェクト・電気水道・経路・地形/Undo・サービス資源が復元され、入力セーブのハッシュは不変でした。保存・再ロードの両プロセス終了時に同じUnifiedUI例外が1件ずつ残りました。無例外の合格とは報告しません。詳細証拠はreports/safety-save-native.log、reports/safety-reload-native.logです。
+
+GitチェックアウトからクリーンにビルドしたDLLも、作業ソースからの配布6 DLLと完全一致しました。公開CIのPublic source checksはコードコミットbfe2410で成功しました。プロプライエタリーなゲームを持たないCIのため、そこで実施したのは純粋/モック検査です。配布DLLのSHA-256はRelease-DLL-hashes.csv、外部入力DLLのSHA-256はBuild-inputs.jsonに記録します。
