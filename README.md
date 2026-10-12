@@ -44,3 +44,5 @@ Construction, service grids, save reloads, terrain tools, and deterministic taxi
 ## License
 
 Original code: MIT. Preserve third-party notices. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Source excludes game DLLs, decompiled game code, saved cities and private logs.
+
+Reviewed More Network Capacity Renew support requires a local Harmony API patch for the pinned wrapper. See [compatibility instructions](docs/Network-capacity-compatibility.md).

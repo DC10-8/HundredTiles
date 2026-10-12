@@ -78,5 +78,28 @@ Check(legacyUnits[0].m_x==electric.m_pulseUnits[0].m_x+103,"Legacy pulse coordin
 var invalid=(SortedDictionary<string,object>)prepared;((ExpandedElectricityManager.ExpandedPulseUnit[])invalid["E.m_pulseUnits"])[0].m_x=508;
 Reject<InvalidDataException>(()=>participant.ValidateTarget(invalid),"Out-of-grid utility queue accepted");participant.ClearLoad();
 Console.WriteLine($"PASS: production utility save participant; {encoded.Length} bytes; both 508x508 grids; four wrapped queues; 1024 groups per supply; all node fields and counters; frozen 256x256 projection; legacy axis offset; checksum/binding/baseline/coordinate refusal. Fixture managers, no Unity execution.");
+// Convert the just-captured v2 fixture to the byte-for-byte v1 layout.
+var v1=new byte[encoded.Length-24];Array.Copy(encoded,0,v1,0,12);v1[8]=1;
+Array.Copy(encoded,36,v1,12,encoded.Length-36-32);
+Array.Copy(UtilitySnapshotCodec.Hash(v1.Take(v1.Length-32).ToArray()),0,v1,v1.Length-32,32);
+UtilitySaveBridge.RequestedCapacity=()=>65024;
+Read();var migrated=(SortedDictionary<string,object>)participant.Prepare(v1,binding);participant.ValidateTarget(migrated);
+Check(((Array)migrated["E.m_nodeGroups"]).Length==65024 && ((Array)migrated["W.m_nodeData"]).Length==65024,"Old save nodes were not migrated");
+Check((ushort)((Array)migrated["E.m_nodeGroups"]).GetValue(65023)==ushort.MaxValue,"New nodes have invalid electricity group");
+Check((int)migrated["E.m_pulseUnitStart"]==0 && (int)migrated["E.m_pulseUnitEnd"]==31,"Wrapped queue was not normalized during growth");
+participant.Commit(migrated);participant.ClearLoad();
+Check(electric.m_nodeGroups.Length==65024 && water.m_nodeData.Length==65024,"Native node arrays were not expanded during commit");
+ExpandedElectricityManager.PulseUnits[0].m_node=65000;
+var expanded=State();UtilitySaveBridge.Validate(expanded);
+byte[] larger=participant.Capture(binding);participant.ClearSave();Read();
+var restoredLarge=(SortedDictionary<string,object>)participant.Prepare(larger,binding);participant.ValidateTarget(restoredLarge);
+Check(((ExpandedElectricityManager.ExpandedPulseUnit[])restoredLarge["E.m_pulseUnits"])[0].m_node==65000,"High node ID lost during round trip");
+var wrong=(byte[])larger.Clone();wrong[12]=1;
+Array.Copy(UtilitySnapshotCodec.Hash(wrong.Take(wrong.Length-32).ToArray()),0,wrong,wrong.Length-32,32);
+Reject<InvalidDataException>(()=>participant.Prepare(wrong,binding),"Untrusted capacity in a checksummed snapshot accepted");
+var smaller=new SortedDictionary<string,object>(restoredLarge,StringComparer.Ordinal);smaller["E.m_nodeGroups"]=new ushort[32768];
+Reject<InvalidDataException>(()=>UtilityCapacity.Adapt(restoredLarge,smaller),"High-capacity data was silently truncated");
+participant.ClearLoad();
+Console.WriteLine("PASS: utility v1-to-v2 capacity migration; 65024 nodes; high node 65000; wrapped queue preserved; untrusted capacity and shrinking refused.");
 static void Check(bool value,string name){if(!value)throw new Exception(name);}
 static void Reject<T>(Action action,string name) where T:Exception {try{action();}catch(T){return;}throw new Exception(name);}

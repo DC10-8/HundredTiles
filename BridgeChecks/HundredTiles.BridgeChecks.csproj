@@ -6,4 +6,5 @@
   <ItemGroup><Compile Include="../SaveBridge/SaveParticipants.cs" Link="SaveParticipants.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../SaveBridge/DistrictSaveBridge.cs" Link="DistrictSaveBridge.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../Utilities/ServiceSaveBridge.cs" Link="ServiceSaveBridge.cs" /><Compile Include="../Utilities/UtilitySnapshotCodec.cs" Link="UtilitySnapshotCodec.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../Utilities/UtilityCapacity.cs" Link="UtilityCapacity.cs" /></ItemGroup>
 </Project>

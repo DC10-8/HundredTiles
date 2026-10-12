@@ -97,7 +97,7 @@ namespace HundredTiles.Runtime
             }
             catch {harmony.UnpatchAll(Owner);throw;}
         }
-        static HarmonyMethod TranspilerMethod(MethodInfo method){if(method==null)return null;return new HarmonyMethod(method){priority=Priority.First,before=new[]{"com.github.algernon-A.csl.buildingcontrol","com.klyte.redirectors.CZM"}};}
+        static HarmonyMethod TranspilerMethod(MethodInfo method){if(method==null)return null;return new HarmonyMethod(method){priority=Priority.First,before=new[]{"com.github.algernon-A.csl.buildingcontrol","com.klyte.redirectors.CZM","com.codex.csl.more-network-capacity","MoreNetworkCapacityRenew.Comprehensive"}};}
         static HarmonyMethod Method(MethodInfo method){return method==null?null:new HarmonyMethod(method);}
         public static void Remove()
         {
@@ -108,3 +108,4 @@ namespace HundredTiles.Runtime
         }
     }
 }
+

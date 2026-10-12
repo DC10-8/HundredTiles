@@ -20,3 +20,7 @@ jobs:
             dotnet restore "$project" --locked-mode
             dotnet run --project "$project" -c Release --no-restore
           done
+
+      - name: Build hash-pinned Renew API patcher
+        run: dotnet build NetworkRenewPatcher -c Release -p:RestoreLockedMode=true
+

@@ -3,6 +3,7 @@
   <ItemGroup>
     <Compile Include="../Utilities/UtilitySaveBridge.cs" Link="UtilitySaveBridge.cs" />
     <Compile Include="../Utilities/UtilitySnapshotCodec.cs" Link="UtilitySnapshotCodec.cs" />
+    <Compile Include="../Utilities/UtilityCapacity.cs" Link="UtilityCapacity.cs" />
     <Compile Include="../Core/UtilityGrid.cs" Link="UtilityGrid.cs" />
     <Compile Include="../Utilities/UtilitySerializerHooks.cs" Link="UtilitySerializerHooks.cs" />
     <Compile Include="../ExperimentalPatch/SerializerTranspiler.cs" Link="SerializerTranspiler.cs" />

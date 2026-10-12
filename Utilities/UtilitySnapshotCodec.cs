@@ -52,23 +52,38 @@ namespace HundredTiles.Utilities
             if(baseline==null || baseline.Length!=32 || binding==null || binding.Length!=32)throw new ArgumentException("Utility snapshot binding missing.");
             using(var stream=new MemoryStream())using(var writer=new BinaryWriter(stream))
             {
-                writer.Write(Encoding.ASCII.GetBytes("HTUTIL01"));writer.Write(1);writer.Write(Schema(state));writer.Write(baseline);writer.Write(binding);writer.Write(Payload(state));
+                bool capacity=state.ContainsKey(UtilityCapacity.Keys[0]);
+                writer.Write(Encoding.ASCII.GetBytes("HTUTIL01"));writer.Write(capacity?2:1);
+                if(capacity)foreach(string key in UtilityCapacity.Keys){int count=((Array)state[key]).Length;if(!UtilityCapacity.Known(count))throw new InvalidDataException("Unsupported utility capacity.");writer.Write(count);}
+                writer.Write(Schema(state));writer.Write(baseline);writer.Write(binding);writer.Write(Payload(state));
                 byte[] payload=stream.ToArray();writer.Write(Hash(payload));return stream.ToArray();
             }
         }
         internal static SortedDictionary<string,object> Decode(byte[] bytes,SortedDictionary<string,object> template,byte[] baseline,byte[] binding)
         {
-            int expected=108+Payload(template).Length+32;
-            if(bytes==null || bytes.Length!=expected)throw new InvalidDataException("Utility snapshot length differs.");
+            bool capacity=template.ContainsKey(UtilityCapacity.Keys[0]);
+            if(bytes==null || bytes.Length<140 || (capacity && bytes.Length>16711680) || (!capacity && bytes.Length!=140+Payload(template).Length))throw new InvalidDataException("Utility snapshot length differs.");
             var body=new byte[bytes.Length-32];Array.Copy(bytes,body,body.Length);
             var checksum=new byte[32];Array.Copy(bytes,body.Length,checksum,0,32);
             if(!Equal(Hash(body),checksum))throw new InvalidDataException("Utility snapshot checksum differs.");
             using(var stream=new MemoryStream(body,false))using(var reader=new BinaryReader(stream))
             {
-                if(Encoding.ASCII.GetString(reader.ReadBytes(8))!="HTUTIL01" || reader.ReadInt32()!=1 || !Equal(reader.ReadBytes(32),Schema(template)) ||
-                    !Equal(reader.ReadBytes(32),baseline) || !Equal(reader.ReadBytes(32),binding))throw new InvalidDataException("Utility schema, standard projection or map binding differs.");
+                if(Encoding.ASCII.GetString(reader.ReadBytes(8))!="HTUTIL01")throw new InvalidDataException("Unknown utility snapshot.");
+                int version=reader.ReadInt32();
+                SortedDictionary<string,object> layout=null;
+                if(version==2 && capacity){var counts=new int[UtilityCapacity.Keys.Length];for(int i=0;i<counts.Length;i++)counts[i]=reader.ReadInt32();layout=UtilityCapacity.Shape(template,counts);}
+                else if(version!=1)throw new InvalidDataException("Unsupported utility snapshot version.");
+                byte[] schema=reader.ReadBytes(32);
+                if(version==1 && !capacity)layout=template;
+                if(version==1 && capacity)
+                {
+                    foreach(int e in new[]{32768,65024})foreach(int w in new[]{32768,65024})foreach(int q in new[]{32768,65024})
+                    {var candidate=UtilityCapacity.Shape(template,new[]{e,w,q,q,q,q});if(Equal(schema,Schema(candidate)))layout=candidate;}
+                }
+                if(layout==null || !Equal(schema,Schema(layout)) || !Equal(reader.ReadBytes(32),baseline) || !Equal(reader.ReadBytes(32),binding))throw new InvalidDataException("Utility schema, standard projection or map binding differs.");
+                if(stream.Length-stream.Position!=Payload(layout).Length)throw new InvalidDataException("Utility snapshot length differs from its verified capacity.");
                 var result=new SortedDictionary<string,object>(StringComparer.Ordinal);
-                foreach(var pair in template)result.Add(pair.Key,Read(reader,pair.Value.GetType(),pair.Value));
+                foreach(var pair in layout)result.Add(pair.Key,Read(reader,pair.Value.GetType(),pair.Value));
                 if(stream.Position!=stream.Length)throw new InvalidDataException("Trailing utility payload.");return result;
             }
         }

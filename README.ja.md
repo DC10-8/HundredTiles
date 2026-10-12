@@ -8,7 +8,7 @@ Cities: Skylines 1の都市領域を、標準サイズの1,920mタイルで10×1
 
 Windows版Cities: Skylines 1 **1.21.1-f9-steam-win**を対象とします。ゲームDLLのSHA-256と変更対象のメソッドを照合し、異なるゲーム版や対象メソッドを変更するMODとの競合では適用を停止します。
 
-通常のマップからの新規都市と都市セーブの読み込みに対応します。マップ・アセットエディター、シナリオは非対応です。81 Tilesなど同じ空間管理を変更するMODと併用しないでください。オブジェクト数の上限は標準のままです。
+通常のマップからの新規都市と都市セーブの読み込みに対応します。マップ・アセットエディター、シナリオは非対応です。81 Tilesなど同じ空間管理を変更するMODと併用しないでください。HundredTiles単体ではオブジェクト数の上限は標準のままです。[More Network Capacity Renewの併用手順](docs/Network-capacity-compatibility.ja.md)は対象版へのローカル互換パッチを含みます。
 
 Move It! 2.10.9（2.10.9.41557）には、建物・道路・プロップ・樹木の検索、建物の移動、描画更新の9メソッドへ互換処理を適用します。元の座標原点を維持して配列の幅と検索範囲を拡張します。対象DLLとメソッド本体を照合し、未確認の版への適用を停止します。Move It!本体は同梱しません。
 
@@ -61,3 +61,4 @@ Building Control、FreeUtilities、TerrainLink、QuayTools、Custom Zone Mixer�
 
 対象ゲームAssembly-CSharp.dll SHA-256:
 `DF557994A03C93D8BB4A14F80B1FBCC0FB29D547658442445D078D069BCDD9FE`
+

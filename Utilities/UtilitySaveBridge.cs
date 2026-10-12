@@ -12,6 +12,7 @@ namespace HundredTiles.Utilities
     {
         internal static readonly string[] ElectricityFields={"m_electricityGrid","m_pulseGroups","m_pulseUnits","m_nodeGroups","m_pulseGroupCount","m_pulseUnitStart","m_pulseUnitEnd","m_processedCells","m_conductiveCells","m_canContinue"};
         internal static readonly string[] WaterFields={"m_waterGrid","m_waterPulseGroups","m_sewagePulseGroups","m_heatingPulseGroups","m_waterPulseUnits","m_sewagePulseUnits","m_heatingPulseUnits","m_nodeData","m_waterPulseGroupCount","m_waterPulseUnitStart","m_waterPulseUnitEnd","m_sewagePulseGroupCount","m_sewagePulseUnitStart","m_sewagePulseUnitEnd","m_heatingPulseGroupCount","m_heatingPulseUnitStart","m_heatingPulseUnitEnd","m_processedCells","m_conductiveCells","m_canContinue"};
+        public static Func<int> RequestedCapacity;
         static SortedDictionary<string,object> saving;
         static ElectricityManager.Cell[] readElectricity;
         static WaterManager.Cell[] readWater;
@@ -36,12 +37,16 @@ namespace HundredTiles.Utilities
         }
         static SortedDictionary<string,object> CaptureState()
         {
+            int requested=RequestedCapacity==null?32768:RequestedCapacity();
+            int queues=Math.Max(requested,((Array)Get("E.m_pulseUnits")).Length);
+            ExpandedElectricityManager.EnsureCapacity(queues);ExpandedWaterManager.EnsureCapacity(queues);
             var result=new SortedDictionary<string,object>(StringComparer.Ordinal);
             foreach(string prefix in new[]{"E.","W."})foreach(string name in prefix=="E."?ElectricityFields:WaterFields)
             {
                 string key=prefix+name;object value=ExpandedArray(key)??Get(key);
                 var array=value as Array;result.Add(key,array==null?value:array.Clone());
             }
+            foreach(string key in new[]{"E.m_nodeGroups","W.m_nodeData"}){var array=(Array)result[key];if(array.Length<requested)result[key]=UtilityCapacity.Grow(array,requested,key);}
             return result;
         }
         // Copy common struct fields while translating only the two spatial axes.
@@ -112,7 +117,8 @@ namespace HundredTiles.Utilities
                 state[key]=ConvertAxes((Array)Get(key),ExpandedArray(key).GetType().GetElementType(),false);
             return state;
         }
-        internal static void Validate(SortedDictionary<string,object> state)
+        internal static void Validate(SortedDictionary<string,object> state){ValidateState(state,true);}
+        static void ValidateState(SortedDictionary<string,object> state,bool targets)
         {
             if(((Array)state["E.m_electricityGrid"]).Length!=UtilityGrid.Side*UtilityGrid.Side || ((Array)state["W.m_waterGrid"]).Length!=UtilityGrid.Side*UtilityGrid.Side)
                 throw new InvalidDataException("Utility grids must cover the expanded map.");
@@ -120,12 +126,12 @@ namespace HundredTiles.Utilities
             {
                 var array=pair.Value as Array;
                 if(array!=null)
-                {var target=ExpandedArray(pair.Key)??(Array)Get(pair.Key);if(array.GetType()!=target.GetType() || array.Length!=target.Length)throw new InvalidDataException("Utility restore target differs: "+pair.Key);}
+                {var target=ExpandedArray(pair.Key)??(Array)Get(pair.Key);if(array.GetType()!=target.GetType() || (targets && array.Length!=RequiredLength(pair.Key,target.Length)) || (Array.IndexOf(UtilityCapacity.Keys,pair.Key)>=0 && !UtilityCapacity.Known(array.Length)))throw new InvalidDataException("Utility restore target differs: "+pair.Key);}
                 else if(pair.Value is int)
                 {
                     int value=(int)pair.Value;
                     if(value<0 || (pair.Key.EndsWith("GroupCount",StringComparison.Ordinal) && value>1024) ||
-                        ((pair.Key.EndsWith("UnitStart",StringComparison.Ordinal) || pair.Key.EndsWith("UnitEnd",StringComparison.Ordinal)) && value>=32768))throw new InvalidDataException("Utility counter out of bounds: "+pair.Key);
+                        ((pair.Key.EndsWith("UnitStart",StringComparison.Ordinal) || pair.Key.EndsWith("UnitEnd",StringComparison.Ordinal)) && value>=((Array)state[pair.Key.Replace("UnitStart","Units").Replace("UnitEnd","Units")]).Length))throw new InvalidDataException("Utility counter out of bounds: "+pair.Key);
                 }
             }
             foreach(string key in new[]{"E.m_pulseGroups","E.m_pulseUnits","W.m_waterPulseUnits","W.m_sewagePulseUnits","W.m_heatingPulseUnits"})
@@ -137,14 +143,15 @@ namespace HundredTiles.Utilities
             {
                 var units=(Array)state[stem+"Units"];Type element=units.GetType().GetElementType();
                 int start=(int)state[stem+"UnitStart"],end=(int)state[stem+"UnitEnd"],groups=(int)state[stem+"GroupCount"];
-                for(int i=start;i!=end;i=(i+1)%32768)
+                for(int i=start;i!=end;i=(i+1)%units.Length)
                 {
                     object unit=units.GetValue(i);
-                    if((ushort)element.GetField("m_group").GetValue(unit)>=groups || (ushort)element.GetField("m_node").GetValue(unit)>=32768)
+                    if((ushort)element.GetField("m_group").GetValue(unit)>=groups || (ushort)element.GetField("m_node").GetValue(unit)>=((Array)state[stem.StartsWith("E.",StringComparison.Ordinal)?"E.m_nodeGroups":"W.m_nodeData"]).Length)
                         throw new InvalidDataException("Active utility pulse references an invalid group or node.");
                 }
             }
         }
+        static int RequiredLength(string key,int current){return Array.IndexOf(UtilityCapacity.Keys,key)<0?current:Math.Max(current,RequestedCapacity==null?32768:RequestedCapacity());}
         sealed class Participant : ISaveParticipant
         {
             public string Key {get{return "HundredTiles.Utilities.v1";}}
@@ -158,13 +165,13 @@ namespace HundredTiles.Utilities
             public object Prepare(byte[] bytes,byte[] binding)
             {
                 if(!electricityRead || !waterRead)throw new InvalidOperationException("Utility standard data incomplete.");
-                var template=LegacyState();return bytes==null?template:UtilitySnapshotCodec.Decode(bytes,template,Baseline(readElectricity,readWater),binding);
+                var target=CaptureState();var legacy=LegacyState();var decoded=bytes==null?legacy:UtilitySnapshotCodec.Decode(bytes,target,Baseline(readElectricity,readWater),binding);ValidateState(decoded,false);return UtilityCapacity.Adapt(decoded,target);
             }
             public void ValidateTarget(object prepared) {Validate((SortedDictionary<string,object>)prepared);}
             public void Commit(object prepared)
             {
                 foreach(var pair in (SortedDictionary<string,object>)prepared)
-                {var array=pair.Value as Array;if(array!=null)Array.Copy(array,ExpandedArray(pair.Key)??(Array)Get(pair.Key),array.Length);else {object owner=Owner(pair.Key);Field(owner,pair.Key.Substring(2)).SetValue(owner,pair.Value);}}
+                {var array=pair.Value as Array;if(array!=null){var target=ExpandedArray(pair.Key)??(Array)Get(pair.Key);if(target.Length!=array.Length){target=UtilityCapacity.Grow(target,array.Length,pair.Key);Field(Owner(pair.Key),pair.Key.Substring(2)).SetValue(Owner(pair.Key),target);}Array.Copy(array,target,array.Length);}else {object owner=Owner(pair.Key);Field(owner,pair.Key.Substring(2)).SetValue(owner,pair.Value);}}
                 Singleton<ElectricityManager>.instance.AreaModified(0,0,UtilityGrid.Side-1,UtilityGrid.Side-1);
                 Singleton<WaterManager>.instance.AreaModified(0,0,UtilityGrid.Side-1,UtilityGrid.Side-1);
             }

@@ -5,6 +5,7 @@
 
 namespace HundredTiles.Utilities
 {
+    using System;
     using ColossalFramework;
     using UnityEngine;
     using static WaterManager;
@@ -17,10 +18,12 @@ namespace HundredTiles.Utilities
     internal static class ExpandedWaterManager
     {
         // Expanded arrays.
-        private static readonly ExpandedPulseUnit[] s_waterPulseUnits = new ExpandedPulseUnit[32768];
-        private static readonly ExpandedPulseUnit[] s_sewagePulseUnits = new ExpandedPulseUnit[32768];
-        private static readonly ExpandedPulseUnit[] s_heatingPulseUnits = new ExpandedPulseUnit[32768];
+        private static ExpandedPulseUnit[] s_waterPulseUnits = new ExpandedPulseUnit[32768];
+        private static ExpandedPulseUnit[] s_sewagePulseUnits = new ExpandedPulseUnit[32768];
+        private static ExpandedPulseUnit[] s_heatingPulseUnits = new ExpandedPulseUnit[32768];
 
+        internal static void EnsureCapacity(int count){Resize(ref s_waterPulseUnits,count);Resize(ref s_sewagePulseUnits,count);Resize(ref s_heatingPulseUnits,count);}
+        static void Resize(ref ExpandedPulseUnit[] value,int count){if(value.Length==count)return;var next=new ExpandedPulseUnit[count];Array.Copy(value,next,Math.Min(value.Length,count));value=next;}
         /// <summary>
         /// Gets the expanded water pulse unit array.
         /// </summary>
@@ -103,8 +106,9 @@ namespace HundredTiles.Utilities
                     m_canContinue = true;
                 }
 
-                int num2 = (num * 32768) >> 7;
-                int num3 = (((num + 1) * 32768) >> 7) - 1;
+                int nodeCapacity = Math.Min(instance.m_nodeData.Length, netManager.m_nodes.m_buffer.Length);
+                int num2 = (num * nodeCapacity) >> 7;
+                int num3 = (((num + 1) * nodeCapacity) >> 7) - 1;
                 PulseGroup pulseGroup = default;
                 ExpandedPulseUnit pulseUnit = default;
                 PulseGroup pulseGroup2 = default;

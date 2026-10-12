@@ -17,6 +17,7 @@ namespace HundredTiles.Runtime
         }
         public static void AddHooks(IList<HookSpec> hooks)
         {
+            NetworkCapacityCompatibility.Configure();
             ReviewedCompatibility.AddHooks(hooks);
             foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {

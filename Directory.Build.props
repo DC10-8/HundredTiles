@@ -4,6 +4,7 @@
   <GameManaged Condition="'$(GameManaged)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed</GameManaged>
   <HarmonyDirectory Condition="'$(HarmonyDirectory)' == ''">$(MSBuildThisFileDirectory)Libs</HarmonyDirectory>
   <Deterministic>true</Deterministic>
+  <EnableSourceLink>false</EnableSourceLink>
   <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   <PathMap>$(MSBuildThisFileDirectory)=/_/HundredTiles/</PathMap>
   <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>

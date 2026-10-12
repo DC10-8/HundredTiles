@@ -48,6 +48,7 @@ namespace HundredTiles.Utilities
 {
     internal static class ExpandedElectricityManager
     {
+        internal static void EnsureCapacity(int count){if(PulseUnits.Length!=count)Array.Resize(ref PulseUnits,count);}
         internal struct ExpandedPulseGroup {public uint m_origCharge,m_curCharge;public ushort m_mergeIndex,m_mergeCount,m_x,m_z;}
         internal struct ExpandedPulseUnit {public ushort m_group,m_node,m_x,m_z;}
         internal static ExpandedPulseGroup[] PulseGroups=new ExpandedPulseGroup[1024];
@@ -55,6 +56,7 @@ namespace HundredTiles.Utilities
     }
     internal static class ExpandedWaterManager
     {
+        internal static void EnsureCapacity(int count){if(WaterPulseUnits.Length!=count){Array.Resize(ref WaterPulseUnits,count);Array.Resize(ref SewagePulseUnits,count);Array.Resize(ref HeatingPulseUnits,count);}}
         internal struct ExpandedPulseUnit {public ushort m_group,m_node,m_x,m_z;}
         internal static ExpandedPulseUnit[] WaterPulseUnits=new ExpandedPulseUnit[32768],SewagePulseUnits=new ExpandedPulseUnit[32768],HeatingPulseUnits=new ExpandedPulseUnit[32768];
     }

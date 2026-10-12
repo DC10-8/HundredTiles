@@ -19,8 +19,9 @@ namespace HundredTiles.Utilities
     {
         // Expanded arrays.
         private static readonly ExpandedPulseGroup[] s_pulseGroups = new ExpandedPulseGroup[MAX_PULSE_GROUPS];
-        private static readonly ExpandedPulseUnit[] s_pulseUnits = new ExpandedPulseUnit[32768];
+        private static ExpandedPulseUnit[] s_pulseUnits = new ExpandedPulseUnit[32768];
 
+        internal static void EnsureCapacity(int count){if(s_pulseUnits.Length!=count){var next=new ExpandedPulseUnit[count];Array.Copy(s_pulseUnits,next,Math.Min(s_pulseUnits.Length,count));s_pulseUnits=next;}}
         // Electric roads status.
         private static bool s_electricRoads = false;
 
@@ -88,8 +89,9 @@ namespace HundredTiles.Utilities
                 // Net nodes.
                 NetManager netManager = Singleton<NetManager>.instance;
                 NetNode[] netNodes = netManager.m_nodes.m_buffer;
-                int num2 = (num * 32768) >> 7;
-                int num3 = (((num + 1) * 32768) >> 7) - 1;
+                int nodeCapacity = Math.Min(nodeGroups.Length, netNodes.Length);
+                int num2 = (num * nodeCapacity) >> 7;
+                int num3 = (((num + 1) * nodeCapacity) >> 7) - 1;
                 for (int i = num2; i <= num3; i++)
                 {
                     if (netNodes[i].m_flags != 0)
