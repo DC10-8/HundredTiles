@@ -1,9 +1,12 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using var module=ModuleDefinition.ReadModule(args[0]);
+using var resolver=new DefaultAssemblyResolver();
+resolver.AddSearchDirectory(Path.GetDirectoryName(Path.GetFullPath(args[0]))!);
+foreach(var directory in (Environment.GetEnvironmentVariable("HUNDREDTILES_FIXTURE_SEARCH_DIRS")??"").Split(Path.PathSeparator))if(Directory.Exists(directory))resolver.AddSearchDirectory(directory);
+using var module=ModuleDefinition.ReadModule(args[0],new ReaderParameters {AssemblyResolver=resolver});
 void Reorder(TypeDefinition type){foreach(var child in type.NestedTypes)Reorder(child);var methods=type.Methods.Reverse().ToArray();type.Methods.Clear();foreach(var method in methods)type.Methods.Add(method);}
 foreach(var type in module.Types)Reorder(type);
-if(args.Length==3 && args[2]=="fps"){
+if(args.Length==3 && args[2].StartsWith("fps")){
 void Rename(TypeDefinition type){foreach(var child in type.NestedTypes)Rename(child);foreach(var method in type.Methods)if(method.Name=="Update" || method.Name=="LateUpdate" || method.Name=="FixedUpdate")method.Name="FpsBooster"+method.Name;}
 foreach(var type in module.Types)Rename(type);
 }
@@ -28,5 +31,6 @@ if(args.Length==3 && args[2]=="spatial-mutate"){
 var target=module.Types.Single(t=>t.Name=="PropsManager").Methods.Single(m=>m.Name=="RaycastHoverInstance");
 target.Body.Instructions.First(i=>i.OpCode==OpCodes.Ldc_I4 && (int)i.Operand==270).Operand=271;
 }
+if(args.Length==3 && args[2]=="fps-mutate"){var target=module.Types.Single(t=>t.Name=="MainThreadPump").Methods.Single(m=>m.Name=="FpsBoosterUpdate");var il=target.Body.GetILProcessor();il.InsertBefore(target.Body.Instructions[0],il.Create(OpCodes.Nop));}
 module.Write(args[1]);
 Console.WriteLine("Generated metadata reorder fixture: "+args[1]);
