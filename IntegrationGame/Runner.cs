@@ -1,0 +1,129 @@
+using System;
+using System.IO;
+using System.Reflection;
+using System.Security.Cryptography;
+using ColossalFramework;
+using ColossalFramework.Packaging;
+using ColossalFramework.UI;
+using HundredTiles.Core;
+using UnityEngine;
+
+public sealed class Runner : MonoBehaviour
+{
+    static string Mode { get { return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")??"Auto"; } }
+    static bool Landscape { get { return Mode.StartsWith("Landscape"); } }
+    static bool Supply { get { return Mode.StartsWith("Supply") || (Landscape && Mode!="LandscapeEntryFresh"); } }
+    static bool Release { get { return Mode=="SupplyEntrySave" || Mode=="SupplyEntryReload" || Mode=="SupplyEntryGraphics" || (Landscape && Mode!="LandscapeEntryFresh"); } }
+    static bool Outer { get { return Mode.StartsWith("Outer") || Supply; } }
+    static string SaveName { get { return Landscape?"HundredTiles_Landscape_Repair_Verification":Release?"HundredTiles_Release_Verification":Supply?"HundredTiles_OuterSupply_Verification":Outer?"HundredTiles_OuterGameplay_Verification":"HundredTiles_Isolated_Verification"; } }
+    static string Record { get { return Landscape?"landscape-saved.marker":Release?"release-saved.marker":Supply?"supply-saved.marker":Outer?"outer-saved.marker":"saved.marker"; } }
+    bool landscapeFlow;
+    int phase;float began;bool verifyingReload;volatile bool workerCompleted;string inputHash;
+    void Awake(){began=Time.realtimeSinceStartup;}
+    void Update()
+    {
+        try
+        {
+            if(Bootstrap.FatalFailure){phase=9;Application.Quit();return;}
+            if(Time.realtimeSinceStartup-began>600)throw new TimeoutException("Isolated game test timed out in phase "+phase);
+            if(!Singleton<LoadingManager>.exists)return;
+            var loading=Singleton<LoadingManager>.instance;
+            if(phase==0)
+            {
+                if(loading.m_currentlyLoading || UIView.GetAView()==null)return;
+                bool reload=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")!="Create" && File.Exists(Path.Combine(Entry.Root,Record));
+                if(Mode=="LandscapeEntryFresh")reload=false;
+                if(Mode=="OuterCreate" || Mode=="SupplyCreate" || Mode=="SupplyEntrySave" || Mode=="LandscapeEntryCreate")reload=true;
+                Package.Asset selected=null;
+                foreach(var asset in PackageManager.FilterAssets(reload?UserAssetType.SaveGameMetaData:UserAssetType.MapMetaData))
+                {if(reload && asset.name!=(Mode=="LandscapeEntryCreate"?"HundredTiles_Landscape_Verification":Mode=="OuterCreate"?"HundredTiles_Isolated_Verification":Mode=="SupplyCreate"?"HundredTiles_OuterGameplay_Verification":Mode=="SupplyEntrySave"?"HundredTiles_OuterSupply_Verification":SaveName))continue;selected=asset;break;}
+                if(selected==null)return;
+                if(reload && Mode!="OuterCreate" && Mode!="SupplyCreate" && Mode!="SupplyEntrySave" && Mode!="LandscapeEntryCreate")
+                {
+                    inputHash=FileHash();var record=File.ReadAllText(Path.Combine(Entry.Root,Record)).Split(new[]{'\r','\n'},StringSplitOptions.RemoveEmptyEntries);
+                    if(record.Length!=2 || record[1]!=inputHash)throw new Exception("Reload input differs from the recorded completed save.");
+                    Entry.Log("Reload input SHA-256: "+inputHash);
+                }
+                var meta=new SimulationMetaData{m_CityName=SaveName,m_gameInstanceIdentifier=Guid.NewGuid().ToString(),m_currentDateTime=DateTime.Now,m_startingDateTime=DateTime.Now,m_disableAchievements=SimulationMetaData.MetaBool.True,m_updateMode=reload?SimulationManager.UpdateMode.LoadGame:SimulationManager.UpdateMode.NewGameFromMap};
+                if(reload)selected=selected.Instantiate<SaveGameMetaData>().assetRef;
+                else{var map=selected.Instantiate<MapMetaData>();meta.m_MapName=map.mapName;meta.m_environment=map.environment;selected=map.assetRef;}
+                phase=reload?3:1;Entry.Log("Loading isolated "+(reload?"saved city":"new map")+": "+selected.name);
+                loading.LoadLevel(selected,"Game","InGame",meta);return;
+            }
+            if(loading.m_currentlyLoading || !loading.m_simulationDataLoaded || !loading.m_loadingComplete)return;
+            if(phase==1 || phase==3)
+            {
+                bool reload=phase==3;verifyingReload=reload;workerCompleted=false;phase=4;
+                if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_CONSTRUCTION")=="1" || Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_TAXI")=="1")LiveConstructionChecks.Prepare();
+                if(Release)LiveTerrainToolChecks.Prepare();
+                Singleton<SimulationManager>.instance.AddAction(delegate
+                {
+                    try
+                    {
+                        Singleton<SimulationManager>.instance.ForcedSimulationPaused=true;
+                        Inspect(reload);
+                        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_CONSTRUCTION")=="1")LiveConstructionChecks.Run();
+                        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SEA")=="1")LiveSeaChecks.Run();
+                        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_TAXI")=="1")LiveTaxiChecks.Run();
+                        if(Outer){if(Mode=="OuterCreate"){OuterObjects.Create();reload=false;verifyingReload=false;}else OuterObjects.Check();}
+                        if(Supply && !Landscape){if(Mode=="SupplyCreate"){LiveSupplyChecks.Create();reload=false;verifyingReload=false;}else LiveSupplyChecks.Check();}
+                        if(Release){LivePathChecks.Run();LiveTerrainToolChecks.Run();}
+                        if(Landscape && Mode!="LandscapeEntryFresh"){if(Mode=="LandscapeEntryCreate"){LiveLandscapeChecks.Create();Inspect(false);reload=false;verifyingReload=false;}else LiveLandscapeChecks.Check();}
+                        if(Mode=="LandscapeEntryFresh")
+                        {
+                            if(!Singleton<SimulationManager>.instance.m_serializableDataStorage.ContainsKey(HundredTiles.Runtime.LandscapeGeneration.Key))throw new Exception("Actual loading extension did not generate the new map landscape automatically.");
+                            Entry.Log("PASS: actual ICities loading extension automatically generated nature on a fresh expanded map; completion marker set without options or harness generation calls.");
+                        }
+                        if(Mode=="SupplyEntrySave"){LiveGridChecks.Shapes();LiveGridChecks.ServiceQuery();LiveGridChecks.ServiceCycle();Inspect(false);reload=false;verifyingReload=false;}
+                        if(reload){LiveGridChecks.Shapes();LiveGridChecks.ServiceQuery();LiveGridChecks.ServiceCycle();if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")=="Graphics")LiveGameplayChecks.PurchaseAll();if(FileHash()!=inputHash)throw new Exception("Reload verification changed the input save.");File.WriteAllText(Path.Combine(Entry.Root,"reload-passed.marker"),"PASS\n"+inputHash);Entry.Log("PASS: real Unity saved city reloaded with expanded service sentinel; input save unchanged, SHA-256 "+inputHash);}
+                        else{File.WriteAllText(Path.Combine(Entry.Root,"ready-to-save.marker"),"READY");Entry.Log("Expanded live grids checked; service sentinel placed on added corner.");}
+                        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_COMPAT")=="1")LiveCompatibilityChecks.Run();
+                        workerCompleted=true;
+                    }
+                    catch(Exception error){Fail(error);}
+                });return;
+            }
+            if(phase==4 && !workerCompleted)return;
+            if(phase==4 && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_COMPAT")=="1")LiveCompatibilityChecks.Hover();
+            if(phase==4 && Mode=="LandscapeEntryFresh"){phase=9;StartCoroutine(LiveLandscapeChecks.FreshFlow());return;}
+            if(phase==4 && Mode=="LandscapeEntryReload"){phase=9;StartCoroutine(LiveLandscapeChecks.OptionsAndScreenshot());return;}
+            if(phase==4 && Mode=="LandscapeEntryCreate" && !landscapeFlow){landscapeFlow=true;phase=6;StartCoroutine(LiveLandscapeChecks.Flow(delegate{Singleton<SimulationManager>.instance.AddAction(delegate{Inspect(false);workerCompleted=true;phase=4;});}));return;}
+            if(phase==4 && verifyingReload && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_WATER")=="1"){phase=9;LiveWaterTextureChecks.Run();Application.Quit();return;}
+            if(phase==4 && verifyingReload && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_OPTIONS")=="1"){phase=9;StartCoroutine(LiveOptionsChecks.Run());return;}
+            if(phase==4 && verifyingReload){phase=9;if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")=="Graphics" || Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")=="OuterGraphics" || Mode=="SupplyEntryGraphics"){LiveGameplayChecks.ServiceTexture();StartCoroutine(LiveGameplayChecks.Screenshot());}else Application.Quit();return;}
+            if(phase==4 && !verifyingReload)
+            {
+                var panel=UIView.library.Get<SavePanel>("SavePanel");
+                if(panel==null)panel=UIView.library.Show<SavePanel>("SavePanel");
+                if(panel==null)return;if(!panel.SaveGame(SaveName))return;phase=5;Entry.Log("Requested real game SavePanel save.");
+            }
+            if(phase==5)
+            {
+                string file=Path.Combine(Entry.Root,"UserData/Saves/"+SaveName+".crp");
+                if(!File.Exists(file) || SavePanel.isSaving)return;
+                string hash=FileHash();File.WriteAllText(Path.Combine(Entry.Root,Record),new FileInfo(file).Length+"\n"+hash);phase=9;Entry.Log("Real .crp saved; SHA-256 "+hash+"; exiting for separate-process reload.");Application.Quit();
+            }
+        }
+        catch(Exception error){phase=9;Fail(error);Application.Quit();}
+    }
+    static void Inspect(bool reload)
+    {
+        var service=Singleton<ImmaterialResourceManager>.instance;
+        var final=(ushort[])typeof(ImmaterialResourceManager).GetField("m_localFinalResources",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(service);
+        var temp=(ushort[])typeof(ImmaterialResourceManager).GetField("m_localTempResources",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(service);
+        if(final.Length!=ServiceGrid.Values || temp.Length!=ServiceGrid.Values)throw new Exception("Service grids were not expanded in Unity.");
+        int index=(499*500+499)*35+7;
+        if(reload){if(final[index]!=32123 || temp[index]!=12345)throw new Exception("Extended corner service values did not survive game restart/reload.");}
+        else{final[index]=32123;temp[index]=12345;service.AreaModified(499,499,499,499);}
+        Entry.Log("Live service grids: "+final.Length+" values each; corner "+final[index]+"/"+temp[index]);
+    }
+    static string FileHash(){using(var stream=File.OpenRead(Path.Combine(Entry.Root,"UserData/Saves/"+SaveName+".crp")))using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-","");}
+    static void Fail(Exception error){Entry.Log("FAILURE: "+error);File.WriteAllText(Path.Combine(Entry.Root,"failed.marker"),error.ToString());Bootstrap.FatalFailure=true;}
+}
+
+
+
+
+
+
+

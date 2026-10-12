@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net35</TargetFramework><LangVersion>latest</LangVersion><TreatWarningsAsErrors>true</TreatWarningsAsErrors></PropertyGroup>
+ <ItemGroup><PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net35" Version="1.0.3" PrivateAssets="all" /><ProjectReference Include="../Runtime/HundredTiles.Runtime.csproj" /></ItemGroup>
+ <ItemGroup><Reference Include="Assembly-CSharp"><HintPath>C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference><Reference Include="ColossalManaged"><HintPath>C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed\ColossalManaged.dll</HintPath><Private>false</Private></Reference><Reference Include="UnityEngine"><HintPath>C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed\UnityEngine.dll</HintPath><Private>false</Private></Reference></ItemGroup>
+<ItemGroup><Reference Include="CitiesHarmony.Harmony"><HintPath>$(HarmonyDirectory)/CitiesHarmony.Harmony.dll</HintPath><Private>true</Private></Reference></ItemGroup></Project>
+
+

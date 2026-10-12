@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+research/
+reports/
+artifacts/
+AuditFixture/results/
+Libs/
+Directory.Build.user.props
+*.user
+*.crp
+*.log

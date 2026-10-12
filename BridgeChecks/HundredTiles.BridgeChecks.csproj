@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><TreatWarningsAsErrors>true</TreatWarningsAsErrors></PropertyGroup>
+  <ItemGroup><Compile Include="../Core/*.cs" Link="%(Filename)%(Extension)" /><Compile Include="../SaveBridge/RuntimeSaveBridge.cs" Link="RuntimeSaveBridge.cs" /><Compile Include="../SaveBridge/ResourceBridge.cs" Link="ResourceBridge.cs" /><Compile Include="../SaveBridge/AreaHooks.cs" Link="AreaHooks.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../SaveBridge/ObjectPositionHooks.cs" Link="ObjectPositionHooks.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../SaveBridge/ObjectSaveBridge.cs" Link="ObjectSaveBridge.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../SaveBridge/SaveParticipants.cs" Link="SaveParticipants.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../SaveBridge/DistrictSaveBridge.cs" Link="DistrictSaveBridge.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../Utilities/ServiceSaveBridge.cs" Link="ServiceSaveBridge.cs" /><Compile Include="../Utilities/UtilitySnapshotCodec.cs" Link="UtilitySnapshotCodec.cs" /></ItemGroup>
+</Project>
+

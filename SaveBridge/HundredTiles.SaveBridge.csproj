@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net35</TargetFramework><LangVersion>latest</LangVersion><TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GameManaged Condition="'$(GameManaged)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed</GameManaged>
+  </PropertyGroup>
+  <ItemGroup><PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net35" Version="1.0.3" PrivateAssets="all" /><ProjectReference Include="../Core/HundredTiles.Core.csproj" /><ProjectReference Include="../ExperimentalPatch/HundredTiles.ExperimentalPatch.csproj" /></ItemGroup>
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp"><HintPath>$(GameManaged)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="ColossalManaged"><HintPath>$(GameManaged)\ColossalManaged.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="ICities"><HintPath>$(GameManaged)\ICities.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine"><HintPath>$(GameManaged)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="CitiesHarmony.Harmony"><HintPath>$(HarmonyDirectory)/CitiesHarmony.Harmony.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>
+

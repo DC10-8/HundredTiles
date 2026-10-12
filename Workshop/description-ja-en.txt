@@ -1,0 +1,40 @@
+[b]HundredTiles — 100 Tiles / 100タイル[/b]
+
+[b]日本語[/b]
+Cities: Skylines 1の都市領域を、標準サイズの10×10・最大100タイルへ拡張します。既存の81タイルを維持し、東側と北側へ計19タイルを追加します。1タイルは1,920m四方、全体は19.2km四方です。
+
+追加領域で道路・線路・建物・地区・区画・電気・水道・暖房・経路探索・描画・保存に対応。タクシーの利用判定も拡張範囲へ対応します。ゲーム標準の営業条件や利用確率は維持します。
+
+[b]必要なもの[/b]
+Cities: Skylines 1 Windows Steam版 1.21.1-f9、およびHarmony。タクシーなどDLCの機能には該当DLCが必要です。81 Tiles・25 Tilesなど他のタイル拡張MODは無効にしてください。エディター・シナリオは対象外です。
+
+[b]使い方[/b]
+1. HarmonyとHundredTilesを有効にし、ゲームを再起動して都市を読み込みます。
+2.「オプション → HundredTiles 1.0」の言語欄で「日本語 / English」を選択。ボタンや処理結果は即時に切り替わり、設定は保存されます。
+3.「100タイルをすべて開放（無料）」で全区画を開放。追加領域の海面以下へ水を入れ、水面を更新します。一時停止中も適用できます。開放済み都市でも再実行できます。
+4. 自然を追加する場合は「追加19タイルに起伏・川・森を生成」。以前の生成で川や森林が不十分な場合は「川の接続を修復して森林を増やす」を実行します。既存の地形・建設物の保護条件により生成を見送る場合があります。
+5. 完了後は別名で都市を保存してください。拡張した都市の再読込にはHundredTilesを有効にしてください。有効化・無効化の後はゲームを再起動します。
+
+[b]検証・対応範囲[/b]
+隔離した実ゲームで建設・タクシーの配車／乗降処理／経路・地形編集・保存都市の再読込を検証。大都市の長時間運行や、すべてのMODとの互換性は未検証です。対応を確認したMove It!・Extra Landscaping Toolsなどは版が異なると起動時の照合で停止する場合があります。エラー時はゲームログを添えて報告してください。
+
+[b]English[/b]
+HundredTiles expands Cities: Skylines 1 to a standard-sized 10×10 area: up to 100 tiles. It keeps the original 81 tiles and adds 19 tiles to the east and north. Each tile is 1,920m square; the full area is 19.2km square.
+
+The added area supports roads, railways, buildings, districts, zoning, electricity, water, heating, pathfinding, rendering and save data. Taxi eligibility uses the expanded boundaries while keeping vanilla service conditions and selection probabilities.
+
+[b]Requirements[/b]
+Cities: Skylines 1, Windows Steam build 1.21.1-f9, and Harmony. DLC features require their respective DLCs. Disable other tile-expansion mods such as 81 Tiles or 25 Tiles. Editors and scenarios are not supported.
+
+[b]How to use[/b]
+1. Enable Harmony and HundredTiles, restart the game and load a city.
+2. Open Options → HundredTiles 1.0. Select 日本語 or English in the language dropdown. Labels and action results switch immediately; your choice is saved.
+3. Click “Unlock all 100 tiles (free)”. The added area below sea level is filled to the current sea level and its water maps are refreshed, even while paused. You can run this again in an already-unlocked city.
+4. To add nature, use “Generate hills, rivers and forests in the 19 added tiles”. For an older generated landscape, use “Repair river connections and increase forests”. Protected terrain or existing construction may cause some changes to be skipped.
+5. Save under a new name after completion. Keep HundredTiles enabled when reloading an expanded city. Restart the game after enabling or disabling the mod.
+
+[b]Validation and compatibility[/b]
+Construction, taxi dispatch/boarding and drop-off callbacks/pathfinding, terrain editing and save reloads were tested in an isolated real game. Long-term operation of large cities and every mod combination have not been tested. Reviewed adapters for mods such as Move It! and Extra Landscaping Tools may reject a different version at startup. Please include the game log when reporting errors.
+
+Source code: https://github.com/DC10-8/HundredTiles
+Thumbnail: AI-generated illustration; not an in-game screenshot.
