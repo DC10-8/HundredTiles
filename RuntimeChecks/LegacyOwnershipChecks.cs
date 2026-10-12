@@ -9,7 +9,7 @@ static class LegacyOwnershipChecks
     public static void Run()
     {
         var fixture=new LegacyAreas {Grid=new int[81]};for(int i=0;i<81;i++)fixture.Grid[i]=i+1;
-        var baseline=new OwnershipState {Grid=new int[25],Count=81,Start=12};
+        var baseline=new OwnershipState {Grid=new int[25],Count=81,Start=40};
         for(int z=0;z<5;z++)for(int x=0;x<5;x++)baseline.Grid[z*5+x]=fixture.Grid[(z+2)*9+x+2];
         foreach(uint version in new uint[]{1,2})using(var stream=new MemoryStream())
         {

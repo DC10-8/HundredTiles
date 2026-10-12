@@ -6,9 +6,11 @@ var oldAreas=new OwnershipState {Grid=new int[25],Count=81,Start=12};
 oldAreas.Grid[0]=7;oldAreas.Grid[12]=1;oldAreas.Grid[24]=81;
 var migratedAreas=Ownership.ImportLegacy(oldAreas);
 Check(migratedAreas.Count==3 && migratedAreas.Start==44 && migratedAreas.Grid[22]==2 && migratedAreas.Grid[44]==1 && migratedAreas.Grid[66]==3,"81-count standard subset compacts purchase order without moving tiles");
-var oldFull=new OwnershipState {Grid=Enumerable.Range(1,81).ToArray(),Count=81,Start=12};
+var oldFull=new OwnershipState {Grid=Enumerable.Range(1,81).ToArray(),Count=81,Start=40};
 var migratedFull=Ownership.ImportLegacy(oldFull);
 Check(migratedFull.Count==81 && migratedFull.Grid[88]==81 && migratedFull.Grid[89]==0 && migratedFull.Grid[99]==0,"All 81 prior owned tiles remain owned; new row and column unowned");
+Check(migratedFull.Start==44,"81 Tiles start index 40 keeps its original world coordinate");
+for(int start=0;start<81;start++){oldFull.Start=start;Check(Ownership.ImportLegacy(oldFull).Start==(start/9)*10+start%9,"All 81 starting positions retain world coordinates");}
 oldFull.Grid[0]=2;
 Reject<InvalidDataException>(()=>Ownership.ImportLegacy(oldFull),"Duplicate legacy purchase orders refused");
 Reject<InvalidDataException>(()=>Ownership.Expand(oldAreas),"Strict standard/100-tile save validation unchanged");

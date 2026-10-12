@@ -49,10 +49,11 @@ namespace HundredTiles.Core
         }
         public static OwnershipState ImportLegacy(OwnershipState saved)
         {
-            if(saved==null || saved.Grid==null || (saved.Grid.Length!=25 && saved.Grid.Length!=81) || saved.Start<0 || saved.Start>=25 || saved.Count<0 || saved.Count>100)
-                throw new InvalidDataException("Invalid legacy ownership layout.");
+            if(saved==null || saved.Grid==null || (saved.Grid.Length!=25 && saved.Grid.Length!=81) || saved.Start<0 || saved.Start>=saved.Grid.Length || saved.Count<0 || saved.Count>100)
+                throw new InvalidDataException("Invalid legacy ownership layout: cells="+(saved==null || saved.Grid==null?-1:saved.Grid.Length)+", start="+(saved==null?-1:saved.Start)+", count="+(saved==null?-1:saved.Count)+".");
             int side=saved.Grid.Length==25?5:9;
-            var seen=new bool[101]; var result=new OwnershipState {Grid=new int[100],Start=(saved.Start/5+2)*10+saved.Start%5+2};
+            int offset=side==5?2:0;
+            var seen=new bool[101]; var result=new OwnershipState {Grid=new int[100],Start=(saved.Start/side+offset)*10+saved.Start%side+offset};
             foreach(int order in saved.Grid)
             {
                 if(order<0 || order>100 || (order!=0 && seen[order]))throw new InvalidDataException("Invalid legacy purchase order.");
