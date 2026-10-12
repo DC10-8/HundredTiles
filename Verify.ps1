@@ -1,7 +1,10 @@
 param(
-    [string]$GameAssembly = 'C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed\Assembly-CSharp.dll'
+    [string]$GameAssembly = 'C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed\Assembly-CSharp.dll',
+    [string]$HarmonyDirectory = (Join-Path $PSScriptRoot 'Libs')
 )
 $ErrorActionPreference = 'Stop'
+$env:GameManaged = Split-Path $GameAssembly
+$env:HarmonyDirectory = $HarmonyDirectory
 Push-Location $PSScriptRoot
 try {
     dotnet build Core -c Release
@@ -29,8 +32,11 @@ try {
     if (($auditCandidates | Where-Object method -eq 'Branch').Count -ne 5) { throw 'IL switch decoding failed' }
     dotnet run --project Audit -c Release -- $GameAssembly reports
     if ($LASTEXITCODE) { throw 'Game audit failed' }
-    dotnet run --project PatchBuilder -c Release -- $GameAssembly ExperimentalPatch/ReviewedPlan.tsv
+    dotnet run --project PatchBuilder -c Release -- $GameAssembly reports/regenerated-plan.tsv
     if ($LASTEXITCODE) { throw 'Reviewed patch plan generation failed' }
+    $trusted=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'ExperimentalPatch/ReviewedPlan.tsv')).Replace("`r`n","`n").TrimEnd()
+    $generated=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'reports/regenerated-plan.tsv')).Replace("`r`n","`n").TrimEnd()
+    if($trusted -ne $generated){throw 'Regenerated plan differs from trusted source; verification will not modify the trusted plan.'}
     dotnet run --project PatchBuilder -c Release -- $GameAssembly ExperimentalPatch/ReviewedPlan.tsv net-audit reports/net-spatial-dependencies.csv
     if ($LASTEXITCODE) { throw 'Net spatial dependency audit failed' }
     dotnet run --project PatchBuilder -c Release -- $GameAssembly ExperimentalPatch/ReviewedPlan.tsv building-audit reports/building-spatial-dependencies.csv
@@ -53,7 +59,7 @@ try {
     if ($LASTEXITCODE) { throw 'Runtime connection check build failed' }
     dotnet build IntegrationGame -c Release -m:1
     if ($LASTEXITCODE) { throw 'Isolated Unity verification harness build failed' }
-    & "$PSScriptRoot\RuntimeChecks\bin\Release\net35\HundredTiles.RuntimeChecks.exe" (Split-Path $GameAssembly) "$PSScriptRoot\..\TrainDepartureSequencer\Libs"
+    & "$PSScriptRoot\RuntimeChecks\bin\Release\net35\HundredTiles.RuntimeChecks.exe" (Split-Path $GameAssembly) $HarmonyDirectory
     if ($LASTEXITCODE) { throw 'Real-game runtime connection checks failed' }
     dotnet run --project UtilityChecks -c Release -- $GameAssembly
     if ($LASTEXITCODE) { throw 'Utility save and serializer checks failed' }

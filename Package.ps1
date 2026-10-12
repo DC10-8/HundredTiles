@@ -2,7 +2,8 @@ param([switch]$SkipBuild)
 $ErrorActionPreference='Stop'
 $projectRoot=$PSScriptRoot
 if(-not $SkipBuild){dotnet build (Join-Path $projectRoot 'Runtime') -c Release -m:1;if($LASTEXITCODE){throw 'Release build failed.'}}
-$packageRoot=Join-Path $projectRoot 'artifacts\HundredTiles-1.0'
+$staging=Join-Path $projectRoot ('artifacts\package-staging-'+[Guid]::NewGuid().ToString('N'))
+$packageRoot=Join-Path $staging 'HundredTiles-1.0'
 $modRoot=Join-Path $packageRoot 'HundredTiles'
 New-Item -ItemType Directory -Force -Path $modRoot | Out-Null
 $files=@('HundredTiles.Core.dll','HundredTiles.ExperimentalPatch.dll','HundredTiles.SaveBridge.dll','HundredTiles.Utilities.dll','HundredTiles.Runtime.dll','CitiesHarmony.API.dll')

@@ -1,6 +1,7 @@
 [b]HundredTiles — 100 Tiles / 100タイル[/b]
 
 [b]日本語[/b]
+試験公開版です。大都市の長時間運転や全MOD構成は未検証です。重要な都市の唯一のセーブには使用せず、外部バックアップと別名のコピーで検証してください。
 Cities: Skylines 1の都市領域を、標準サイズの10×10・最大100タイルへ拡張します。既存の81タイルを維持し、東側と北側へ計19タイルを追加します。1タイルは1,920m四方、全体は19.2km四方です。
 
 追加領域で道路・線路・建物・地区・区画・電気・水道・暖房・経路探索・描画・保存に対応。タクシーの利用判定も拡張範囲へ対応します。ゲーム標準の営業条件や利用確率は維持します。
@@ -19,6 +20,7 @@ Cities: Skylines 1 Windows Steam版 1.21.1-f9、およびHarmony。タクシー�
 隔離した実ゲームで建設・タクシーの配車／乗降処理／経路・地形編集・保存都市の再読込を検証。大都市の長時間運行や、すべてのMODとの互換性は未検証です。対応を確認したMove It!・Extra Landscaping Toolsなどは版が異なると起動時の照合で停止する場合があります。エラー時はゲームログを添えて報告してください。
 
 [b]English[/b]
+Experimental release. Long-term large-city operation and arbitrary mod combinations are unverified. Use copied saves and keep external backups; do not use your only important-city save.
 HundredTiles expands Cities: Skylines 1 to a standard-sized 10×10 area: up to 100 tiles. It keeps the original 81 tiles and adds 19 tiles to the east and north. Each tile is 1,920m square; the full area is 19.2km square.
 
 The added area supports roads, railways, buildings, districts, zoning, electricity, water, heating, pathfinding, rendering and save data. Taxi eligibility uses the expanded boundaries while keeping vanilla service conditions and selection probabilities.

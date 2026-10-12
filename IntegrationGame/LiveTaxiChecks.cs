@@ -55,4 +55,3 @@ static class LiveTaxiChecks
  }
  static void WaitPath(uint path){if(path==0)throw new Exception("Taxi path absent.");var manager=Singleton<PathManager>.instance;var timer=System.Diagnostics.Stopwatch.StartNew();while((manager.m_pathUnits.m_buffer[path].m_pathFindFlags&12)==0 && timer.ElapsedMilliseconds<10000)Thread.Sleep(1);if((manager.m_pathUnits.m_buffer[path].m_pathFindFlags&4)==0)throw new Exception("Taxi path worker failed: "+manager.m_pathUnits.m_buffer[path].m_pathFindFlags);}
 }
-

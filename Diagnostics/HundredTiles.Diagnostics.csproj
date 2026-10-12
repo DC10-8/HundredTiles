@@ -12,4 +12,3 @@
     <Reference Include="UnityEngine"><HintPath>$(GameManaged)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
 </Project>
-

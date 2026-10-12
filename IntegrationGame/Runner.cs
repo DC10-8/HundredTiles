@@ -32,7 +32,7 @@ public sealed class Runner : MonoBehaviour
             {
                 if(loading.m_currentlyLoading || UIView.GetAView()==null)return;
                 bool reload=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")!="Create" && File.Exists(Path.Combine(Entry.Root,Record));
-                if(Mode=="LandscapeEntryFresh")reload=false;
+                if(Mode=="LandscapeEntryFresh" || Mode=="BaseEntryCreate")reload=false;
                 if(Mode=="OuterCreate" || Mode=="SupplyCreate" || Mode=="SupplyEntrySave" || Mode=="LandscapeEntryCreate")reload=true;
                 Package.Asset selected=null;
                 foreach(var asset in PackageManager.FilterAssets(reload?UserAssetType.SaveGameMetaData:UserAssetType.MapMetaData))
@@ -66,6 +66,7 @@ public sealed class Runner : MonoBehaviour
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SEA")=="1")LiveSeaChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_TAXI")=="1")LiveTaxiChecks.Run();
                         if(Outer){if(Mode=="OuterCreate"){OuterObjects.Create();reload=false;verifyingReload=false;}else OuterObjects.Check();}
+                        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SAVE_SAFETY")=="1")LiveSaveSafetyChecks.Run();
                         if(Supply && !Landscape){if(Mode=="SupplyCreate"){LiveSupplyChecks.Create();reload=false;verifyingReload=false;}else LiveSupplyChecks.Check();}
                         if(Release){LivePathChecks.Run();LiveTerrainToolChecks.Run();}
                         if(Landscape && Mode!="LandscapeEntryFresh"){if(Mode=="LandscapeEntryCreate"){LiveLandscapeChecks.Create();Inspect(false);reload=false;verifyingReload=false;}else LiveLandscapeChecks.Check();}
@@ -120,10 +121,3 @@ public sealed class Runner : MonoBehaviour
     static string FileHash(){using(var stream=File.OpenRead(Path.Combine(Entry.Root,"UserData/Saves/"+SaveName+".crp")))using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-","");}
     static void Fail(Exception error){Entry.Log("FAILURE: "+error);File.WriteAllText(Path.Combine(Entry.Root,"failed.marker"),error.ToString());Bootstrap.FatalFailure=true;}
 }
-
-
-
-
-
-
-

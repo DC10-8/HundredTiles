@@ -1,0 +1,22 @@
+name: Public source checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  pure-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.0.401
+            8.0.x
+      - name: Pure logic and corruption checks (no game DLLs)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for project in Checks SaveChecks BridgeChecks ServiceChecks; do
+            dotnet restore "$project" --locked-mode
+            dotnet run --project "$project" -c Release --no-restore
+          done

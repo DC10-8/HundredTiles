@@ -858,4 +858,3 @@ namespace HundredTiles.Utilities
         }
     }
 }
-

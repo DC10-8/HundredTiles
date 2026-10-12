@@ -90,6 +90,7 @@ namespace HundredTiles.Runtime
                 UtilitySaveBridge.Register();
                 ServiceSaveBridge.Register();
                 foreach(var hook in hooks){Progress("Applying "+hook.Target.DeclaringType.FullName+"."+hook.Target.Name);harmony.Patch(hook.Target,Method(hook.Prefix),Method(hook.Postfix),TranspilerMethod(hook.Transpiler),Method(hook.Finalizer));}
+                RuntimeSaveBridge.ValidateSave=delegate {SaveSafety.Validate(hooks);};
                 installed=true;
                 Progress("Installed "+hooks.Count);
                 UnityEngine.Debug.Log("[HundredTiles] Installed: "+hooks.Count+" targets; 10x10 tiles; purchase limit 100.");

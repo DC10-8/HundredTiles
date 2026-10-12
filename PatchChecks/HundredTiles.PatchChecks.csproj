@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>disable</Nullable><TreatWarningsAsErrors>true</TreatWarningsAsErrors></PropertyGroup>
   <ItemGroup>
-    <Reference Include="Mono.Cecil"><HintPath>$(UserProfile)\.dotnet\tools\.store\ilspycmd\10.1.0.8386\ilspycmd\10.1.0.8386\tools\net10.0\any\Mono.Cecil.dll</HintPath><Aliases>ExternalCecil</Aliases></Reference>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" Aliases="ExternalCecil" />
     <Reference Include="CitiesHarmony.Harmony"><HintPath>$(HarmonyDirectory)/CitiesHarmony.Harmony.dll</HintPath><Private>true</Private></Reference>
     <Compile Include="../ExperimentalPatch/PlannedTranspiler.cs" Link="PlannedTranspiler.cs" />
     <Compile Include="../ExperimentalPatch/AssemblyFile.cs" Link="AssemblyFile.cs" />
@@ -13,4 +13,3 @@
     <EmbeddedResource Include="../ExperimentalPatch/ReviewedPlan.tsv" LogicalName="HundredTiles.ExperimentalPatch.ReviewedPlan.tsv" />
   </ItemGroup>
 </Project>
-

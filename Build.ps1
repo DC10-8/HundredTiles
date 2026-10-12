@@ -2,6 +2,9 @@ param([string]$GameManaged='C:\Program Files (x86)\Steam\steamapps\common\Cities
 $ErrorActionPreference='Stop'
 foreach($name in @('Assembly-CSharp.dll','ColossalManaged.dll','ICities.dll','UnityEngine.dll')){if(-not (Test-Path -LiteralPath (Join-Path $GameManaged $name))){throw "Game assembly missing: $name"}}
 foreach($name in @('CitiesHarmony.API.dll','CitiesHarmony.Harmony.dll')){if(-not (Test-Path -LiteralPath (Join-Path $HarmonyDirectory $name))){throw "Harmony assembly missing: $name. Supply -HarmonyDirectory."}}
-dotnet build (Join-Path $PSScriptRoot 'Runtime/HundredTiles.Runtime.csproj') -c Release -m:1 "-p:GameManaged=$GameManaged" "-p:HarmonyDirectory=$HarmonyDirectory"
+$project=Join-Path $PSScriptRoot 'Runtime/HundredTiles.Runtime.csproj'
+dotnet restore $project --locked-mode "-p:GameManaged=$GameManaged" "-p:HarmonyDirectory=$HarmonyDirectory"
+if($LASTEXITCODE){throw 'Locked dependency restore failed.'}
+dotnet build $project -c Release -m:1 --no-restore "-p:GameManaged=$GameManaged" "-p:HarmonyDirectory=$HarmonyDirectory"
 if($LASTEXITCODE){throw 'Release build failed.'}
 Write-Output ('Built mod: '+(Join-Path $PSScriptRoot 'Runtime/bin/Release/net35'))

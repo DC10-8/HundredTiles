@@ -11,4 +11,3 @@ Source: https://github.com/DC10-8/HundredTiles
 Required Workshop dependency: Cities Harmony. Disable other tile expansion mods. Upload the runtime DLLs and notices from the release package's HundredTiles directory, not the development integration harness. Workshop upload itself is not part of this prepared package.
 
 Preview file formats reference: https://partner.steamgames.com/doc/api/isteamugc#SetItemPreview
-

@@ -4,7 +4,7 @@
 
 ユーザーログでGameAreaManager.Data.Deserialize → RuntimeSaveBridge.AreasRead → Ownership.ExpandのInvalid ownership layoutを確認しました。100タイル拡張データがない旧セーブについて、標準25区画に保存された購入順を位置を維持して連番化し、所有数を実際の区画数から再計算します。fakeGAMが存在する場合は81 TilesのEncodedArray形式（v1/v2）を読み、標準保存データの中央25区画との一致を確認して81区画全体を10列の配列へ移します。既存HundredTiles拡張のハッシュ・購入順・保存データ対の厳密な検査は維持します。
 
-ビルド、459対象の接続検査、Core保存検査、モック管理クラスの保存・復元検査が合格しました。実ゲームDLLのDataSerializer/EncodedArrayで作ったv1/v2形式のフィクスチャを単独CLRで読み、81購入の保持と中央区画不一致の拒否を確認しました。実ゲームでのユーザー都市「分割」の再読み込みは未確認です。旧81 Tilesの電気・水道等の独自追加データを移行する変更ではありません。
+ビルド、459対象の接続検査、Core保存検査、モック管理クラスの保存・復元検査が合格しました。実ゲームDLLのDataSerializer/EncodedArrayで作ったv1/v2形式のフィクスチャを単独CLRで読み、81購入の保持と中央区画不一致の拒否を確認しました。実ゲームでの旧81 Tiles形式のユーザー都市の再読み込みは未確認です。旧81 Tilesの電気・水道等の独自追加データを移行する変更ではありません。
 ## 追加MODとの互換性修正（2026-10-12）
 
 Building.AfterTerrainUpdatedの競合表示を含む実ユーザーの起動ログを調べ、Building Control、FreeUtilities、TerrainLink、QuayTools、Custom Zone Mixer、RightOfWay、SimulationGuard、First Person Camera、HyperLoad、PassengerLineBuilderの確認済み版に限定した互換処理を追加しました。対象DLLのSHA-256とパッチ・関連ヘルパーの意味的ハッシュを照合します。未知の版や未知の競合は拒否します。

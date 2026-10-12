@@ -66,10 +66,3 @@ static class LiveOptionsChecks
         UnityEngine.Object.Destroy(panel.gameObject);Application.Quit();
     }
 }
-
-
-
-
-
-
-

@@ -74,7 +74,3 @@ static class LiveConstructionChecks
         Entry.Log("PASS: native BuildingTool preview and construction for "+name+" in added tiles.");return found;
     }
 }
-
-
-
-

@@ -1,4 +1,4 @@
-param([string]$GameRoot='C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines',[ValidateSet('Auto','Create','Reload','Graphics','OuterCreate','OuterReload','OuterGraphics','SupplyCreate','SupplyReload','SupplyEntry','SupplyEntrySave','SupplyEntryReload','SupplyEntryGraphics','LandscapeEntryCreate','LandscapeEntryReload','LandscapeEntryFresh')][string]$Mode='Auto',[switch]$Options,[switch]$WaterTextures)
+param([string]$GameRoot='C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines',[ValidateSet('Auto','Create','Reload','BaseEntryCreate','BaseEntryReload','Graphics','OuterCreate','OuterReload','OuterGraphics','SupplyCreate','SupplyReload','SupplyEntry','SupplyEntrySave','SupplyEntryReload','SupplyEntryGraphics','LandscapeEntryCreate','LandscapeEntryReload','LandscapeEntryFresh')][string]$Mode='Auto',[switch]$Options,[switch]$WaterTextures)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot
 $testRoot=Join-Path $projectRoot 'artifacts\isolated-game'
@@ -20,6 +20,7 @@ if($env:HUNDREDTILES_TEST_TERRAIN_REWRITE -eq '1'){$startInfo.EnvironmentVariabl
 if($env:HUNDREDTILES_TEST_SEA -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_SEA']='1'}
 if($env:HUNDREDTILES_TEST_TAXI -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_TAXI']='1'}
 if($env:HUNDREDTILES_TEST_REVIEWED -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_REVIEWED']='1'}
+if($env:HUNDREDTILES_TEST_SAVE_SAFETY -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_SAVE_SAFETY']='1'}
 if($Options){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_OPTIONS']='1'}
 if($WaterTextures){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_WATER']='1'}
 $startInfo.Arguments='-noWorkshop -windowed -screen-width 960 -screen-height 540 -logFile "'+(Join-Path $testRoot 'unity.log')+'"'

@@ -11,4 +11,3 @@
     <Reference Include="CitiesHarmony.Harmony"><HintPath>$(HarmonyDirectory)/CitiesHarmony.Harmony.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
 </Project>
-

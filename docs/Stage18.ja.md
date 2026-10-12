@@ -52,4 +52,3 @@ NullReferenceExceptionになる問題を発見し、修正と回帰検査を追�
 
 参照した公園探索のコードはMITのEightyOne2由来です。
 著作権表示とライセンスはUtilities/ExpandedServices.csおよびUPSTREAM-LICENSE.txtに保持しています。
-

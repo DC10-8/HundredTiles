@@ -13,17 +13,7 @@ namespace HundredTiles.Runtime
     {
         public static bool Allowed(string owner,MethodBase target,Patches patches)
         {
-            if(ReviewedCompatibility.Allowed(owner,target,patches))return true;
-            foreach(var patch in patches.Transpilers)if(patch.owner==owner)return false;
-            string key=target.DeclaringType.FullName+"."+target.Name;
-            if(owner=="com.dc108.forceroadconnect")return ForceRoadCompatibility.Reviewed && key=="NetTool.MakeControlPoint";
-            if(owner=="com.dc10.areapobuilder")return key=="PrivateBuildingAI.CheckNearbyBuildingZones";
-            if(owner=="kunie.cs1.freeloteditor")return key=="Building.CheckZoning";
-            if(owner=="com.kunie.buildinglimitremoval")return key=="BuildingManager.Awake" || key=="RenderManager.Awake" || key=="SimulationManager+Data.Deserialize";
-            if(owner=="com.dc108.autohistoricalplop")return key=="BuildingManager.ZonesUpdated" || key=="ZoneBlock.SimulationStep";
-            if(owner=="jp.clearfpsboost")return key=="RenderManager.FpsBoosterLateUpdate" || key=="RenderManager.LateUpdate" || key=="FogEffect.OnRenderImage";
-            if(owner=="com.example.loadtimeremaining")return key=="LoadingManager.LoadLevel";
-            return false;
+            return ReviewedCompatibility.Allowed(owner,target,patches);
         }
         public static void AddHooks(IList<HookSpec> hooks)
         {

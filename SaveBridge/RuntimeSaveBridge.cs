@@ -23,6 +23,8 @@ namespace HundredTiles.SaveBridge
         static bool restored;
         public static bool NeedsLandscape;
         static OwnershipState saveOwnership,saveLegacyOwnership,readOwnership,importedOwnership;
+        static bool loadFailed;
+        public static Action ValidateSave;
         static int[] readArea;
         static LoadSession loading;
         static WaterSimulation.Cell[][] readWater;
@@ -59,6 +61,8 @@ namespace HundredTiles.SaveBridge
         // the game starts writing any manager or serializable extension data.
         public static void BeginSave(out SaveScope __state)
         {
+            if(loadFailed)throw new InvalidOperationException("City loading failed. Saving is blocked; reload a valid city before saving.");
+            if(ValidateSave!=null)ValidateSave();
             if (saving != null || loading != null) throw new InvalidOperationException("Nested save or save during load.");
             __state = new SaveScope();
             try
@@ -187,6 +191,7 @@ namespace HundredTiles.SaveBridge
         // scratch arrays; live expanded fields and water height pointers stay put.
         public static void BeginLoad()
         {
+            loadFailed=false;
             if (saving != null || loading != null) throw new InvalidOperationException("Overlapping save/load.");
             loading=new LoadSession();
             restored=false;
@@ -198,7 +203,7 @@ namespace HundredTiles.SaveBridge
         }
         public static Exception LoadFailure(Exception __exception)
         {
-            if (__exception != null) Reset();
+            if (__exception != null) { Reset(); loadFailed=true; }
             return __exception;
         }
         static void RequireLoad() { if(loading==null) throw new InvalidOperationException("Load session missing."); }

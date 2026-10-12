@@ -5,4 +5,3 @@
   <ItemGroup><EmbeddedResource Include="ReviewedPlan.tsv" LogicalName="HundredTiles.ExperimentalPatch.ReviewedPlan.tsv" /></ItemGroup>
   <ItemGroup><ProjectReference Include="../Core/HundredTiles.Core.csproj" /></ItemGroup>
 </Project>
-

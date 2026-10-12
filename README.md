@@ -1,5 +1,7 @@
 # HundredTiles — Cities: Skylines 1
 
+**Experimental release.** Long-term large-city operation and arbitrary mod combinations are unverified. Use copied saves and keep an external backup. See [safety and build verification](docs/Safety-and-build.md) for confirmed checks and limits.
+
 Standard-sized 10×10 city area (100 tiles). Keeps original coordinates and adds 19 tiles to the east and north. Windows Steam game build 1.21.1-f9 is the reviewed build.
 
 日本語の導入・操作説明: [README.ja.md](README.ja.md)
@@ -20,7 +22,7 @@ Enable Cities Harmony and HundredTiles, then restart the game. Disable other til
 
 ## Build from source
 
-Install a current .NET SDK (development used .NET SDK 10) and your own Windows Steam copy of the reviewed game. You need `Assembly-CSharp.dll`, `ColossalManaged.dll`, `ICities.dll`, and `UnityEngine.dll` from `Cities_Data/Managed`, plus `CitiesHarmony.API.dll` and `CitiesHarmony.Harmony.dll` from Cities Harmony. These DLLs are not part of this repository.
+Install .NET SDK 10.0.401 (pinned by global.json) and your own Windows Steam copy of the reviewed game. You need `Assembly-CSharp.dll`, `ColossalManaged.dll`, `ICities.dll`, and `UnityEngine.dll` from `Cities_Data/Managed`, plus `CitiesHarmony.API.dll` and `CitiesHarmony.Harmony.dll` from Cities Harmony. These DLLs are not part of this repository.
 
 ```powershell
 ./Build.ps1 -GameManaged 'C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed' -HarmonyDirectory 'C:\path\to\CitiesHarmony'

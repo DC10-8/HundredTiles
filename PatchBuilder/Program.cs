@@ -611,4 +611,3 @@ static IEnumerable<TypeDefinition> AllTypes(IEnumerable<TypeDefinition> types)
 {
     foreach(var type in types) { yield return type; foreach(var nested in AllTypes(type.NestedTypes)) yield return nested; }
 }
-
