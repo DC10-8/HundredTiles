@@ -47,6 +47,22 @@ namespace HundredTiles.Core
             for(int z=0;z<5;z++) for(int x=0;x<5;x++) state.Grid[(z+2)*10+x+2]=legacy.Grid[z*5+x];
             return state;
         }
+        public static OwnershipState ImportLegacy(OwnershipState saved)
+        {
+            if(saved==null || saved.Grid==null || (saved.Grid.Length!=25 && saved.Grid.Length!=81) || saved.Start<0 || saved.Start>=25 || saved.Count<0 || saved.Count>100)
+                throw new InvalidDataException("Invalid legacy ownership layout.");
+            int side=saved.Grid.Length==25?5:9;
+            var seen=new bool[101]; var result=new OwnershipState {Grid=new int[100],Start=(saved.Start/5+2)*10+saved.Start%5+2};
+            foreach(int order in saved.Grid)
+            {
+                if(order<0 || order>100 || (order!=0 && seen[order]))throw new InvalidDataException("Invalid legacy purchase order.");
+                if(order!=0)seen[order]=true;
+            }
+            for(int order=1;order<=100;order++)for(int z=0;z<side;z++)for(int x=0;x<side;x++)
+                if(saved.Grid[z*side+x]==order)result.Grid[(z+(side==5?2:0))*10+x+(side==5?2:0)]=++result.Count;
+            if(saved.Count<result.Count || (side==9 && saved.Count!=result.Count))throw new InvalidDataException("Legacy ownership count differs from grid.");
+            Validate(result,10); return result;
+        }
         public static bool CanPurchase(OwnershipState state,int x,int z)
         {
             Validate(state,10);

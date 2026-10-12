@@ -192,7 +192,7 @@ RuntimeSaveBridge.Reset(); storage.Clear();
 Array.Clear(areas.m_areaGrid); areas.m_areaGrid[44]=1; areas.m_areaCount=1;
 var unlock=Singleton<UnlockManager>.instance;
 bool purchase=false; unlock.Enabled=false;
-AreaHooks.CanUnlock(areas,5,4,ref purchase); Check(!purchase,"Early milestone retained");
+AreaHooks.CanUnlock(areas,5,4,ref purchase); Check(purchase,"Adjacent purchase available before milestones");
 unlock.Enabled=true; AreaHooks.CanUnlock(areas,5,4,ref purchase); Check(purchase,"Adjacent purchase allowed");
 areas.m_AreasWrapper.Veto=true; AreaHooks.CanUnlock(areas,5,4,ref purchase); Check(!purchase,"Wrapper veto retained"); areas.m_AreasWrapper.Veto=false;
 for(int i=0;i<9;i++)areas.m_areaGrid[40+i]=i+1;

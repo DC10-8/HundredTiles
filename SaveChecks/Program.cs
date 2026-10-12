@@ -2,6 +2,17 @@ using System.Security.Cryptography;
 using HundredTiles.Core;
 
 int size=ExpandedMap.HeightStride * ExpandedMap.HeightStride;
+var oldAreas=new OwnershipState {Grid=new int[25],Count=81,Start=12};
+oldAreas.Grid[0]=7;oldAreas.Grid[12]=1;oldAreas.Grid[24]=81;
+var migratedAreas=Ownership.ImportLegacy(oldAreas);
+Check(migratedAreas.Count==3 && migratedAreas.Start==44 && migratedAreas.Grid[22]==2 && migratedAreas.Grid[44]==1 && migratedAreas.Grid[66]==3,"81-count standard subset compacts purchase order without moving tiles");
+var oldFull=new OwnershipState {Grid=Enumerable.Range(1,81).ToArray(),Count=81,Start=12};
+var migratedFull=Ownership.ImportLegacy(oldFull);
+Check(migratedFull.Count==81 && migratedFull.Grid[88]==81 && migratedFull.Grid[89]==0 && migratedFull.Grid[99]==0,"All 81 prior owned tiles remain owned; new row and column unowned");
+oldFull.Grid[0]=2;
+Reject<InvalidDataException>(()=>Ownership.ImportLegacy(oldFull),"Duplicate legacy purchase orders refused");
+Reject<InvalidDataException>(()=>Ownership.Expand(oldAreas),"Strict standard/100-tile save validation unchanged");
+Console.WriteLine("PASS: legacy ownership count, purchase-order and 81-to-100 coordinate migration; duplicate orders refused.");
 var state=new MapSaveState { Heights=new ushort[size],BlockOffsets=new ushort[size],Water=new WaterCellState[size],WaterFrame=128 };
 for(int i=0;i<size;i++)
 {

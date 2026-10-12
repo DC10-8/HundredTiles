@@ -30,6 +30,7 @@ class Program
     }
     static int Run()
     {
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_LEGACY_OWNERSHIP")=="1"){LegacyOwnershipChecks.Run();return 0;}
         HundredTiles.ExperimentalPatch.AssemblyFile.ManagedDirectory=gameDirectory;
         string updater=Environment.GetEnvironmentVariable("HUNDREDTILES_ELT_UPDATER");if(!string.IsNullOrEmpty(updater))Assembly.LoadFrom(updater);
         string reviewFile=Environment.GetEnvironmentVariable("HUNDREDTILES_REVIEW_EXPORT");

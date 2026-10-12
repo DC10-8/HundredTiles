@@ -22,7 +22,7 @@ namespace HundredTiles.SaveBridge
         static readonly List<ISaveParticipant> participants = new List<ISaveParticipant> { objects, new DistrictSaveBridge.Participant() };
         static bool restored;
         public static bool NeedsLandscape;
-        static OwnershipState saveOwnership,saveLegacyOwnership,readOwnership;
+        static OwnershipState saveOwnership,saveLegacyOwnership,readOwnership,importedOwnership;
         static int[] readArea;
         static LoadSession loading;
         static WaterSimulation.Cell[][] readWater;
@@ -191,7 +191,7 @@ namespace HundredTiles.SaveBridge
             loading=new LoadSession();
             restored=false;
             foreach(var participant in participants)participant.BeginLoad();
-            readArea=new int[25]; readOwnership=null;
+            readArea=new int[25]; readOwnership=null; importedOwnership=null;
             ResourceBridge.BeginLoad();
             int count=LegacyProjection.Stride * LegacyProjection.Stride;
             readWater=new[] { new WaterSimulation.Cell[count],new WaterSimulation.Cell[count] };
@@ -221,9 +221,19 @@ namespace HundredTiles.SaveBridge
             if(readOwnership!=null) throw new InvalidOperationException("Ownership read twice.");
             var areas=Singleton<GameAreaManager>.instance;
             var legacy=new OwnershipState {Grid=(int[])readArea.Clone(),Count=areas.m_areaCount,Start=(int)Get(areas,"m_startTile")};
-            var expanded=Ownership.Expand(legacy);
+            var storage=Singleton<SimulationManager>.instance.m_serializableDataStorage;
+            OwnershipState expanded;
+            if(storage.ContainsKey(OwnershipKey)) expanded=Ownership.Expand(legacy);
+            else
+            {
+                byte[] prior;
+                expanded=storage.TryGetValue("fakeGAM",out prior)?LegacyAreas.Read(prior,legacy):Ownership.ImportLegacy(legacy);
+                importedOwnership=expanded;
+                legacy=Ownership.Project(expanded);
+            }
             if(areas.m_areaGrid.Length!=100) throw new InvalidDataException("Ownership target is not expanded.");
             Array.Copy(expanded.Grid,areas.m_areaGrid,100);
+            areas.m_areaCount=expanded.Count;
             Set(areas,"m_startTile",expanded.Start); areas.m_maxAreaCount=100;
             readOwnership=legacy;
         }
@@ -292,7 +302,7 @@ namespace HundredTiles.SaveBridge
                 if(readOwnership==null) throw new InvalidOperationException("Standard ownership has not finished loading.");
                 if((bytes!=null)!=hasOwnership || (hasOwnership && ownershipBytes==null)) throw new InvalidDataException("Terrain and ownership extension pair is incomplete.");
                 if((bytes!=null)!=hasResource || (hasResource && resourceBytes==null))throw new InvalidDataException("Resource extension set is incomplete.");
-                var ownership=bytes==null ? Ownership.Expand(readOwnership) : Ownership.Decode(ownershipBytes,readOwnership,bytes);
+                var ownership=bytes==null ? (importedOwnership ?? Ownership.Expand(readOwnership)) : Ownership.Decode(ownershipBytes,readOwnership,bytes);
                 var resourceState=ResourceBridge.Prepare(resourceBytes,bytes,ownershipBytes);
                 var additionalStates=new List<object>();byte[] binding=Binding(resourceBytes);
                 for(int i=0;i<participants.Count;i++)
@@ -332,7 +342,7 @@ namespace HundredTiles.SaveBridge
                 for(int i=0;i<participants.Count;i++)participants[i].Commit(additionalStates[i]);
                 typeof(TerrainManager).GetMethod("RefreshPatchFlatness",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(terrain,null);
                 // Terrain.UpdateData rebuilds derived heights and LOD data next.
-                loading=null; readWater=null; readArea=null; readOwnership=null; ResourceBridge.ClearLoad();
+                loading=null; readWater=null; readArea=null; readOwnership=null; importedOwnership=null; ResourceBridge.ClearLoad();
                 foreach(var participant in participants)participant.ClearLoad();restored=true;
             }
         }
@@ -343,7 +353,7 @@ namespace HundredTiles.SaveBridge
         public static void BeforeAfterDeserialize() { BeforeManagersUpdate(); }
 
         static WaterCellState ToState(WaterSimulation.Cell c) { return new WaterCellState { Height=c.m_height,Pollution=c.m_pollution,VelocityX=c.m_velocityX,VelocityZ=c.m_velocityZ }; }
-        public static void Reset() { loading=null; readWater=null; readArea=null; readOwnership=null; restored=false; NeedsLandscape=false; ResourceBridge.ClearLoad(); foreach(var participant in participants)participant.ClearLoad(); ClearSave(); }
+        public static void Reset() { loading=null; readWater=null; readArea=null; readOwnership=null; importedOwnership=null; restored=false; NeedsLandscape=false; ResourceBridge.ClearLoad(); foreach(var participant in participants)participant.ClearLoad(); ClearSave(); }
         static WaterSimulation.Cell[] ToGame(WaterCellState[] cells)
         {
             var result=new WaterSimulation.Cell[cells.Length];
