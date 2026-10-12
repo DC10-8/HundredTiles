@@ -21,6 +21,7 @@ class Program
     static Assembly Resolve(object sender,ResolveEventArgs args)
     {
         string filename=new AssemblyName(args.Name).Name+".dll";
+        if(filename=="0Harmony.dll")return Assembly.LoadFrom(Path.Combine(harmonyDirectory,"CitiesHarmony.Harmony.dll"));
         if(filename=="BehaviourUpdater.dll" && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("HUNDREDTILES_ELT_UPDATER")))return Assembly.LoadFrom(Environment.GetEnvironmentVariable("HUNDREDTILES_ELT_UPDATER"));
         if(filename=="Assembly-CSharp.dll" && rewrittenFile!=null)return Assembly.Load(File.ReadAllBytes(rewrittenFile));
         foreach(string folder in new[]{gameDirectory,harmonyDirectory})
@@ -31,6 +32,15 @@ class Program
     {
         HundredTiles.ExperimentalPatch.AssemblyFile.ManagedDirectory=gameDirectory;
         string updater=Environment.GetEnvironmentVariable("HUNDREDTILES_ELT_UPDATER");if(!string.IsNullOrEmpty(updater))Assembly.LoadFrom(updater);
+        string reviewFile=Environment.GetEnvironmentVariable("HUNDREDTILES_REVIEW_EXPORT");
+        if(!string.IsNullOrEmpty(reviewFile)){
+            var plugin=Assembly.LoadFrom(reviewFile);if(Environment.GetEnvironmentVariable("HUNDREDTILES_REVIEW_VALIDATE")=="1"){ReviewedCompatibility.Verify(plugin,reviewFile);var helperHooks=new System.Collections.Generic.List<HookSpec>();if(plugin.GetName().Name=="TerrainLink")foreach(string row in new[]{"TerrainLink.Sync.NetworkSync|Process","TerrainLink.Sync.NetworkSync|WorldToGrid","TerrainLink.Sync.BuildingSync|Process","TerrainLink.Sync.BuildingSync|WorldToGrid"}){var parts=row.Split('|');var target=plugin.GetType(parts[0]).GetMethod(parts[1],BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic);new System.Collections.Generic.List<HarmonyLib.CodeInstruction>(ReviewedCompatibility.Grid(HarmonyLib.PatchProcessor.GetOriginalInstructions(target)));}if(plugin.GetName().Name=="TerrainLink"){var target=plugin.GetType("TerrainLink.Sync.DirtyAreas").GetMethod("Add");new System.Collections.Generic.List<HarmonyLib.CodeInstruction>(ReviewedCompatibility.Bounds(HarmonyLib.PatchProcessor.GetOriginalInstructions(target)));}if(plugin.GetName().Name=="RightOfWay")foreach(string name in new[]{"RefreshAround","CellIndex"}){var target=plugin.GetType("RightOfWay.Yielding.YieldScanner").GetMethod(name,BindingFlags.Static|BindingFlags.NonPublic);new System.Collections.Generic.List<HarmonyLib.CodeInstruction>(ReviewedCompatibility.Grid(HarmonyLib.PatchProcessor.GetOriginalInstructions(target)));}Console.WriteLine("PASS reviewed compatibility and spatial transforms: "+plugin.GetName().Name);return 0;}var roots=Environment.GetEnvironmentVariable("HUNDREDTILES_REVIEW_TYPES").Split(';');
+            Console.WriteLine("assembly\t"+plugin.GetName().Name+"\t"+HundredTiles.ExperimentalPatch.PlannedTranspiler.Hash(File.ReadAllBytes(reviewFile)));
+            foreach(var type in plugin.GetTypes()){
+                bool selected=false;foreach(string root in roots)if(type.FullName==root || type.FullName.StartsWith(root+"+",StringComparison.Ordinal))selected=true;if(!selected)continue;
+                foreach(var method in type.GetMethods(BindingFlags.Instance|BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.DeclaredOnly))if(method.GetMethodBody()!=null)Console.WriteLine("method\t"+plugin.GetName().Name+"\t"+type.FullName+"\t"+method.Name+"\t"+HundredTiles.ExperimentalPatch.ReviewedMethod.SemanticHash(method));
+            }return 0;
+        }
         string export=Environment.GetEnvironmentVariable("HUNDREDTILES_ELT_EXPORT");
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_CONSTRUCTION_EXPORT")=="1")
         {
@@ -145,9 +155,3 @@ class Program
         return 0;
     }
 }
-
-
-
-
-
-

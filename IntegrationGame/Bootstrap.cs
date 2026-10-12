@@ -92,10 +92,12 @@ public static class Bootstrap
             if(Path.GetFileName(plugin.modPath)=="MoveIt")plugin.isEnabled=true;
         foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())
             if(Path.GetFileName(plugin.modPath)=="HundredTiles" || Path.GetFileName(plugin.modPath)=="ForceRoadConnect")plugin.isEnabled=true;
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_REVIEWED")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())foreach(var assembly in plugin.GetAssemblies())if(assembly.GetName().Name=="BuildingControl" || assembly.GetName().Name=="FreeUtilities" || assembly.GetName().Name=="TerrainLink" || assembly.GetName().Name=="QuayTools" || assembly.GetName().Name=="CustomZoneMixer" || assembly.GetName().Name=="RightOfWay" || assembly.GetName().Name=="SimulationGuard" || assembly.GetName().Name=="FPSCamera" || assembly.GetName().Name=="HyperLoad" || assembly.GetName().Name=="PassengerLineBuilder" || assembly.GetName().Name=="AutoHistoricalPlop")plugin.isEnabled=true;
         int owned=0;
         foreach(var target in Harmony.GetAllPatchedMethods())
         {var info=Harmony.GetPatchInfo(target);if(info!=null)foreach(string owner in info.Owners)if(owner==Installer.Owner){owned++;break;}}
-        int expected=(terrain?475:moveIt?469:459)+(ForceRoadCompatibility.Reviewed?3:0);
+        int extra=0;foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies()){if(assembly.GetName().Name=="TerrainLink")extra+=5;if(assembly.GetName().Name=="RightOfWay")extra+=2;if(assembly.GetName().Name=="AutoHistoricalPlop")extra+=1;}
+        int expected=(terrain?475:moveIt?469:459)+(ForceRoadCompatibility.Reviewed?3:0)+extra;
         if(owned!=expected){Entry.Log("FAILURE: actual local-plugin entry installed "+owned+" targets, expected "+expected+".");FatalFailure=true;return;}
         Entry.Log("PASS: actual PluginManager/IUserMod/HarmonyHelper entry installed the production city-runtime patches.");
     }
@@ -106,5 +108,3 @@ public static class Bootstrap
         Entry.Log("Unity verification runner created.");
     }
 }
-
-

@@ -19,6 +19,7 @@ if($env:HUNDREDTILES_TEST_CONSTRUCTION -eq '1'){$startInfo.EnvironmentVariables[
 if($env:HUNDREDTILES_TEST_TERRAIN_REWRITE -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_TERRAIN_REWRITE']='1'}
 if($env:HUNDREDTILES_TEST_SEA -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_SEA']='1'}
 if($env:HUNDREDTILES_TEST_TAXI -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_TAXI']='1'}
+if($env:HUNDREDTILES_TEST_REVIEWED -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_REVIEWED']='1'}
 if($Options){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_OPTIONS']='1'}
 if($WaterTextures){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_WATER']='1'}
 $startInfo.Arguments='-noWorkshop -windowed -screen-width 960 -screen-height 540 -logFile "'+(Join-Path $testRoot 'unity.log')+'"'
@@ -26,10 +27,3 @@ $startInfo.WindowStyle=[System.Diagnostics.ProcessWindowStyle]::Hidden
 $gameProcess=[System.Diagnostics.Process]::Start($startInfo)
 Set-Content -LiteralPath (Join-Path $testRoot 'process.id') -Value $gameProcess.Id
 Write-Output "Isolated Unity verification started: PID $($gameProcess.Id)."
-
-
-
-
-
-
-

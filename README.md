@@ -10,7 +10,7 @@ Standard-sized 10×10 city area (100 tiles). Keeps original coordinates and adds
 - Added terrain, districts, zoning, networks, object grids, utilities, service resources, rendering and save data.
 - Immediate below-sea-level water initialization on unlock.
 - Optional hills, river connections and forests in added tiles.
-- Reviewed adapters for installed versions of Move It!, Extra Landscaping Tools, No Utility Networks and ForceRoadConnect.
+- Reviewed adapters for installed versions of Move It!, Extra Landscaping Tools, No Utility Networks, ForceRoadConnect, TerrainLink and RightOfWay. Reviewed patch composition also supports the installed Building Control, Custom Zone Mixer, FreeUtilities, QuayTools, SimulationGuard, First Person Camera, HyperLoad and PassengerLineBuilder versions; unknown versions remain blocked.
 - Taxi eligibility across purchased original and added tiles; vanilla probabilities preserved, with a 40m outer-edge guard.
 - Japanese / English options dropdown: switches labels and current results immediately; preference persists.
 

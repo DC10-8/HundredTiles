@@ -89,13 +89,14 @@ namespace HundredTiles.Runtime
             {
                 UtilitySaveBridge.Register();
                 ServiceSaveBridge.Register();
-                foreach(var hook in hooks){Progress("Applying "+hook.Target.DeclaringType.FullName+"."+hook.Target.Name);harmony.Patch(hook.Target,Method(hook.Prefix),Method(hook.Postfix),Method(hook.Transpiler),Method(hook.Finalizer));}
+                foreach(var hook in hooks){Progress("Applying "+hook.Target.DeclaringType.FullName+"."+hook.Target.Name);harmony.Patch(hook.Target,Method(hook.Prefix),Method(hook.Postfix),TranspilerMethod(hook.Transpiler),Method(hook.Finalizer));}
                 installed=true;
                 Progress("Installed "+hooks.Count);
                 UnityEngine.Debug.Log("[HundredTiles] Installed: "+hooks.Count+" targets; 10x10 tiles; purchase limit 100.");
             }
             catch {harmony.UnpatchAll(Owner);throw;}
         }
+        static HarmonyMethod TranspilerMethod(MethodInfo method){if(method==null)return null;return new HarmonyMethod(method){priority=Priority.First,before=new[]{"com.github.algernon-A.csl.buildingcontrol","com.klyte.redirectors.CZM"}};}
         static HarmonyMethod Method(MethodInfo method){return method==null?null:new HarmonyMethod(method);}
         public static void Remove()
         {
@@ -106,4 +107,3 @@ namespace HundredTiles.Runtime
         }
     }
 }
-

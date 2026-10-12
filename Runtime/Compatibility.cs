@@ -13,7 +13,8 @@ namespace HundredTiles.Runtime
     {
         public static bool Allowed(string owner,MethodBase target,Patches patches)
         {
-            if(patches.Transpilers.Count!=0)return false;
+            if(ReviewedCompatibility.Allowed(owner,target,patches))return true;
+            foreach(var patch in patches.Transpilers)if(patch.owner==owner)return false;
             string key=target.DeclaringType.FullName+"."+target.Name;
             if(owner=="com.dc108.forceroadconnect")return ForceRoadCompatibility.Reviewed && key=="NetTool.MakeControlPoint";
             if(owner=="com.dc10.areapobuilder")return key=="PrivateBuildingAI.CheckNearbyBuildingZones";
@@ -26,6 +27,7 @@ namespace HundredTiles.Runtime
         }
         public static void AddHooks(IList<HookSpec> hooks)
         {
+            ReviewedCompatibility.AddHooks(hooks);
             foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
                 if(assembly.GetName().Name=="ForceRoadConnect")ForceRoadCompatibility.AddHooks(assembly,hooks);
@@ -50,4 +52,3 @@ namespace HundredTiles.Runtime
         }
     }
 }
-

@@ -1,6 +1,15 @@
+## 追加MODとの互換性修正（2026-10-12）
+
+Building.AfterTerrainUpdatedの競合表示を含む実ユーザーの起動ログを調べ、Building Control、FreeUtilities、TerrainLink、QuayTools、Custom Zone Mixer、RightOfWay、SimulationGuard、First Person Camera、HyperLoad、PassengerLineBuilderの確認済み版に限定した互換処理を追加しました。対象DLLのSHA-256とパッチ・関連ヘルパーの意味的ハッシュを照合します。未知の版や未知の競合は拒否します。
+
+Building ControlとCustom Zone Mixerのtranspilerより先に空間拡張を適用する順序を指定しました。AutoHistoricalPlopのprefixは、別所有者の確認済みtranspilerがある場合も個別に検証します。TerrainLinkの地形変更範囲と建物・道路検索、RightOfWayの車両検索の計7メソッドを拡張グリッドへ接続しました。既存の座標原点を維持します。
+
+各MODの照合と7ヘルパーの変換検査、基本459対象の接続検査が合格しました。通常のユーザーMOD・Workshop構成で486対象の適用とメインメニュー到達を実ゲームログで確認しました。ローカル版とユーザー公開済みWorkshop項目の導入済みDLLを更新し、旧DLLをバックアップしました。ユーザー都市は変更していません。
 # HundredTiles 1.0 実装・検証記録
 
 対象: Windows Steam版Cities: Skylines 1、ゲーム表示1.21.1-f9-steam-win。
+
+隔離した実ゲームで全10 MODとAutoHistoricalPlopを有効にし、保存都市の再ロード、拡張部の道路・タクシー営業所の建設、タクシーの配車・乗降と経路、電気・水道、サービス資源の全256フェーズ、Extra Landscaping Toolsの地形編集とUndo、言語切り替え、1→100タイルの解放が合格しました。入力セーブのハッシュは不変です。終了時には他MODのUI（UnifiedUI.ExternalButton / Kwytto.GUIWindow）でNullReferenceExceptionが各1件ありました。ゲームプレイ検査後の終了処理の例外として記録し、HundredTiles側で隠しません。タクシーの到着コールバックは制御した検証で、長時間の自動走行は未測定です。証拠: reports/reviewed-compatibility-native.log、reports/reviewed-compatibility-unity.log、reports/user-profile-compatibility-startup.log。配布ZIPの展開・6 DLLのハッシュ照合・既存版バックアップ・破損マニフェスト拒否も合格しました。
 
 ## 日本語・英語の即時切替と公開準備（2026-10-12）
 
@@ -172,21 +181,3 @@ ColossalManaged.dll SHA-256: `34701F61DEF31F5F9DF79D573CE19E0BC52575879BCC395D51
 実ユーザー環境の起動ログで「Path is empty」によりパッチ適用が停止していたため、ゲームDLLがメモリー読み込みされる環境への対応を追加しました。Unityのゲームデータ配下から対象DLLを特定し、メモリー上のモジュールIDとの一致と従来のSHA-256・メソッドIL検証を維持します。メモリー読み込み方式で456対象の接続検査、405メソッド・1901編集の変換検査が合格しました。
 
 最初の9区画に残っていた人口・マイルストーン条件を撤廃しました。開始時から隣接区画を100区画まで購入できます。費用・隣接条件・ゲーム標準の購入トランザクションは保持しています。以下の実ゲーム保存・再ロード記録は変更前の1.0で取得した記録です。この購入条件変更後はビルド・所有判定・接続検査を実施しており、実ゲームの再検証は未実施です。
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

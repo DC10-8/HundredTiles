@@ -9,5 +9,4 @@
     <Reference Include="CitiesHarmony.API"><HintPath>$(HarmonyDirectory)/CitiesHarmony.API.dll</HintPath><Private>true</Private></Reference>
     <Reference Include="CitiesHarmony.Harmony"><HintPath>$(HarmonyDirectory)/CitiesHarmony.Harmony.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
-</Project>
-
+<ItemGroup><EmbeddedResource Include="ReviewedCompatibility.tsv" LogicalName="HundredTiles.Runtime.ReviewedCompatibility.tsv" /></ItemGroup></Project>
