@@ -52,7 +52,7 @@ namespace HundredTiles.Runtime
                 hooks.Add(new HookSpec{Target=target,Transpiler=typeof(LandscapingCompatibility).GetMethod("TerrainGrid")});
             }
         }
-        static void VerifyBehaviourUpdater()
+        internal static void VerifyBehaviourUpdater()
         {
             // FPS Booster's reviewed AutoPatcher prepends exactly ldarg.0 +
             // BehaviourRegistry.RegisterBehaviour(MonoBehaviour) to OnEnable.

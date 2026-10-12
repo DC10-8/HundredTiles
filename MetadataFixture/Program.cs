@@ -6,7 +6,7 @@ foreach(var directory in (Environment.GetEnvironmentVariable("HUNDREDTILES_FIXTU
 using var module=ModuleDefinition.ReadModule(args[0],new ReaderParameters {AssemblyResolver=resolver});
 void Reorder(TypeDefinition type){foreach(var child in type.NestedTypes)Reorder(child);var methods=type.Methods.Reverse().ToArray();type.Methods.Clear();foreach(var method in methods)type.Methods.Add(method);}
 foreach(var type in module.Types)Reorder(type);
-if(args.Length==3 && args[2].StartsWith("fps")){
+if(args.Length>=3 && args[2].StartsWith("fps")){
 void Rename(TypeDefinition type){foreach(var child in type.NestedTypes)Rename(child);foreach(var method in type.Methods)if(method.Name=="Update" || method.Name=="LateUpdate" || method.Name=="FixedUpdate")method.Name="FpsBooster"+method.Name;}
 foreach(var type in module.Types)Rename(type);
 }
@@ -32,5 +32,11 @@ var target=module.Types.Single(t=>t.Name=="PropsManager").Methods.Single(m=>m.Na
 target.Body.Instructions.First(i=>i.OpCode==OpCodes.Ldc_I4 && (int)i.Operand==270).Operand=271;
 }
 if(args.Length==3 && args[2]=="fps-mutate"){var target=module.Types.Single(t=>t.Name=="MainThreadPump").Methods.Single(m=>m.Name=="FpsBoosterUpdate");var il=target.Body.GetILProcessor();il.InsertBefore(target.Body.Instructions[0],il.Create(OpCodes.Nop));}
+if(args.Length>=4 && args[2].StartsWith("fps-triggers")){
+using var updater=ModuleDefinition.ReadModule(args[3]);
+var registry=updater.Types.Single(t=>t.FullName=="BehaviourUpdater.BehaviourRegistry");
+void Inject(TypeDefinition type){foreach(var child in type.NestedTypes)Inject(child);foreach(var method in type.Methods.Where(m=>m.HasBody && (m.Name=="OnEnable" || m.Name=="OnDisable"))){string name=method.Name=="OnEnable" && args[2]!="fps-triggers-wrong"?"RegisterBehaviour":"UnRegisterBehaviour";var trigger=registry.Methods.Single(m=>m.Name==name);var il=method.Body.GetILProcessor();var first=method.Body.Instructions[0];il.InsertBefore(first,il.Create(OpCodes.Ldarg_0));il.InsertBefore(first,il.Create(OpCodes.Call,module.ImportReference(trigger)));}}
+foreach(var type in module.Types)Inject(type);
+}
 module.Write(args[1]);
 Console.WriteLine("Generated metadata reorder fixture: "+args[1]);
