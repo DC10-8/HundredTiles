@@ -114,6 +114,7 @@ public sealed class Runner : MonoBehaviour
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_IPT")=="1")LiveIptCacheChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_REPAIRS")=="1")LiveStartupChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_CONSTRUCTION")=="1")LiveConstructionChecks.Run();
+                        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_OUTSIDE_TRAFFIC")=="1")LiveOutsideTrafficChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SEA")=="1")LiveSeaChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_TAXI")=="1")LiveTaxiChecks.Run();
                         if(Outer){if(Mode=="OuterCreate"){OuterObjects.Create();reload=false;verifyingReload=false;}else OuterObjects.Check();}
@@ -143,6 +144,7 @@ public sealed class Runner : MonoBehaviour
             if(phase==4 && Mode=="LandscapeEntryFresh"){phase=9;StartCoroutine(LiveLandscapeChecks.FreshFlow());return;}
             if(phase==4 && Mode=="LandscapeEntryReload"){phase=9;StartCoroutine(LiveLandscapeChecks.OptionsAndScreenshot());return;}
             if(phase==4 && Mode=="LandscapeEntryCreate" && !landscapeFlow){landscapeFlow=true;phase=6;StartCoroutine(LiveLandscapeChecks.Flow(delegate{Singleton<SimulationManager>.instance.AddAction(delegate{Inspect(false);workerCompleted=true;phase=4;});}));return;}
+            if(phase==4 && verifyingReload && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_OUTSIDE_TRAFFIC")=="1"){phase=9;StartCoroutine(LiveOutsideTrafficChecks.CheckVehicles());return;}
             if(phase==4 && verifyingReload && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_WATER")=="1"){phase=9;LiveWaterTextureChecks.Run();Application.Quit();return;}
             if(phase==4 && verifyingReload && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_OPTIONS")=="1"){phase=9;StartCoroutine(LiveOptionsChecks.Run());return;}
             if(phase==4 && verifyingReload && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SIMULATION_REPAIRS")=="1"){phase=9;StartCoroutine(LiveSimulationRepairsChecks.Measure());return;}
