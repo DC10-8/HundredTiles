@@ -18,6 +18,9 @@ namespace HundredTiles.Runtime
         public static bool EditorSession {get{return editorSession;}}
         public static void Enable()
         {
+            // Memory-loaded game assemblies have no Location. Establish their
+            // reviewed disk path before SerializerHooks.Verify in either profile.
+            Installer.InitializeManagedDirectory(Application.dataPath);
             enabled=true;
             if(installed)return;
             editorProfile=StartupProfile.Selected==1;

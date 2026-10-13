@@ -59,10 +59,15 @@ namespace HundredTiles.Runtime
         }
         static void Merge(ref MethodInfo destination,MethodInfo source)
         {if(source==null)return;if(destination!=null)throw new InvalidOperationException("Overlapping connection: "+source.Name);destination=source;}
+        public static void InitializeManagedDirectory(string applicationDataPath)
+        {
+            if(string.IsNullOrEmpty(applicationDataPath))throw new ArgumentException("Game data path required.","applicationDataPath");
+            AssemblyFile.ManagedDirectory=System.IO.Path.Combine(applicationDataPath,"Managed");
+        }
         public static void Install()
         {
             if(installed)return;
-            AssemblyFile.ManagedDirectory=System.IO.Path.Combine(UnityEngine.Application.dataPath,"Managed");
+            InitializeManagedDirectory(UnityEngine.Application.dataPath);
             // Guard precedes participant registration, reflection and all patches.
             if(!PatchPlan.Embedded().CanActivate)throw new InvalidOperationException("Activation blocked: remaining spatial/render boundaries and Unity save/reload validation are incomplete.");
             if(ColossalFramework.Singleton<TerrainManager>.exists)throw new InvalidOperationException("Enable HundredTiles before game startup. Restart the game after enabling this mod.");

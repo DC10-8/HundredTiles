@@ -69,7 +69,7 @@ public static class Bootstrap
     {
         if(runtimeInstalled)return;
         PluginManager.noWorkshop=true;PackageManager.noWorkshop=true;
-        if(EntryMode){runtimeInstalled=true;Entry.Log("Testing actual local-plugin IUserMod entry; development patch installer bypass disabled.");return;}
+        if(EntryMode){HundredTiles.ExperimentalPatch.AssemblyFile.ManagedDirectory=null;runtimeInstalled=true;Entry.Log("Testing actual local-plugin IUserMod entry with uninitialized game directory; development patch installer bypass disabled.");return;}
         // Deliberate development-only execution of reviewed connections. The
         // production entry still refuses incomplete coverage and is untouched.
         var connections=Installer.Connections();var harmony=new Harmony("HundredTiles.IsolatedIntegration.Runtime");
@@ -83,6 +83,7 @@ public static class Bootstrap
     public static void EnableEntry()
     {
         if(!EntryMode)return;
+        if(HundredTiles.ExperimentalPatch.AssemblyFile.ManagedDirectory!=Path.Combine(Application.dataPath,"Managed"))throw new Exception("Actual plugin entry did not initialize game directory before gate verification.");
         bool moveIt=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_COMPAT")=="1";
         bool terrain=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_TERRAIN")=="1";
         if(terrain)foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())

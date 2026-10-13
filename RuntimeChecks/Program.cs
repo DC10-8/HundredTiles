@@ -42,7 +42,30 @@ class Program
             Console.WriteLine("PASS camera target resolver: "+target.Name);return 0;
         }
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_LEGACY_OWNERSHIP")=="1"){LegacyOwnershipChecks.Run();return 0;}
-        HundredTiles.ExperimentalPatch.AssemblyFile.ManagedDirectory=gameDirectory;
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_GATE_INITIALIZATION")=="1")
+        {
+            int ordinal=0,initialize=-1,verify=-1;
+            foreach(var instruction in HarmonyLib.PatchProcessor.GetOriginalInstructions(typeof(SessionGate).GetMethod("Enable")))
+            {
+                var called=instruction.operand as MethodInfo;
+                if(called==typeof(Installer).GetMethod("InitializeManagedDirectory"))initialize=ordinal;
+                if(called==typeof(SerializerHooks).GetMethod("Verify"))verify=ordinal;
+                ordinal++;
+            }
+            if(initialize<0 || verify<=initialize)throw new Exception("Session gate must initialize the game directory before verification.");
+            var memoryGame=Assembly.Load(File.ReadAllBytes(Path.Combine(gameDirectory,"Assembly-CSharp.dll")));
+            var load=memoryGame.GetType("LoadingManager",true).GetMethod("LoadLevel",new[]{memoryGame.GetType("ColossalFramework.Packaging.Package+Asset")??typeof(ColossalFramework.Packaging.Package.Asset),typeof(string),typeof(string),memoryGame.GetType("SimulationMetaData",true),typeof(bool)});
+            if(load==null)throw new Exception("Memory-loaded LoadingManager target missing.");
+            HundredTiles.ExperimentalPatch.AssemblyFile.ManagedDirectory=null;
+            bool reproduced=false;
+            try{SerializerHooks.Verify(load);}catch(InvalidOperationException error){if(error.Message!="Game managed directory was not initialized.")throw;reproduced=true;}
+            if(!reproduced)throw new Exception("Cold memory-loaded failure was not reproduced.");
+            Installer.InitializeManagedDirectory(Path.GetDirectoryName(gameDirectory));
+            SerializerHooks.Verify(load);
+            Console.WriteLine("PASS: cold memory-loaded LoadLevel verification failure reproduced; shared initialization supplies reviewed disk path before gate verification.");
+            return 0;
+        }
+        Installer.InitializeManagedDirectory(Path.GetDirectoryName(gameDirectory));
         string updater=Environment.GetEnvironmentVariable("HUNDREDTILES_ELT_UPDATER");if(!string.IsNullOrEmpty(updater))Assembly.LoadFrom(updater);
         string reviewFile=Environment.GetEnvironmentVariable("HUNDREDTILES_REVIEW_EXPORT");
         if(!string.IsNullOrEmpty(reviewFile)){

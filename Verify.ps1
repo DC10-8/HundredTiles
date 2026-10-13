@@ -61,6 +61,12 @@ try {
     if ($LASTEXITCODE) { throw 'Isolated Unity verification harness build failed' }
     & "$PSScriptRoot\RuntimeChecks\bin\Release\net35\HundredTiles.RuntimeChecks.exe" (Split-Path $GameAssembly) $HarmonyDirectory
     if ($LASTEXITCODE) { throw 'Real-game runtime connection checks failed' }
+    $previousGateCheck=$env:HUNDREDTILES_TEST_GATE_INITIALIZATION
+    try {
+        $env:HUNDREDTILES_TEST_GATE_INITIALIZATION='1'
+        & "$PSScriptRoot\RuntimeChecks\bin\Release\net35\HundredTiles.RuntimeChecks.exe" (Split-Path $GameAssembly) $HarmonyDirectory
+        if ($LASTEXITCODE) { throw 'Cold memory-loaded session gate initialization check failed' }
+    } finally { $env:HUNDREDTILES_TEST_GATE_INITIALIZATION=$previousGateCheck }
     dotnet run --project UtilityChecks -c Release -- $GameAssembly
     if ($LASTEXITCODE) { throw 'Utility save and serializer checks failed' }
     dotnet run --project ServiceChecks -c Release
