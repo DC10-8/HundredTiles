@@ -40,13 +40,13 @@ namespace HundredTiles.Runtime
             bool editor=IsEditor(__1,__3);
             if(editor)
             {
-                if(!editorProfile || Installer.IsInstalled)return Refuse(ref __result,"オプションでHundredTilesの起動用途を「エディタ」に変更し、ゲームを再起動してください。MODの無効化は不要です。","Select the Editor startup profile in HundredTiles options and restart the game. The mod can remain enabled.");
+                if(!editorProfile || Installer.IsInstalled){if(StartupProfile.Selected==1)return Refuse(ref __result,"「エディタ」は設定済みです。反映するにはゲームを完全に終了して再起動してください。現在の起動用途は「都市（100タイル）」です。MODの無効化は不要です。","The Editor profile is already selected. Fully exit and restart the game to apply it. This process started with the City (100 tiles) profile. The mod can remain enabled.");return Refuse(ref __result,"オプションでHundredTilesの起動用途を「エディタ」に変更し、ゲームを再起動してください。MODの無効化は不要です。","Select the Editor startup profile in HundredTiles options and restart the game. The mod can remain enabled.");}
                 editorSession=true;
                 Debug.Log("[HundredTiles] Editor session: no expanded city patches installed.");
                 return true;
             }
             if(__1!="Game")return true;
-            if(editorProfile || editorSession)return Refuse(ref __result,"オプションでHundredTilesの起動用途を「都市（100タイル）」に変更し、ゲームを再起動してください。MODは有効のままで構いません。","Select the City (100 tiles) startup profile in HundredTiles options and restart the game. The mod can remain enabled.");
+            if(editorProfile || editorSession){if(StartupProfile.Selected==0)return Refuse(ref __result,"「都市（100タイル）」は設定済みです。反映するにはゲームを完全に終了して再起動してください。現在の起動用途は「エディタ」です。MODは有効のままで構いません。","The City (100 tiles) profile is already selected. Fully exit and restart the game to apply it. This process started with the Editor profile. The mod can remain enabled.");return Refuse(ref __result,"オプションでHundredTilesの起動用途を「都市（100タイル）」に変更し、ゲームを再起動してください。MODは有効のままで構いません。","Select the City (100 tiles) startup profile in HundredTiles options and restart the game. The mod can remain enabled.");}
             if(!enabled && !Installer.IsInstalled)return true;
             try
             {
