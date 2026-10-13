@@ -32,6 +32,27 @@ class Program
     }
     static int Run()
     {
+        string iptTest=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_IPT_CACHE");
+        if(!string.IsNullOrEmpty(iptTest))
+        {
+            var assembly=Assembly.LoadFrom(iptTest);
+            var cache=assembly.GetType("ImprovedPublicTransport.Data.CachedNodeData",true);
+            var field=cache.GetField("m_cachedNodeData");var element=field.FieldType.GetElementType();
+            var release=assembly.GetType("ImprovedPublicTransport.HarmonyPatches.NetManagerPatches.ReleaseNodePatch",true).GetMethod("ReleaseNodePost");
+            field.SetValue(null,Array.CreateInstance(element,32768));
+            bool original=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_IPT_ORIGINAL")=="1";
+            try{release.Invoke(null,new object[]{(ushort)65000});if(original)throw new Exception("Original IPT3 failure not reproduced.");}
+            catch(TargetInvocationException error){if(!original || !(error.InnerException is IndexOutOfRangeException))throw;Console.WriteLine("PASS: original IPT3 ReleaseNodePost reproduced out-of-range at node 65000.");return 0;}
+            field.SetValue(null,null);release.Invoke(null,new object[]{(ushort)65000});
+            var expanded=Array.CreateInstance(element,65536);field.SetValue(null,expanded);
+            foreach(ushort node in new ushort[]{41,32767,32768,65023,65535})
+            {
+                object data=Activator.CreateInstance(element);element.GetProperty("PassengersIn").SetValue(data,42,null);expanded.SetValue(data,node);
+                release.Invoke(null,new object[]{node});
+                if(!(bool)element.GetProperty("IsEmpty").GetValue(expanded.GetValue(node),null))throw new Exception("Release did not clear node "+node);
+            }
+            Console.WriteLine("PASS: repaired IPT release handles null/short caches and clears populated low/high/last ushort nodes.");return 0;
+        }
         string cameraTest=Environment.GetEnvironmentVariable("HUNDREDTILES_CAMERA_TARGET_TEST");
         if(!string.IsNullOrEmpty(cameraTest))
         {

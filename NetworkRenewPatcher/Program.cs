@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+if(args.Length==4 && args[0]=="--ipt-node-cache"){IptNodeCacheRepair.Run(args[1],args[2],args[3]);return;}
 if(args.Length==5 && args[0]=="--startup-repair"){StartupRepairs.Run(args[1],args[2],args[3],args[4]);return;}
 if(args.Length==3 && args[0]=="--simulation-repair"){SimulationRepairs.Run(args[1],args[2]);return;}
 if(args.Length!=3)throw new ArgumentException("<original Renew DLL> <new output DLL> <CitiesHarmony.Harmony.dll>");

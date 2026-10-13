@@ -111,6 +111,7 @@ public sealed class Runner : MonoBehaviour
                     {
                         Singleton<SimulationManager>.instance.ForcedSimulationPaused=true;
                         Inspect(reload);
+                        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_IPT")=="1")LiveIptCacheChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_REPAIRS")=="1")LiveStartupChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_CONSTRUCTION")=="1")LiveConstructionChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SEA")=="1")LiveSeaChecks.Run();
