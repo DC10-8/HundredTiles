@@ -141,6 +141,12 @@ class Program
             if(BoundaryHooks.RestoreEdgeFog(failure,ref edge,state)!=failure || edge!=original)throw new Exception("Edge fog restoration changed settings or swallowed failure.");
         }
         BoundaryHooks.CityMode("MainMenu",null);
+        foreach(string editor in new[]{"AssetEditor","MapEditor","ThemeEditor","ScenarioEditor"})
+            if(!SessionGate.IsEditor(editor,null))throw new Exception("Editor classification failed: "+editor);
+        foreach(var mode in new[]{SimulationManager.UpdateMode.NewAsset,SimulationManager.UpdateMode.LoadAsset})
+            if(!SessionGate.IsEditor(null,new SimulationMetaData{m_updateMode=mode}))throw new Exception("Asset metadata classification failed.");
+        foreach(var mode in new[]{SimulationManager.UpdateMode.LoadGame,SimulationManager.UpdateMode.NewGameFromMap})
+            if(SessionGate.IsEditor("Game",new SimulationMetaData{m_updateMode=mode}))throw new Exception("City classified as editor.");
         BoundaryHooks.CityMode("Game",new SimulationMetaData{m_updateMode=SimulationManager.UpdateMode.LoadGame});
         BoundaryHooks.CityMode("Game",new SimulationMetaData{m_updateMode=SimulationManager.UpdateMode.NewGameFromMap});
         foreach(string scene in new[]{"MapEditor","AssetEditor"})

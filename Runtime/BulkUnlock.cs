@@ -10,7 +10,7 @@ namespace HundredTiles.Runtime
         static int pending;
         public static void Request(Action<string> status)
         {
-            if(!Installer.IsInstalled){status("MODの起動に失敗しています。起動失敗の詳細を確認してください");UnityEngine.Debug.LogError("[HundredTiles] Unlock unavailable: "+Installer.FailureReason);return;}
+            if(!Installer.IsInstalled){status(string.IsNullOrEmpty(Installer.FailureReason)?"都市を読み込んでから押してください":"MODの起動に失敗しています。起動失敗の詳細を確認してください");return;}
             if(!Ready()){status("都市を読み込んでから押してください");return;}
             if(Interlocked.CompareExchange(ref pending,1,0)!=0){status("全タイルを開放中です…");return;}
             status("全タイルを開放中です…");

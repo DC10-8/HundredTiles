@@ -9,9 +9,9 @@ namespace HundredTiles.Runtime
  {
   static bool enabled;
   public string Name {get{return "HundredTiles 1.0";}}
-  public string Description {get{return UiLanguage.Text("標準サイズ10×10の都市領域。Harmonyが必要です。有効化・無効化後はゲームを再起動してください。エディターは非対応です。","Standard-sized 10×10 city area. Requires Harmony. Restart after enabling or disabling. Editors are not supported.");}}
-  public void OnEnabled(){enabled=true;HarmonyHelper.DoOnHarmonyReady(delegate{if(!enabled)return;try{Installer.Install();}catch(Exception error){Installer.FailureReason=error.Message;Debug.LogError("[HundredTiles] "+error);}});}
-  public void OnDisabled(){enabled=false;Installer.Remove();}
+  public string Description {get{return UiLanguage.Text("標準サイズ10×10の都市領域。Harmonyが必要です。オプションの起動用途を「エディタ」に変更して再起動すると、MODを有効にしたままエディタを使えます。","Standard-sized 10×10 city area. Requires Harmony. Select the Editor startup profile in options and restart to use editors with the mod enabled.");}}
+  public void OnEnabled(){enabled=true;HarmonyHelper.DoOnHarmonyReady(delegate{if(!enabled)return;try{SessionGate.Enable();if(StartupProfile.Selected==0)Installer.Install();}catch(Exception error){Installer.FailureReason=error.Message;Debug.LogError("[HundredTiles] "+error);}});}
+  public void OnDisabled(){enabled=false;SessionGate.Disable();}
   static void ButtonLayout(UIButton button,UIComponent root){button.autoSize=false;button.width=Math.Max(300,root.width-32);button.height=48;button.wordWrap=true;}
   static UIHelperBase Group(UIHelperBase helper,LanguageView view,string ja,string en){var group=helper.AddGroup(UiLanguage.Text(ja,en));var content=((UIHelper)group).self as UIComponent;var label=content.parent.Find<UILabel>("Label");if(label!=null)view.Bind(delegate{if(label!=null)label.text=UiLanguage.Text(ja,en);});return group;}
   public void OnSettingsUI(UIHelperBase helper)
@@ -20,6 +20,9 @@ namespace HundredTiles.Runtime
    var language=(UIDropDown)helper.AddDropdown("Language / 言語",new[]{"日本語","English"},UiLanguage.Current,delegate(int value){UiLanguage.Set(value);});language.name="HundredTiles.Language";
    var languageLabel=language.parent.Find<UILabel>("Label");if(languageLabel!=null)view.Bind(delegate{if(languageLabel!=null)languageLabel.text=UiLanguage.Text("言語 / Language","Language / 言語");});
    view.Bind(delegate{if(language!=null && language.selectedIndex!=UiLanguage.Current)language.selectedIndex=UiLanguage.Current;});
+   var profileGroup=Group(helper,view,"起動用途（変更後はゲームを再起動）","Startup profile (restart after changing)");
+   bool bindingProfile=false;var profile=(UIDropDown)profileGroup.AddDropdown(UiLanguage.Text("用途","Profile"),new[]{UiLanguage.Text("都市（100タイル）","City (100 tiles)"),UiLanguage.Text("エディタ（通常サイズ）","Editor (normal grids)")},StartupProfile.Selected,delegate(int value){if(bindingProfile || value<0 || value>1)return;try{StartupProfile.Set(value);}catch(Exception error){Debug.LogError("[HundredTiles] Startup profile save failed: "+error);UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel").SetMessage("HundredTiles",UiLanguage.Text("設定を保存できませんでした。\n","Could not save the setting.\n")+error.Message,false);}});profile.name="HundredTiles.StartupProfile";
+   var profileLabel=profile.parent.Find<UILabel>("Label");view.Bind(delegate{if(profileLabel!=null)profileLabel.text=UiLanguage.Text("用途","Profile");if(profile!=null){bindingProfile=true;try{profile.items=new[]{UiLanguage.Text("都市（100タイル）","City (100 tiles)"),UiLanguage.Text("エディタ（通常サイズ）","Editor (normal grids)")};profile.selectedIndex=StartupProfile.Selected;}finally{bindingProfile=false;}}});
    var group=Group(helper,view,"タイルの開放（都市を読み込んでから実行）","Tile unlock (run after loading a city)");string unlockStatus=null;UIButton unlock=null;
    unlock=(UIButton)group.AddButton(UiLanguage.Text("100タイルをすべて開放（無料）","Unlock all 100 tiles (free)"),delegate{BulkUnlock.Request(delegate(string message){unlockStatus=message;if(unlock!=null)unlock.text=UiLanguage.Status(message);});});unlock.name="HundredTiles.Unlock";ButtonLayout(unlock,root);
    view.Bind(delegate{if(unlock!=null)unlock.text=unlockStatus==null?UiLanguage.Text("100タイルをすべて開放（無料）","Unlock all 100 tiles (free)"):UiLanguage.Status(unlockStatus);});

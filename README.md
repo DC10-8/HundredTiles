@@ -18,7 +18,7 @@ Standard-sized 10×10 city area (100 tiles). Keeps original coordinates and adds
 
 ## Use
 
-Enable Cities Harmony and HundredTiles, then restart the game. Disable other tile expansion mods. Load a city and open Options → HundredTiles 1.0. Select 日本語 or English. Unlock all tiles and optionally generate/repair added nature, then save the city under a new name. Keep the mod enabled for expanded saves. Editors and scenarios are not supported. DLC features require the corresponding DLC.
+Enable Cities Harmony and HundredTiles, then restart the game. Disable other tile expansion mods. Load a city and open Options → HundredTiles 1.0. Select 日本語 or English. Unlock all tiles and optionally generate/repair added nature, then save the city under a new name. Keep the mod enabled for expanded saves. Editors can be opened with HundredTiles enabled: select Editor (normal grids) in Options → HundredTiles → Startup profile, then fully restart the game. To play cities again, select City (100 tiles) and restart. Scenarios as playable cities are not supported. DLC features require the corresponding DLC.
 
 ## Build from source
 

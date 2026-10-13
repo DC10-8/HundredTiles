@@ -199,3 +199,7 @@ GitチェックアウトからクリーンにビルドしたDLLも、作業ソ�
 AreaPOBuilder、AutoHistoricalPlop、BuildingLimitRemoval、ClearFpsBoost、FreeLotEditor、LoadTimeRemainingの元DLLを基準に、メタデータ番号を並べ替えてFPS名へ改名したメモリー読み込みDLLで全メソッド照合が合格しました。改名に加えてAreaPOBuilder.MainThreadPump.UpdateのILへ命令を追加したDLLは拒否しました。459対象の接続検査も合格しました。実ユーザー都市での修正版起動・全開放は未確認です。
 
 追補: AreaPOBuilder.AreaDragToolとFreeLotEditor.LotToolのOnEnable/OnDisableには、既知のBehaviourRegistry登録/解除を追加した完全な意味的ハッシュ4件も照合します。代替ハッシュの一致時にBehaviourUpdater DLLのSHA-256 0D3DC3B601E3E6157008BD8BF0CB931FC99005D1B3450EB19027FEBB7F4A4C0Eを検証します。両ツールの改名・登録/解除を含むフィクスチャは合格し、OnEnableで解除を呼ぶ異なるフィクスチャは拒否しました。元の処理を一般的に無視する検査ではありません。
+
+## エディタ併用対応（2026-10-13）
+
+オプションの起動用途で「エディタ（通常サイズ）」を選択してゲームを再起動すると、MODを有効にしたままエディタを開けるよう変更しました。都市を遊ぶ前に「都市（100タイル）」へ戻して再起動してください。従来のエディタ非対応の記述は都市用パッチの適用範囲を示します。詳細は[エディタ併用対応](Editor-support.ja.md)を参照してください。

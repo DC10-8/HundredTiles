@@ -14,7 +14,7 @@ namespace HundredTiles.Runtime
     {
         public override void OnLevelLoaded(LoadMode mode)
         {
-            if(HundredTiles.SaveBridge.RuntimeSaveBridge.NeedsLandscape)
+            if(Installer.IsInstalled && (mode==LoadMode.NewGame || mode==LoadMode.LoadGame) && HundredTiles.SaveBridge.RuntimeSaveBridge.NeedsLandscape)
                 LandscapeGeneration.Request(delegate(string value){Debug.Log("[HundredTiles] "+value);});
         }
     }
@@ -25,7 +25,7 @@ namespace HundredTiles.Runtime
         static int pending;
         public static void Request(Action<string> status)
         {
-            if(!Installer.IsInstalled){status("MODの起動に失敗しています。起動失敗の詳細を確認してください");return;}
+            if(!Installer.IsInstalled){status(string.IsNullOrEmpty(Installer.FailureReason)?"都市を読み込んでから押してください":"MODの起動に失敗しています。起動失敗の詳細を確認してください");return;}
             if(!Singleton<LoadingManager>.exists || !Singleton<LoadingManager>.instance.m_loadingComplete || !Singleton<TerrainManager>.exists || Singleton<TerrainManager>.instance.RawHeights.Length!=1201*1201)
             {status("都市を読み込んでから押してください");return;}
             if(Interlocked.CompareExchange(ref pending,1,0)!=0){status("拡張部分の自然を生成中です…");return;}

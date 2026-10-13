@@ -32,6 +32,17 @@ public sealed class Runner : MonoBehaviour
             if(phase==0)
             {
                 if(loading.m_currentlyLoading || UIView.GetAView()==null)return;
+                if(Mode=="EditorEntry")
+                {
+                    if(HundredTiles.Runtime.Installer.IsInstalled)throw new Exception("City patches active before editor load.");
+                    foreach(var metadata in PackageManager.FilterAssets(UserAssetType.SystemMapMetaData))
+                    {
+                        phase=20;
+                        loading.LoadLevel(metadata.Instantiate<SystemMapMetaData>().assetRef,"AssetEditor","InAssetEditor",new SimulationMetaData{m_gameInstanceIdentifier=Guid.NewGuid().ToString(),m_updateMode=SimulationManager.UpdateMode.NewAsset},true);
+                        Entry.Log("Requested real asset editor load with HundredTiles enabled: "+metadata.name);return;
+                    }
+                    throw new Exception("Built-in editor terrain missing.");
+                }
                 if(!textureChecksRun && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_REPAIRS")=="1"){LiveTextureDiagnostics.VerifyRepair();textureChecksRun=true;}
                 bool reload=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")!="Create" && File.Exists(Path.Combine(Entry.Root,Record));
                 if(Mode=="LandscapeEntryFresh" || Mode=="BaseEntryCreate")reload=false;
@@ -59,8 +70,38 @@ public sealed class Runner : MonoBehaviour
                 loading.LoadLevel(selected,"Game","InGame",meta);return;
             }
             if(loading.m_currentlyLoading || !loading.m_simulationDataLoaded || !loading.m_loadingComplete)return;
+            if(phase==20)
+            {
+                LiveStartupProfileChecks.Run(true);
+                if(HundredTiles.Runtime.Installer.IsInstalled || !HundredTiles.Runtime.SessionGate.EditorSession)throw new Exception("Editor session gate state incorrect.");
+                if((Singleton<ToolManager>.instance.m_properties.m_mode & ItemClass.Availability.AssetEditor)==0)throw new Exception("Asset editor mode missing.");
+                if(Singleton<GameAreaManager>.instance.m_areaGrid.Length!=25 || Singleton<TerrainManager>.instance.RawHeights.Length!=1081*1081)throw new Exception("Editor grids were expanded.");
+                foreach(var target in HarmonyLib.Harmony.GetAllPatchedMethods())
+                {
+                    var patches=HarmonyLib.Harmony.GetPatchInfo(target);
+                    foreach(string owner in patches.Owners)if(owner==HundredTiles.Runtime.Installer.Owner)throw new Exception("City patch leaked into editor: "+target);
+                }
+                string message=null;HundredTiles.Runtime.BulkUnlock.Request(delegate(string value){message=value;});
+                if(message!="都市を読み込んでから押してください")throw new Exception("Editor unlock action did not refuse safely.");
+                Entry.Log("PASS: real asset editor opened with enabled HundredTiles; vanilla 25-area/1081-height grids, no city hooks, unlock safely refused.");
+                File.WriteAllText(Path.Combine(Entry.Root,"editor-passed.marker"),"PASS");
+                var denied=loading.LoadLevel(null,"Game","InGame",new SimulationMetaData{m_updateMode=SimulationManager.UpdateMode.LoadGame});
+                if(denied!=null || loading.m_currentlyLoading || HundredTiles.Runtime.Installer.IsInstalled || Singleton<GameAreaManager>.instance.m_areaGrid.Length!=25)throw new Exception("Editor-to-city switch was not refused before changing grids.");
+                UIView.library.Hide("ExceptionPanel");
+                Entry.Log("PASS: editor-to-city load safely refused with restart notice; editor grids and loader state unchanged.");
+                phase=9;StartCoroutine(EditorScreenshot());return;
+            }
             if(phase==1 || phase==3)
             {
+                if(Mode.IndexOf("Entry",StringComparison.Ordinal)>=0)
+                {
+                    LiveStartupProfileChecks.Run(false);
+                    Bootstrap.VerifyRuntime();
+                    var denied=loading.LoadLevel(null,"AssetEditor","InAssetEditor",new SimulationMetaData{m_updateMode=SimulationManager.UpdateMode.NewAsset},true);
+                    if(denied!=null || loading.m_currentlyLoading || !HundredTiles.Runtime.Installer.IsInstalled || Singleton<GameAreaManager>.instance.m_areaGrid.Length!=100)throw new Exception("City-to-editor switch was not refused before changing grids.");
+                    UIView.library.Hide("ExceptionPanel");
+                    Entry.Log("PASS: city-to-editor load safely refused with restart notice; expanded grids and loader state unchanged.");
+                }
                 bool reload=phase==3;verifyingReload=reload;workerCompleted=false;phase=4;
                 if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_CONSTRUCTION")=="1" || Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_TAXI")=="1")LiveConstructionChecks.Prepare();
                 if(Release)LiveTerrainToolChecks.Prepare();
@@ -119,6 +160,16 @@ public sealed class Runner : MonoBehaviour
             }
         }
         catch(Exception error){phase=9;Fail(error);Application.Quit();}
+    }
+    static System.Collections.IEnumerator EditorScreenshot()
+    {
+        yield return new WaitForSeconds(2f);
+        yield return new WaitForEndOfFrame();
+        var image=new Texture2D(Screen.width,Screen.height,TextureFormat.RGB24,false);
+        image.ReadPixels(new Rect(0,0,Screen.width,Screen.height),0,0);image.Apply();
+        File.WriteAllBytes(Path.Combine(Entry.Root,"editor.png"),image.EncodeToPNG());UnityEngine.Object.Destroy(image);
+        yield return new WaitForSeconds(2f);
+        Application.Quit();
     }
     static void Inspect(bool reload)
     {

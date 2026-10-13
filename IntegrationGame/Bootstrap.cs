@@ -31,6 +31,8 @@ public static class Bootstrap
     }
     static void InstallLate()
     {
+        var settings=Path.Combine(Entry.Root,"UserData");Directory.CreateDirectory(settings);
+        File.WriteAllText(Path.Combine(settings,"HundredTiles.startup-profile.txt"),Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")=="EditorEntry"?"editor":"city");
         Application.logMessageReceivedThreaded+=ObserveLog;
         var harmony=new Harmony("HundredTiles.IsolatedIntegration");
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_TERRAIN_REWRITE")=="1")
@@ -95,12 +97,20 @@ public static class Bootstrap
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_REVIEWED")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())foreach(var assembly in plugin.GetAssemblies())if(assembly.GetName().Name=="BuildingControl" || assembly.GetName().Name=="FreeUtilities" || assembly.GetName().Name=="TerrainLink" || assembly.GetName().Name=="QuayTools" || assembly.GetName().Name=="CustomZoneMixer" || assembly.GetName().Name=="RightOfWay" || assembly.GetName().Name=="SimulationGuard" || assembly.GetName().Name=="FPSCamera" || assembly.GetName().Name=="HyperLoad" || assembly.GetName().Name=="PassengerLineBuilder" || assembly.GetName().Name=="AutoHistoricalPlop" || assembly.GetName().Name=="AreaPOBuilder" || assembly.GetName().Name=="FreeLotEditor" || assembly.GetName().Name=="BuildingLimitRemoval" || assembly.GetName().Name=="ClearFpsBoost" || assembly.GetName().Name=="LoadTimeRemaining")plugin.isEnabled=true;
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_NETWORK_CAPACITY")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())if(Path.GetFileName(plugin.modPath)=="MoreNetworkCapacityRenew")plugin.isEnabled=true;
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SIMULATION_REPAIRS")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())if(Path.GetFileName(plugin.modPath)=="TrafficManager" || Path.GetFileName(plugin.modPath)=="RoadUtilityPoles" || Path.GetFileName(plugin.modPath)=="RealismLite")plugin.isEnabled=true;
-        int owned=0;
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_REPAIRS")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())if(Path.GetFileName(plugin.modPath)=="CameraSmoothFps" || Path.GetFileName(plugin.modPath)=="TrainRidershipBooster" || Path.GetFileName(plugin.modPath)=="AlwaysTrainCommute")plugin.isEnabled=true;
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")=="EditorEntry")
+        {if(Installer.IsInstalled)throw new Exception("City patches active in editor startup profile.");Entry.Log("PASS: actual enabled plugin selected editor profile without city patches.");}
+        else VerifyRuntime();
+    }
+    public static void VerifyRuntime()
+    {
+        int owned=0;
+        bool terrain=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_TERRAIN")=="1";
+        bool moveIt=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_COMPAT")=="1";
         foreach(var target in Harmony.GetAllPatchedMethods())
         {var info=Harmony.GetPatchInfo(target);if(info!=null)foreach(string owner in info.Owners)if(owner==Installer.Owner){owned++;break;}}
         int extra=0;foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies()){if(assembly.GetName().Name=="TerrainLink")extra+=5;if(assembly.GetName().Name=="RightOfWay")extra+=2;if(assembly.GetName().Name=="AutoHistoricalPlop")extra+=1;}
-        int expected=(terrain?475:moveIt?469:459)+(ForceRoadCompatibility.Reviewed?3:0)+extra;
+        int expected=(terrain?474:moveIt?468:458)+(ForceRoadCompatibility.Reviewed?3:0)+extra;
         if(owned!=expected){Entry.Log("FAILURE: actual local-plugin entry installed "+owned+" targets, expected "+expected+".");FatalFailure=true;return;}
         Entry.Log("PASS: actual PluginManager/IUserMod/HarmonyHelper entry installed the production city-runtime patches.");
     }

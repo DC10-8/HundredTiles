@@ -28,9 +28,9 @@ namespace HundredTiles.SaveBridge
                 if(cells==null)throw new MissingMethodException(name);SerializerHooks.Verify(cells);
                 result.Add(new HookSpec{Target=cells,Prefix=typeof(BoundaryHooks).GetMethod("DetailCell")});
             }
-            var load=typeof(LoadingManager).GetMethod("LoadLevel",new[]{typeof(ColossalFramework.Packaging.Package.Asset),typeof(string),typeof(string),typeof(SimulationMetaData),typeof(bool)});
-            if(load==null)throw new MissingMethodException("LoadingManager.LoadLevel");SerializerHooks.Verify(load);
-            result.Add(new HookSpec{Target=load,Prefix=typeof(BoundaryHooks).GetMethod("CityMode")});
+            // The runtime session gate validates city mode before installation.
+            // A second void prefix would still execute after the gate cancels
+            // an editor load, turning its restart notice back into an exception.
             foreach(var type in new[]{typeof(FogProperties),typeof(FogEffect)})
             {
                 var fog=type.GetMethod(type==typeof(FogProperties)?"Update":"OnRenderImage",BindingFlags.Instance|BindingFlags.NonPublic);
