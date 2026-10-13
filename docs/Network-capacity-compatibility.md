@@ -9,3 +9,4 @@ The reviewed Renew wrapper references Harmony 1.2 APIs and produced a TypeLoadEx
 Steam updates may replace the locally patched wrapper. An updated, unreviewed wrapper is not automatically accepted. Removing the network capacity mod from a city saved with expanded capacity is outside the supported migration scope.
 
 Use separately named test saves and external backups. Large-city, long-running, and arbitrary mod configuration safety is not established by the isolated tests. Native test results are reported separately in the validation record.
+

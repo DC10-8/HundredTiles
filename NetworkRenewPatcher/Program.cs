@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+if(args.Length==3 && args[0]=="--simulation-repair"){SimulationRepairs.Run(args[1],args[2]);return;}
 if(args.Length!=3)throw new ArgumentException("<original Renew DLL> <new output DLL> <CitiesHarmony.Harmony.dll>");
 if(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(args[0])))!="C4334AD302F232644E147EC6FC2397C0C328EF26A02BCA8E1CE71A5F0183338B")throw new InvalidOperationException("Unreviewed Renew version; patch refused.");
 if(Path.GetFullPath(args[0])==Path.GetFullPath(args[1]) || File.Exists(args[1]))throw new InvalidOperationException("Use a new output file; originals are never overwritten.");
@@ -29,5 +30,9 @@ foreach(var type in Types(module.Types))foreach(var method in type.Methods.Where
 }
 if(creates!=1 || patches!=16)throw new InvalidOperationException($"Unexpected patch sites: create={creates}, patch={patches}.");
 foreach(var old in module.AssemblyReferences.Where(r=>r.Name=="0Harmony").ToArray())module.AssemblyReferences.Remove(old);
-module.Write(args[1]);Console.WriteLine($"Patched only Harmony API references: create={creates}, patch={patches}; SHA256={Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(args[1])))}");
+SimulationRepairs.FixRenew(module);
+module.Write(args[1]);Console.WriteLine($"Reviewed Renew Harmony and signal-lookup repairs: create={creates}, patch={patches}; SHA256={Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(args[1])))}");
+
+
+
 

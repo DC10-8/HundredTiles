@@ -6,6 +6,10 @@ foreach(var directory in (Environment.GetEnvironmentVariable("HUNDREDTILES_FIXTU
 using var module=ModuleDefinition.ReadModule(args[0],new ReaderParameters {AssemblyResolver=resolver});
 void Reorder(TypeDefinition type){foreach(var child in type.NestedTypes)Reorder(child);var methods=type.Methods.Reverse().ToArray();type.Methods.Clear();foreach(var method in methods)type.Methods.Add(method);}
 foreach(var type in module.Types)Reorder(type);
+if(args.Length==5 && args[2]=="method-nop"){
+var target=module.Types.Single(t=>t.FullName==args[3]).Methods.Single(m=>m.Name==args[4]);
+var il=target.Body.GetILProcessor();il.InsertBefore(target.Body.Instructions[0],il.Create(OpCodes.Nop));
+}
 if(args.Length>=3 && args[2].StartsWith("fps")){
 void Rename(TypeDefinition type){foreach(var child in type.NestedTypes)Rename(child);foreach(var method in type.Methods)if(method.Name=="Update" || method.Name=="LateUpdate" || method.Name=="FixedUpdate")method.Name="FpsBooster"+method.Name;}
 foreach(var type in module.Types)Rename(type);

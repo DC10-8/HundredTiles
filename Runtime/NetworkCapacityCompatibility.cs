@@ -16,7 +16,7 @@ namespace HundredTiles.Runtime
                 string path=Path.Combine(plugin.modPath,"MoreNetworkCapacity.Core.dll");
                 if(!File.Exists(path))continue;
                 string wrapper=Path.Combine(plugin.modPath,"MoreNetworkCapacityRenew.dll");
-                if(!File.Exists(wrapper))throw new InvalidOperationException("Missing More Network Capacity Renew wrapper."); string wrapperHash=PlannedTranspiler.Hash(File.ReadAllBytes(wrapper)); if(wrapperHash!="33977CE2A2C2D83AA14BFB4432244EBEBA2F9ACF29FDB8B9CAD7E53A4A0C5A07" && wrapperHash!="C4334AD302F232644E147EC6FC2397C0C328EF26A02BCA8E1CE71A5F0183338B")throw new InvalidOperationException("Unreviewed More Network Capacity Renew wrapper.");
+                if(!File.Exists(wrapper))throw new InvalidOperationException("Missing More Network Capacity Renew wrapper."); string wrapperHash=PlannedTranspiler.Hash(File.ReadAllBytes(wrapper)); if(wrapperHash!="83E318E1ED01D4C000EC268A31767EF295A2357814C025DAD6A8E8E631D5C832" && wrapperHash!="C4334AD302F232644E147EC6FC2397C0C328EF26A02BCA8E1CE71A5F0183338B")throw new InvalidOperationException("Unreviewed More Network Capacity Renew wrapper.");
                 Assembly core=null;foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())if(assembly.GetName().Name=="MoreNetworkCapacity")core=assembly;
                 if(core==null)throw new InvalidOperationException("More Network Capacity Renew core is not loaded.");
                 ReviewedCompatibility.Verify(core,path);
@@ -26,4 +26,5 @@ namespace HundredTiles.Runtime
         }
     }
 }
+
 

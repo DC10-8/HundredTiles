@@ -66,9 +66,11 @@ public sealed class Runner : MonoBehaviour
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SEA")=="1")LiveSeaChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_TAXI")=="1")LiveTaxiChecks.Run();
                         if(Outer){if(Mode=="OuterCreate"){OuterObjects.Create();reload=false;verifyingReload=false;}else OuterObjects.Check();}
+                        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SIMULATION_REPAIRS")=="1")foreach(var hook in HundredTiles.Runtime.Installer.Connections()){var patches=HarmonyLib.Harmony.GetPatchInfo(hook.Target);if(patches!=null)foreach(string owner in patches.Owners)if(owner=="me.tmpe")Entry.Log("TMPE shared target: "+hook.Target.DeclaringType.FullName+"."+hook.Target.Name);}
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SAVE_SAFETY")=="1")LiveSaveSafetyChecks.Run();
                         if(Supply && !Landscape){if(Mode=="SupplyCreate"){LiveSupplyChecks.Create();reload=false;verifyingReload=false;}else LiveSupplyChecks.Check();}
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_NETWORK_CAPACITY")=="1")LiveNetworkCapacityChecks.Run();
+                        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SIMULATION_REPAIRS")=="1")LiveSimulationRepairsChecks.Run();
                         if(Release){LivePathChecks.Run();LiveTerrainToolChecks.Run();}
                         if(Landscape && Mode!="LandscapeEntryFresh"){if(Mode=="LandscapeEntryCreate"){LiveLandscapeChecks.Create();Inspect(false);reload=false;verifyingReload=false;}else LiveLandscapeChecks.Check();}
                         if(Mode=="LandscapeEntryFresh")
@@ -92,6 +94,7 @@ public sealed class Runner : MonoBehaviour
             if(phase==4 && Mode=="LandscapeEntryCreate" && !landscapeFlow){landscapeFlow=true;phase=6;StartCoroutine(LiveLandscapeChecks.Flow(delegate{Singleton<SimulationManager>.instance.AddAction(delegate{Inspect(false);workerCompleted=true;phase=4;});}));return;}
             if(phase==4 && verifyingReload && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_WATER")=="1"){phase=9;LiveWaterTextureChecks.Run();Application.Quit();return;}
             if(phase==4 && verifyingReload && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_OPTIONS")=="1"){phase=9;StartCoroutine(LiveOptionsChecks.Run());return;}
+            if(phase==4 && verifyingReload && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SIMULATION_REPAIRS")=="1"){phase=9;StartCoroutine(LiveSimulationRepairsChecks.Measure());return;}
             if(phase==4 && verifyingReload){phase=9;if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")=="Graphics" || Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")=="OuterGraphics" || Mode=="SupplyEntryGraphics"){LiveGameplayChecks.ServiceTexture();StartCoroutine(LiveGameplayChecks.Screenshot());}else Application.Quit();return;}
             if(phase==4 && !verifyingReload)
             {
@@ -122,4 +125,7 @@ public sealed class Runner : MonoBehaviour
     static string FileHash(){using(var stream=File.OpenRead(Path.Combine(Entry.Root,"UserData/Saves/"+SaveName+".crp")))using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-","");}
     static void Fail(Exception error){Entry.Log("FAILURE: "+error);File.WriteAllText(Path.Combine(Entry.Root,"failed.marker"),error.ToString());Bootstrap.FatalFailure=true;}
 }
+
+
+
 
