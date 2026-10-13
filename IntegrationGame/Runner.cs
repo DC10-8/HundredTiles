@@ -15,9 +15,10 @@ public sealed class Runner : MonoBehaviour
     static bool Supply { get { return Mode.StartsWith("Supply") || (Landscape && Mode!="LandscapeEntryFresh"); } }
     static bool Release { get { return Mode=="SupplyEntrySave" || Mode=="SupplyEntryReload" || Mode=="SupplyEntryGraphics" || (Landscape && Mode!="LandscapeEntryFresh"); } }
     static bool Outer { get { return Mode.StartsWith("Outer") || Supply; } }
-    static string SaveName { get { return Landscape?"HundredTiles_Landscape_Repair_Verification":Release?"HundredTiles_Release_Verification":Supply?"HundredTiles_OuterSupply_Verification":Outer?"HundredTiles_OuterGameplay_Verification":"HundredTiles_Isolated_Verification"; } }
-    static string Record { get { return Landscape?"landscape-saved.marker":Release?"release-saved.marker":Supply?"supply-saved.marker":Outer?"outer-saved.marker":"saved.marker"; } }
-    bool landscapeFlow;
+    static bool StartupCopy { get { return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_COPY")=="1"; } }
+    static string SaveName { get { return StartupCopy && Release?"HundredTiles_Startup_Repair_Verification":Landscape?"HundredTiles_Landscape_Repair_Verification":Release?"HundredTiles_Release_Verification":Supply?"HundredTiles_OuterSupply_Verification":Outer?"HundredTiles_OuterGameplay_Verification":"HundredTiles_Isolated_Verification"; } }
+    static string Record { get { return StartupCopy && Release?"startup-saved.marker":Landscape?"landscape-saved.marker":Release?"release-saved.marker":Supply?"supply-saved.marker":Outer?"outer-saved.marker":"saved.marker"; } }
+    bool landscapeFlow,textureChecksRun;
     int phase;float began;bool verifyingReload;volatile bool workerCompleted;string inputHash;
     void Awake(){began=Time.realtimeSinceStartup;}
     void Update()
@@ -31,6 +32,7 @@ public sealed class Runner : MonoBehaviour
             if(phase==0)
             {
                 if(loading.m_currentlyLoading || UIView.GetAView()==null)return;
+                if(!textureChecksRun && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_REPAIRS")=="1"){LiveTextureDiagnostics.VerifyRepair();textureChecksRun=true;}
                 bool reload=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")!="Create" && File.Exists(Path.Combine(Entry.Root,Record));
                 if(Mode=="LandscapeEntryFresh" || Mode=="BaseEntryCreate")reload=false;
                 if(Mode=="OuterCreate" || Mode=="SupplyCreate" || Mode=="SupplyEntrySave" || Mode=="LandscapeEntryCreate")reload=true;
@@ -38,6 +40,12 @@ public sealed class Runner : MonoBehaviour
                 foreach(var asset in PackageManager.FilterAssets(reload?UserAssetType.SaveGameMetaData:UserAssetType.MapMetaData))
                 {if(reload && asset.name!=(Mode=="LandscapeEntryCreate"?"HundredTiles_Landscape_Verification":Mode=="OuterCreate"?"HundredTiles_Isolated_Verification":Mode=="SupplyCreate"?"HundredTiles_OuterGameplay_Verification":Mode=="SupplyEntrySave"?"HundredTiles_OuterSupply_Verification":SaveName))continue;selected=asset;break;}
                 if(selected==null)return;
+                if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_REPAIRS")=="1")foreach(var metadata in PackageManager.FilterAssets(UserAssetType.CustomAssetMetaData))
+                    if(metadata.package.packageName=="2093619702")
+                    {
+                        var definition=metadata.Instantiate<CustomAssetMetaData>();
+                        if(definition!=null && definition.type==CustomAssetMetaData.Type.SubBuilding){metadata.isEnabled=false;Entry.Log("FIXTURE: disabled standalone embedded sub-building metadata; parent remains enabled to verify dependency recovery.");}
+                    }
                 if(reload && Mode!="OuterCreate" && Mode!="SupplyCreate" && Mode!="SupplyEntrySave" && Mode!="LandscapeEntryCreate")
                 {
                     inputHash=FileHash();var record=File.ReadAllText(Path.Combine(Entry.Root,Record)).Split(new[]{'\r','\n'},StringSplitOptions.RemoveEmptyEntries);
@@ -62,6 +70,7 @@ public sealed class Runner : MonoBehaviour
                     {
                         Singleton<SimulationManager>.instance.ForcedSimulationPaused=true;
                         Inspect(reload);
+                        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_REPAIRS")=="1")LiveStartupChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_CONSTRUCTION")=="1")LiveConstructionChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SEA")=="1")LiveSeaChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_TAXI")=="1")LiveTaxiChecks.Run();

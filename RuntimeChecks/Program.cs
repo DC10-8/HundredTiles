@@ -31,6 +31,16 @@ class Program
     }
     static int Run()
     {
+        string cameraTest=Environment.GetEnvironmentVariable("HUNDREDTILES_CAMERA_TARGET_TEST");
+        if(!string.IsNullOrEmpty(cameraTest))
+        {
+            var assembly=Assembly.LoadFrom(cameraTest);
+            var patch=assembly.GetType("CameraSmoothFps.Harmony.FpsBoostPatch",true);
+            var target=(MethodBase)patch.GetMethod("TargetMethod",BindingFlags.Static|BindingFlags.NonPublic).Invoke(null,null);
+            string expected=Environment.GetEnvironmentVariable("HUNDREDTILES_CAMERA_TARGET_EXPECTED");
+            if(target==null || target.DeclaringType.Name!="CameraController" || target.Name!=expected)throw new Exception("Camera target resolver failed: "+target);
+            Console.WriteLine("PASS camera target resolver: "+target.Name);return 0;
+        }
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_LEGACY_OWNERSHIP")=="1"){LegacyOwnershipChecks.Run();return 0;}
         HundredTiles.ExperimentalPatch.AssemblyFile.ManagedDirectory=gameDirectory;
         string updater=Environment.GetEnvironmentVariable("HUNDREDTILES_ELT_UPDATER");if(!string.IsNullOrEmpty(updater))Assembly.LoadFrom(updater);

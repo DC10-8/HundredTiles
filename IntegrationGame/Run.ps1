@@ -24,6 +24,8 @@ if($env:HUNDREDTILES_TEST_SAVE_SAFETY -eq '1'){$startInfo.EnvironmentVariables['
 if($env:HUNDREDTILES_TEST_NETWORK_CAPACITY -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_NETWORK_CAPACITY']='1'}
 if($env:HUNDREDTILES_TEST_SIMULATION_REPAIRS -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_SIMULATION_REPAIRS']='1'}
 if($Options){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_OPTIONS']='1'}
+if($env:HUNDREDTILES_TEST_STARTUP_COPY -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_STARTUP_COPY']='1'}
+if($env:HUNDREDTILES_TEST_STARTUP_REPAIRS -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_STARTUP_REPAIRS']='1'}
 if($WaterTextures){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_WATER']='1'}
 $startInfo.Arguments='-noWorkshop -windowed -screen-width 960 -screen-height 540 -logFile "'+(Join-Path $testRoot 'unity.log')+'"'
 $startInfo.WindowStyle=[System.Diagnostics.ProcessWindowStyle]::Hidden

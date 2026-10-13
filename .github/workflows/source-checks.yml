@@ -16,7 +16,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for project in Checks SaveChecks BridgeChecks ServiceChecks; do
+          for project in Checks SaveChecks BridgeChecks ServiceChecks TextureChecks; do
             dotnet restore "$project" --locked-mode
             dotnet run --project "$project" -c Release --no-restore
           done

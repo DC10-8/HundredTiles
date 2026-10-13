@@ -96,6 +96,7 @@ public static class Bootstrap
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_NETWORK_CAPACITY")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())if(Path.GetFileName(plugin.modPath)=="MoreNetworkCapacityRenew")plugin.isEnabled=true;
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SIMULATION_REPAIRS")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())if(Path.GetFileName(plugin.modPath)=="TrafficManager" || Path.GetFileName(plugin.modPath)=="RoadUtilityPoles" || Path.GetFileName(plugin.modPath)=="RealismLite")plugin.isEnabled=true;
         int owned=0;
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_REPAIRS")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())if(Path.GetFileName(plugin.modPath)=="CameraSmoothFps" || Path.GetFileName(plugin.modPath)=="TrainRidershipBooster" || Path.GetFileName(plugin.modPath)=="AlwaysTrainCommute")plugin.isEnabled=true;
         foreach(var target in Harmony.GetAllPatchedMethods())
         {var info=Harmony.GetPatchInfo(target);if(info!=null)foreach(string owner in info.Owners)if(owner==Installer.Owner){owned++;break;}}
         int extra=0;foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies()){if(assembly.GetName().Name=="TerrainLink")extra+=5;if(assembly.GetName().Name=="RightOfWay")extra+=2;if(assembly.GetName().Name=="AutoHistoricalPlop")extra+=1;}

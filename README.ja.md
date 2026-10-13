@@ -62,3 +62,5 @@ Building Control、FreeUtilities、TerrainLink、QuayTools、Custom Zone Mixer�
 対象ゲームAssembly-CSharp.dll SHA-256:
 `DF557994A03C93D8BB4A14F80B1FBCC0FB29D547658442445D078D069BCDD9FE`
 
+
+起動動画からの修正と検証範囲は [起動修正の記録](docs/Startup-repairs.ja.md) を参照してください。自然の操作ボタンは完了後も操作名を保持し、日英切り替えで結果も更新します。

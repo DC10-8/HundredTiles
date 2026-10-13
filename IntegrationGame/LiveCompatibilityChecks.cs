@@ -49,12 +49,18 @@ static class LiveCompatibilityChecks
         if((int)heating.GetMethod("DumpHeating").Invoke(null,new object[]{300})!=0)throw new Exception("Zero-capacity reproduction failed.");
         updater.GetMethod("OnBeforeSimulationTick").Invoke(instance,null);
         if((int)heating.GetField("HeatingCapacity").GetValue(null)<100000 || (int)heating.GetField("CurrentHeating").GetValue(null)!=0)throw new Exception("Heating reserve correction created heat or failed.");
-        assembly.GetType("NoUtilityNetworks.Patcher",true).GetMethod("PatchAll").Invoke(null,null);
+        const string owner="Pionier.NoUtilityNetworks";bool existing=false;
+        foreach(var method in HarmonyLib.Harmony.GetAllPatchedMethods()){var patches=HarmonyLib.Harmony.GetPatchInfo(method);if(patches!=null)foreach(string patchOwner in patches.Owners)if(patchOwner==owner)existing=true;}
+        try
+        {
+        if(!existing)assembly.GetType("NoUtilityNetworks.Patcher",true).GetMethod("PatchAll").Invoke(null,null);
         var water=Singleton<WaterManager>.instance;bool connected,available;
         if(water.TryFetchHeating(new Vector3(10000,80,10100),100,100,out connected)!=0)throw new Exception("Empty No Utility pool supplied free heat.");
         if(water.TryDumpHeating(1,300,300)!=300 || water.TryFetchHeating(new Vector3(10000,80,10100),100,100,out connected)!=100 || !connected)throw new Exception("No Utility production/consumption failed after capacity update.");
         water.CheckHeating(new Vector3(10000,80,10100),out available);if(!available)throw new Exception("No Utility heating check failed after production.");
         Entry.Log("PASS: reproduced zero-capacity No Utility heating stall; actual updater preserves an empty reserve, real supply accepts 300 units and consumer receives 100; no heat created by adapter.");
+        }
+        finally{if(!existing)new HarmonyLib.Harmony(owner).UnpatchAll(owner);}
     }
     public static void Hover()
     {

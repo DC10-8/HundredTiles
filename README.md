@@ -46,3 +46,7 @@ Construction, service grids, save reloads, terrain tools, and deterministic taxi
 Original code: MIT. Preserve third-party notices. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Source excludes game DLLs, decompiled game code, saved cities and private logs.
 
 Reviewed More Network Capacity Renew support requires a local Harmony API patch for the pinned wrapper. See [compatibility instructions](docs/Network-capacity-compatibility.md).
+
+Nature action buttons retain their operation names while displaying pending or completed results. Language changes update both lines immediately.
+
+See [startup repair scope and verification](docs/Startup-repairs.ja.md) for camera, rail, asset and optional-integration fixes. Third-party DLLs are not included in this repository.

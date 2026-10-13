@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+if(args.Length==5 && args[0]=="--startup-repair"){StartupRepairs.Run(args[1],args[2],args[3],args[4]);return;}
 if(args.Length==3 && args[0]=="--simulation-repair"){SimulationRepairs.Run(args[1],args[2]);return;}
 if(args.Length!=3)throw new ArgumentException("<original Renew DLL> <new output DLL> <CitiesHarmony.Harmony.dll>");
 if(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(args[0])))!="C4334AD302F232644E147EC6FC2397C0C328EF26A02BCA8E1CE71A5F0183338B")throw new InvalidOperationException("Unreviewed Renew version; patch refused.");
