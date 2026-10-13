@@ -14,7 +14,7 @@ class Program
         memoryLoad=args.Length>=3;
         rewrittenFile=args.Length==4?args[3]:null;
         AppDomain.CurrentDomain.AssemblyResolve+=Resolve;
-        try{return Run();}catch(Exception error){Console.WriteLine("FAIL: "+error);return 1;}
+        try{return Run();}catch(Exception error){Console.WriteLine("FAIL: "+error);var types=error as ReflectionTypeLoadException;if(types!=null)foreach(var loader in types.LoaderExceptions)Console.WriteLine("Loader: "+loader.Message);return 1;}
     }
     static bool memoryLoad;
     static string rewrittenFile;
@@ -25,6 +25,7 @@ class Program
         if(filename=="BehaviourUpdater.dll" && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("HUNDREDTILES_ELT_UPDATER")))return Assembly.LoadFrom(Environment.GetEnvironmentVariable("HUNDREDTILES_ELT_UPDATER"));
         if(filename=="Assembly-CSharp.dll" && rewrittenFile!=null)return Assembly.Load(File.ReadAllBytes(rewrittenFile));
         string review=Environment.GetEnvironmentVariable("HUNDREDTILES_REVIEW_EXPORT");
+        if(filename=="MoreNetworkCapacity.dll" && !string.IsNullOrEmpty(review))filename="MoreNetworkCapacity.Core.dll";
         foreach(string folder in new[]{gameDirectory,harmonyDirectory,string.IsNullOrEmpty(review)?gameDirectory:Path.GetDirectoryName(review)})
         {string path=Path.Combine(folder,filename);if(File.Exists(path))return memoryLoad && folder==gameDirectory ? Assembly.Load(File.ReadAllBytes(path)) : Assembly.LoadFrom(path);}
         return null;

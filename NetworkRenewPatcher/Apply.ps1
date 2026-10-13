@@ -6,6 +6,11 @@ $expected='C4334AD302F232644E147EC6FC2397C0C328EF26A02BCA8E1CE71A5F0183338B'
 $legacy='33977CE2A2C2D83AA14BFB4432244EBEBA2F9ACF29FDB8B9CAD7E53A4A0C5A07'
 $patched='83E318E1ED01D4C000EC268A31767EF295A2357814C025DAD6A8E8E631D5C832'
 $hash=(Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash
+if($hash -eq '867BE560EDCFF616E8B737A88CB5F50A51148F866D76F4B038644F611F686A39'){Write-Output 'Reviewed current Renew compatibility patch is already installed.';return}
+if($hash -eq 'BB664EAC91039216A1BA65C70EC5C5AAD06E50BBA46CFF2F5CCEAD3C742B0E18'){
+    $expected=$hash
+    $patched='867BE560EDCFF616E8B737A88CB5F50A51148F866D76F4B038644F611F686A39'
+}
 if($hash -eq $patched){Write-Output 'Reviewed compatibility patch is already installed.';return}
 if($hash -ne $expected -and $hash -ne $legacy){throw 'Unknown Renew version; original DLL was not changed.'}
 $backupRoot=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'HundredTiles\CompatibilityBackups'
