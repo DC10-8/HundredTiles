@@ -17,14 +17,17 @@ namespace HundredTiles.Core
         public const int MaximumCode = 40049;
 
         public static PackedObjectAxis Encode(float world)
+        {return Encode(world,MapLayout.Hundred);}
+        public static PackedObjectAxis Encode(float world,MapLayout layout)
         {
+            if(layout==null)throw new ArgumentNullException(nameof(layout));
             if (float.IsNaN(world) || float.IsInfinity(world) ||
-                world < ExpandedMap.WorldMin || world >= ExpandedMap.WorldMax)
+                world < layout.WorldMin || world >= layout.WorldMax)
                 throw new ArgumentOutOfRangeException(nameof(world));
             // Match Mathf.RoundToInt's nearest-even rounding and the original
             // negative clamp. Existing gameplay positions retain their precision.
             int code = (int)Math.Round((double)(world * LegacyEncodeScale), MidpointRounding.ToEven);
-            code = Math.Max(-32767, Math.Min(MaximumCode, code));
+            code = Math.Max(-32767, Math.Min(layout.MaximumObjectCode, code));
             return new PackedObjectAxis
             {
                 Value = unchecked((short)code),
@@ -33,12 +36,15 @@ namespace HundredTiles.Core
         }
 
         public static float Decode(PackedObjectAxis axis)
+        {return Decode(axis,MapLayout.Hundred);}
+        public static float Decode(PackedObjectAxis axis,MapLayout layout)
         {
+            if(layout==null)throw new ArgumentNullException(nameof(layout));
             int code = axis.Value;
             if (axis.PositiveExtension)
             {
                 code += 65536;
-                if (code < 32768 || code > MaximumCode)
+                if (code < 32768 || code > layout.MaximumObjectCode)
                     throw new ArgumentException("Invalid positive extension coordinate.", nameof(axis));
             }
             return code * Step;

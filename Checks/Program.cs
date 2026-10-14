@@ -2,6 +2,7 @@ using System;
 using HundredTiles.Core;
 
 PackedPositionChecks.Run();
+MapLayoutChecks.Run();
 LandscapeChecks.Run();
 UtilityGridChecks.Run();
 
