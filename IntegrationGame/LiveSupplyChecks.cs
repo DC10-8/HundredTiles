@@ -62,6 +62,41 @@ static class LiveSupplyChecks
         }
         finally{simulation.m_currentFrameIndex=originalFrame;}
     }
+    public static void CheckRealWaterProduction()
+    {
+        if(!Far)throw new Exception("Actual water production check requires the isolated far fixture.");
+        ushort tower=LiveConstructionChecks.PlaceBuilding("Water Tower",new Vector3(25460,0,24320));
+        var buildings=Singleton<BuildingManager>.instance;var graph=Singleton<NetManager>.instance;
+        buildings.m_buildings.m_buffer[tower].m_flags|=Building.Flags.Completed;
+        ushort node=buildings.m_buildings.m_buffer[tower].m_netNode;
+        Entry.Log("Actual water tower constructed: building="+tower+", native pipe node="+node);
+        if(node==0)throw new Exception("Native water tower has no connection node; automatic connection remains unverified.");
+        ushort target=ushort.Parse(File.ReadAllLines(Manifest)[1]),segment;var random=new Randomizer(182);
+        var direction=(graph.m_nodes.m_buffer[target].m_position-graph.m_nodes.m_buffer[node].m_position).normalized;
+        if(!graph.CreateSegment(out segment,ref random,PrefabCollection<NetInfo>.FindLoaded("Water Pipe"),node,target,direction,-direction,20,20,false))throw new Exception("Actual water tower pipe connection failed.");
+        var manager=Singleton<WaterManager>.instance;var fields=BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public;
+        var grid=(WaterManager.Cell[])typeof(WaterManager).GetField("m_waterGrid",fields).GetValue(manager);
+        for(int i=0;i<grid.Length;i++)grid[i]=new WaterManager.Cell{m_waterPulseGroup=ushort.MaxValue,m_sewagePulseGroup=ushort.MaxValue,m_heatingPulseGroup=ushort.MaxValue};
+        var nodes=(WaterManager.Node[])typeof(WaterManager).GetField("m_nodeData",fields).GetValue(manager);
+        for(int i=0;i<nodes.Length;i++)nodes[i]=new WaterManager.Node{m_waterPulseGroup=ushort.MaxValue,m_sewagePulseGroup=ushort.MaxValue,m_heatingPulseGroup=ushort.MaxValue};
+        manager.UpdateGrid(25300,24200,25700,24450);
+        var simulation=Singleton<SimulationManager>.instance;uint originalFrame=simulation.m_currentFrameIndex;
+        var step=typeof(WaterManager).GetMethod("SimulationStepImpl",fields);
+        try
+        {
+            for(uint offset=0;offset<2048;offset++)
+            {
+                simulation.m_currentFrameIndex=(originalFrame&~255u)+offset;
+                if((offset&63)==0)buildings.m_buildings.m_buffer[tower].Info.m_buildingAI.SimulationStep(tower,ref buildings.m_buildings.m_buffer[tower]);
+                step.Invoke(manager,new object[]{1});
+            }
+            bool water,sewage;byte pollution;manager.CheckWater(Point(9900,80,9700),out water,out sewage,out pollution);
+            Entry.Log("Actual water tower production: flags="+buildings.m_buildings.m_buffer[tower].m_flags+", water="+water+", pollution="+pollution);
+            if(!water)throw new Exception("Actual water tower AI did not supply the cleared far pipe grid.");
+            Entry.Log("PASS: native water tower AI supplies the far pipe grid over eight cycles without harness TryDumpWater injection. Residential consumption not asserted.");
+        }
+        finally{simulation.m_currentFrameIndex=originalFrame;}
+    }
     static void Cycle()
     {
         ushort source=ushort.Parse(File.ReadAllLines(Manifest)[1]);var simulation=Singleton<SimulationManager>.instance;uint frame=simulation.m_currentFrameIndex;

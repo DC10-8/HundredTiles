@@ -66,6 +66,7 @@ static class Live324Trial
         LiveSupplyChecks.Check();Entry.Log("PASS: far 324 native road/rail/building identities and electricity/water supply at x/z over 24000.");
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SURFACE_TRACE")=="1"){TerrainModify.RefreshAllModifications();TerrainModify.UpdateArea(25300f,24600f,25800f,25000f,true,true,true);TerrainModify.RefreshAllModifications();Entry.Log("TRACE: immediate CPU clip="+Singleton<TerrainManager>.instance.GetSurfaceCell(8563,8335).m_clipped);}
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_REAL_POWER")=="1")LiveSupplyChecks.CheckRealElectricityProduction();
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_REAL_WATER")=="1")LiveSupplyChecks.CheckRealWaterProduction();
     }
     public static System.Collections.IEnumerator ScreenshotFar()
     {
