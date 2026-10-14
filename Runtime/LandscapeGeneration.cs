@@ -44,7 +44,9 @@ namespace HundredTiles.Runtime
             bool upgrade;lock(storage)upgrade=storage.ContainsKey(PreviousKey);
             var terrain=Singleton<TerrainManager>.instance;
             var mask=new bool[ExpandedMap.HeightStride*ExpandedMap.HeightStride];
-            if(ExpandedMap.GridSize==18){int preserved=HundredTiles.SaveBridge.RuntimeSaveBridge.PreservedRawResolution;for(int z=0;z<=preserved;z++)for(int x=0;x<=preserved;x++)mask[z*ExpandedMap.HeightStride+x]=true;}
+#if HUNDREDTILES_324
+            int preserved=HundredTiles.SaveBridge.RuntimeSaveBridge.PreservedRawResolution;for(int z=0;z<=preserved;z++)for(int x=0;x<=preserved;x++)mask[z*ExpandedMap.HeightStride+x]=true;
+#endif
             var buildings=Singleton<BuildingManager>.instance.m_buildings.m_buffer;
             for(int i=1;i<buildings.Length;i++)if((buildings[i].m_flags&Building.Flags.Created)!=0)
                 Protect(mask,buildings[i].m_position,Math.Max(128,Math.Max(buildings[i].Width,buildings[i].Length)*8+96));

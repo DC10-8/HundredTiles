@@ -54,10 +54,10 @@ namespace HundredTiles.SaveBridge
             if(__1=="Game" && (__3==null || (__3.m_updateMode!=SimulationManager.UpdateMode.LoadGame && __3.m_updateMode!=SimulationManager.UpdateMode.NewGameFromMap)))
                 throw new NotSupportedException("HundredTiles supports normal saved cities and new cities from maps; scenarios are unsupported.");
         }
-        // Detailed heights include the edge vertex (4800), but zone/surface
-        // cells stop at 4799. Refresh requests padding beyond the last tile.
+        // Heights include the final vertex; zone/surface cells exclude it.
+        // Use the active tile dimension when refresh requests edge padding.
         public static void DetailCell(ref int __0,ref int __1)
-        {__0=Math.Max(0,Math.Min(4799,__0));__1=Math.Max(0,Math.Min(4799,__1));}
+        {int last=HundredTiles.Core.ExpandedMap.GridSize*480-1;__0=Math.Max(0,Math.Min(last,__0));__1=Math.Max(0,Math.Min(last,__1));}
         public static bool Cinematic(Vector3 position,ref bool __result)
         {__result=position.x>=-8640f && position.x<=HundredTiles.Core.ExpandedMap.WorldMax && position.z>=-8640f && position.z<=HundredTiles.Core.ExpandedMap.WorldMax;return false;}
     }

@@ -42,7 +42,7 @@ static class Live324Trial
     }
     static string Objects {get{return Path.Combine(Entry.Root,"trial324-far-objects.txt");}}
     public static void PrepareFar()
-    {LiveTerrainToolChecks.Prepare();LiveConstructionChecks.Prepare();}
+    {LiveTerrainToolChecks.Prepare();LiveConstructionChecks.Prepare();if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SURFACE_TRACE")=="1")TerrainSurfaceTrace.Install();}
     public static void PrepareGround(){LiveTerrainToolChecks.LevelArea(new Vector3(25450,400,24650),900,400);}
     public static void CreateFar()
     {
@@ -64,6 +64,8 @@ static class Live324Trial
         var building=Singleton<BuildingManager>.instance.m_buildings.m_buffer[ushort.Parse(ids[2])];
         if(building.m_flags==Building.Flags.None || building.Info.name!="Wind Turbine" || Math.Abs(building.m_position.x-25700)>8)throw new Exception("Far 324 building identity/position differs.");
         LiveSupplyChecks.Check();Entry.Log("PASS: far 324 native road/rail/building identities and electricity/water supply at x/z over 24000.");
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SURFACE_TRACE")=="1"){TerrainModify.RefreshAllModifications();TerrainModify.UpdateArea(25300f,24600f,25800f,25000f,true,true,true);TerrainModify.RefreshAllModifications();Entry.Log("TRACE: immediate CPU clip="+Singleton<TerrainManager>.instance.GetSurfaceCell(8563,8335).m_clipped);}
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_REAL_POWER")=="1")LiveSupplyChecks.CheckRealElectricityProduction();
     }
     public static System.Collections.IEnumerator ScreenshotFar()
     {
@@ -83,6 +85,13 @@ static class Live324Trial
         {
             var segment=graph.m_segments.m_buffer[ushort.Parse(objectIds[i])];
             var position=(graph.m_nodes.m_buffer[segment.m_startNode].m_position+graph.m_nodes.m_buffer[segment.m_endNode].m_position)*.5f;
+            var cpuSurface=terrain.GetSurfaceCell((int)((position.x+8640)/4),(int)((position.z+8640)/4));
+            if(cpuSurface.m_clipped==0 || (i==0 && cpuSurface.m_pavementA==0))throw new Exception("Far native road/rail surface mask is missing.");
+            Entry.Log("324 surface state: sim="+patches[323].m_simDetailIndex+", tmp="+patches[323].m_tmpDetailIndex+", rnd="+patches[323].m_rndDetailIndex+", cpu clip="+cpuSurface.m_clipped+", pavement="+cpuSurface.m_pavementA);
+            int gridX=(int)(segment.m_middlePosition.x/64f+135),gridZ=(int)(segment.m_middlePosition.z/64f+135);ushort cursor=graph.m_segmentGrid[gridZ*540+gridX];bool registered=false;int visited=0;
+            while(cursor!=0 && visited++<65024){if(cursor==ushort.Parse(objectIds[i])){registered=true;break;}cursor=graph.m_segments.m_buffer[cursor].m_nextGridSegment;}
+            Vector3 corner,direction;bool smooth;segment.CalculateCorner(ushort.Parse(objectIds[i]),true,true,true,out corner,out direction,out smooth);
+            Entry.Log("324 road surface diagnostic "+segment.Info.name+": flags="+segment.m_flags+", node flags="+graph.m_nodes.m_buffer[segment.m_startNode].m_flags+", middle="+segment.m_middlePosition+", registered="+registered+", grid="+gridX+","+gridZ+", corner="+corner+", lower="+segment.Info.m_netAI.GetSegmentLowerTerrain()+", clip="+segment.Info.m_clipTerrain+", pavement="+segment.Info.m_createPavement);
             Texture height;Vector4 heightMapping,surfaceMapping;
             terrain.GetHeightMapping(position,out height,out heightMapping,out surfaceMapping);
             float u=position.x*surfaceMapping.z+surfaceMapping.x,v=position.z*surfaceMapping.z+surfaceMapping.y;
@@ -103,6 +112,9 @@ static class Live324Trial
         for(int i=0;i<60;i++)yield return null;yield return new WaitForEndOfFrame();
         var close=new Texture2D(Screen.width,Screen.height,TextureFormat.RGB24,false);close.ReadPixels(new Rect(0,0,Screen.width,Screen.height),0,0);close.Apply();File.WriteAllBytes(Path.Combine(Entry.Root,"trial324-far-render-close.png"),close.EncodeToPNG());UnityEngine.Object.Destroy(close);
         Entry.Log("324 close network render calls="+graph.m_drawCallData.m_defaultCalls+"/"+graph.m_drawCallData.m_lodCalls);
+        camera.m_targetPosition=camera.m_currentPosition=new Vector3(25600,400,24900);
+        for(int i=0;i<60;i++)yield return null;yield return new WaitForEndOfFrame();
+        var railClose=new Texture2D(Screen.width,Screen.height,TextureFormat.RGB24,false);railClose.ReadPixels(new Rect(0,0,Screen.width,Screen.height),0,0);railClose.Apply();File.WriteAllBytes(Path.Combine(Entry.Root,"trial324-far-rail-close.png"),railClose.EncodeToPNG());UnityEngine.Object.Destroy(railClose);
         if(CompareRender)
         {
             foreach(var point in new[]{new Vector3(2200,400,2700),new Vector3(25600,80,23400)})

@@ -36,6 +36,32 @@ static class LiveSupplyChecks
         if(!electric || !water)throw new Exception("Outer supply did not reach consumers: electricity="+electric+", water="+water);
         Entry.Log("PASS: actual electricity and pipe water propagation reach the added corner; native turbine/pipe identities and supply queries verified.");
     }
+    public static void CheckRealElectricityProduction()
+    {
+        var ids=File.ReadAllLines(Manifest);ushort source=ushort.Parse(ids[0]);
+        var manager=Singleton<ElectricityManager>.instance;var graph=Singleton<BuildingManager>.instance;
+        var fields=BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public;
+        var grid=(ElectricityManager.Cell[])typeof(ElectricityManager).GetField("m_electricityGrid",fields).GetValue(manager);
+        for(int i=0;i<grid.Length;i++)grid[i]=new ElectricityManager.Cell{m_pulseGroup=ushort.MaxValue};
+        foreach(string name in new[]{"m_pulseGroupCount","m_pulseUnitStart","m_pulseUnitEnd","m_processedCells","m_conductiveCells"})typeof(ElectricityManager).GetField(name,fields).SetValue(manager,0);
+        manager.UpdateGrid(X(9700),Z(9600),X(10100),Z(9850));
+        var simulation=Singleton<SimulationManager>.instance;uint originalFrame=simulation.m_currentFrameIndex;
+        var step=typeof(ElectricityManager).GetMethod("SimulationStepImpl",fields);
+        try
+        {
+            for(uint offset=0;offset<2048;offset++)
+            {
+                simulation.m_currentFrameIndex=(originalFrame&~255u)+offset;
+                if((offset&63)==0)graph.m_buildings.m_buffer[source].Info.m_buildingAI.SimulationStep(source,ref graph.m_buildings.m_buffer[source]);
+                step.Invoke(manager,new object[]{1});
+            }
+            bool supplied;manager.CheckElectricity(graph.m_buildings.m_buffer[source].m_position,out supplied);
+            Entry.Log("Actual turbine AI production: wind="+Singleton<WeatherManager>.instance.SampleWindSpeed(graph.m_buildings.m_buffer[source].m_position,false)+", flags="+graph.m_buildings.m_buffer[source].m_flags+", supplied="+supplied);
+            if(!supplied)throw new Exception("Actual turbine AI did not produce electricity after clearing the injected snapshot.");
+            Entry.Log("PASS: native turbine AI produces electricity at the far position over eight utility cycles; no harness TryDumpElectricity injection. Actual consumer operation not asserted.");
+        }
+        finally{simulation.m_currentFrameIndex=originalFrame;}
+    }
     static void Cycle()
     {
         ushort source=ushort.Parse(File.ReadAllLines(Manifest)[1]);var simulation=Singleton<SimulationManager>.instance;uint frame=simulation.m_currentFrameIndex;

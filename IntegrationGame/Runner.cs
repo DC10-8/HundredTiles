@@ -32,6 +32,7 @@ public sealed class Runner : MonoBehaviour
             if(phase==0)
             {
                 if(loading.m_currentlyLoading || UIView.GetAView()==null)return;
+                if(Mode=="CatalogEntry"){SaveCatalogChecks.Run();phase=9;Application.Quit();return;}
                 if(Mode=="EditorEntry")
                 {
                     if(HundredTiles.Runtime.Installer.IsInstalled)throw new Exception("City patches active before editor load.");
