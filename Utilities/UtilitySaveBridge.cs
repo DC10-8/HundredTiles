@@ -152,7 +152,7 @@ namespace HundredTiles.Utilities
             }
         }
         static int RequiredLength(string key,int current){return Array.IndexOf(UtilityCapacity.Keys,key)<0?current:Math.Max(current,RequestedCapacity==null?32768:RequestedCapacity());}
-        static int SchemaLengthWithoutManagers()
+        static int SchemaLengthWithoutManagers(int side=UtilityGrid.Side,int[] counts=null)
         {
             // Registration runs before native managers are patched/created.
             // Reading Singleton.instance here would allocate a vanilla grid early.
@@ -163,7 +163,7 @@ namespace HundredTiles.Utilities
                 Type owner=prefix=="E."?typeof(ElectricityManager):typeof(WaterManager);var field=owner.GetField(name,BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);if(field==null)throw new MissingFieldException(owner.FullName,name);
                 Type type=field.FieldType;if(!type.IsArray){size=checked(size+UtilitySnapshotCodec.TypeSize(type));continue;}
                 Type element=type.GetElementType();int length;
-                if(name=="m_electricityGrid" || name=="m_waterGrid")length=UtilityGrid.Side*UtilityGrid.Side;
+                if(name=="m_electricityGrid" || name=="m_waterGrid")length=side*side;
                 else if(name.EndsWith("Groups",StringComparison.Ordinal))length=1024;
                 else if(name.EndsWith("Units",StringComparison.Ordinal) || name=="m_nodeData")length=capacity;
                 else throw new InvalidDataException("Unclassified utility array: "+name);
@@ -171,17 +171,29 @@ namespace HundredTiles.Utilities
                 if(prefix=="E." && name=="m_pulseUnits")element=typeof(ExpandedElectricityManager.ExpandedPulseUnit);
                 if(prefix=="W." && name.EndsWith("Units",StringComparison.Ordinal))element=typeof(ExpandedWaterManager.ExpandedPulseUnit);
                 if(name=="m_nodeGroups")length=capacity;
+                int capacityIndex=Array.IndexOf(UtilityCapacity.Keys,prefix+name);
+                if(counts!=null && capacityIndex>=0)length=counts[capacityIndex];
                 size=checked(size+length*UtilitySnapshotCodec.TypeSize(element));
             }
             return size;
         }
 #if HUNDREDTILES_324
-        sealed class Participant : IChunkedSaveParticipant
+        sealed class Participant : IChunkedSaveParticipant, IMigratingSaveParticipant
 #else
         sealed class Participant : ISaveParticipant
 #endif
         {
             public int EncodedSize {get{return SchemaLengthWithoutManagers();}}
+            public bool CanReadSize(int size)
+            {
+                foreach(int side in new[]{508,UtilityGrid.Side})for(int mask=0;mask<64;mask++)
+                {
+                    var counts=new int[6];for(int i=0;i<6;i++)counts[i]=(mask&(1<<i))==0?32768:65024;
+                    int expected=SchemaLengthWithoutManagers(side,counts);
+                    if(size==expected || size==expected-24)return true;
+                }
+                return false;
+            }
             public string Key {get{return "HundredTiles.Utilities.v1";}}
             public byte[] Capture(byte[] binding)
             {
@@ -193,7 +205,20 @@ namespace HundredTiles.Utilities
             public object Prepare(byte[] bytes,byte[] binding)
             {
                 if(!electricityRead || !waterRead)throw new InvalidOperationException("Utility standard data incomplete.");
-                var target=CaptureState();var legacy=LegacyState();var decoded=bytes==null?legacy:UtilitySnapshotCodec.Decode(bytes,target,Baseline(readElectricity,readWater),binding);ValidateState(decoded,false);return UtilityCapacity.Adapt(decoded,target);
+                var target=CaptureState();var legacy=LegacyState();var decoded=bytes==null?legacy:UtilitySnapshotCodec.Decode(bytes,target,Baseline(readElectricity,readWater),binding);
+#if HUNDREDTILES_324
+                if(((Array)decoded["E.m_electricityGrid"]).Length==508*508)
+                {
+                    foreach(string key in new[]{"E.m_pulseGroups","E.m_pulseUnits","W.m_waterPulseUnits","W.m_sewagePulseUnits","W.m_heatingPulseUnits"})
+                    {
+                        var array=(Array)decoded[key];var element=array.GetType().GetElementType();
+                        foreach(var value in array)if((ushort)element.GetField("m_x").GetValue(value)>=508 || (ushort)element.GetField("m_z").GetValue(value)>=508)throw new InvalidDataException("Old utility pulse coordinate out of bounds.");
+                    }
+                    decoded["E.m_electricityGrid"]=UtilityGrid.MigrateHundred((ElectricityManager.Cell[])decoded["E.m_electricityGrid"],new ElectricityManager.Cell{m_pulseGroup=ushort.MaxValue});
+                    decoded["W.m_waterGrid"]=UtilityGrid.MigrateHundred((WaterManager.Cell[])decoded["W.m_waterGrid"],new WaterManager.Cell{m_waterPulseGroup=ushort.MaxValue,m_sewagePulseGroup=ushort.MaxValue,m_heatingPulseGroup=ushort.MaxValue});
+                }
+#endif
+                ValidateState(decoded,false);return UtilityCapacity.Adapt(decoded,target);
             }
             public void ValidateTarget(object prepared) {Validate((SortedDictionary<string,object>)prepared);}
             public void Commit(object prepared)

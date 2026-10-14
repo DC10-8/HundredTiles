@@ -8,6 +8,18 @@ using System.Reflection;
 static class Live324Trial
 {
     public static bool Far {get{return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_324_FAR")=="1";}}
+    public static bool Migration {get{return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_324_MIGRATION")=="1";}}
+    public const string MigrationSource="HundredTiles_Startup_Repair_Verification";
+    public static void CheckMigratedTerrain()
+    {
+        var storage=Singleton<SimulationManager>.instance.m_serializableDataStorage;
+        byte[] bytes;lock(storage)bytes=SaveTransport.Read(storage,HundredTiles.SaveBridge.RuntimeSaveBridge.DataKey);
+        byte[] digest;MapLayout layout;var source=SaveCodec.DecodeOriginal(bytes,out digest,out layout);
+        if(layout.TileCount!=100)throw new Exception("Migration source is not a 100-tile save.");
+        var terrain=Singleton<TerrainManager>.instance;
+        for(int z=0;z<1201;z++)for(int x=0;x<1201;x++)if(terrain.RawHeights[z*2161+x]!=source.Heights[z*1201+x])throw new Exception("Migrated native terrain differs at "+x+","+z);
+        Entry.Log("PASS: complete 100-tile city loaded into native 324 managers; all 1,442,401 original terrain heights preserved. Supply/consumer operation not asserted.");
+    }
     static string Objects {get{return Path.Combine(Entry.Root,"trial324-far-objects.txt");}}
     public static void PrepareFar()
     {LiveTerrainToolChecks.Prepare();LiveConstructionChecks.Prepare();}
@@ -47,6 +59,22 @@ static class Live324Trial
         float detail=terrain.SampleDetailHeight(new Vector3(25600,0,24600));
         if(Math.Abs(gpu-detail)>.02f)throw new Exception("324 far GPU/native height differs: "+gpu+" / "+detail);
         var cameraInfo=Singleton<RenderManager>.instance.CurrentCameraInfo;var graph=Singleton<NetManager>.instance;var objectIds=File.ReadAllLines(Objects);
+        for(int i=0;i<2;i++)
+        {
+            var segment=graph.m_segments.m_buffer[ushort.Parse(objectIds[i])];
+            var position=(graph.m_nodes.m_buffer[segment.m_startNode].m_position+graph.m_nodes.m_buffer[segment.m_endNode].m_position)*.5f;
+            Texture height;Vector4 heightMapping,surfaceMapping;
+            terrain.GetHeightMapping(position,out height,out heightMapping,out surfaceMapping);
+            float u=position.x*surfaceMapping.z+surfaceMapping.x,v=position.z*surfaceMapping.z+surfaceMapping.y;
+            var texture=height as Texture2D;if(texture==null)throw new Exception("Network height mapping has no readable texture.");
+            Color32 sample=texture.GetPixel((int)(u*texture.width),(int)(v*texture.height));float mapped=(sample.r*256+sample.g)/64f;
+            Entry.Log("324 network terrain mapping "+segment.Info.name+": patch323="+ReferenceEquals(height,patches[323].m_heightMap)+", height="+heightMapping+", surface="+surfaceMapping+", uv="+u+","+v+", mappedHeight="+mapped+", nativeHeight="+terrain.SampleDetailHeight(position)+", requiresHeight="+segment.Info.m_requireHeightMap+", requiresSurface="+segment.Info.m_requireSurfaceMaps);
+            if(!ReferenceEquals(height,patches[323].m_heightMap) || Math.Abs(mapped-terrain.SampleDetailHeight(position))>.05f)throw new Exception("324 network terrain mapping differs from native height.");
+            Texture surfaceA,surfaceB;Vector4 actualSurfaceMapping;
+            terrain.GetSurfaceMapping(position,out surfaceA,out surfaceB,out actualSurfaceMapping);
+            if(!ReferenceEquals(surfaceA,patches[323].m_surfaceMapA) || !ReferenceEquals(surfaceB,patches[323].m_surfaceMapB) || actualSurfaceMapping!=surfaceMapping)throw new Exception("324 network surface mapping differs from selected patch.");
+            Entry.Log("324 network surface shader inputs "+segment.Info.name+": patch323=True, surfaceA="+((Texture2D)surfaceA).GetPixel((int)(u*surfaceA.width),(int)(v*surfaceA.height))+", surfaceB="+((Texture2D)surfaceB).GetPixel((int)(u*surfaceB.width),(int)(v*surfaceB.height)));
+        }
         for(int i=0;i<2;i++){var segment=graph.m_segments.m_buffer[ushort.Parse(objectIds[i])];Entry.Log("324 network render "+segment.Info.name+": bounds="+segment.m_bounds+", camera intersects="+cameraInfo.Intersect(segment.m_bounds)+", start="+graph.m_nodes.m_buffer[segment.m_startNode].m_position+", end="+graph.m_nodes.m_buffer[segment.m_endNode].m_position+", calls="+graph.m_drawCallData.m_defaultCalls+"/"+graph.m_drawCallData.m_lodCalls);foreach(var mesh in segment.Info.m_segments)Entry.Log("324 network mesh: layer="+mesh.m_layer+", bounds="+mesh.m_segmentMesh.bounds+", material="+mesh.m_segmentMaterial.name+", lod distance="+mesh.m_lodRenderDistance);}
         var renderedGroups=Singleton<RenderManager>.instance.m_renderedGroups;for(int i=0;i<renderedGroups.m_size;i++){var group=renderedGroups.m_buffer[i];if(group.m_x>=85 && group.m_z>=84)Entry.Log("324 render group "+group.m_x+","+group.m_z+": mask="+group.m_instanceMask);}
         yield return new WaitForEndOfFrame();var captured=new Texture2D(Screen.width,Screen.height,TextureFormat.RGB24,false);

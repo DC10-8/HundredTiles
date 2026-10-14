@@ -38,6 +38,10 @@ namespace HundredTiles.SaveBridge
         public void ClearLoad() { treesRead = propsRead = false; }
     }
 
+    public interface IMigratingSaveParticipant : ISaveParticipant
+    {
+        bool CanReadSize(int size);
+    }
     public interface IChunkedSaveParticipant : ISaveParticipant
     {int EncodedSize {get;}}
     internal sealed class ExtensionBackup

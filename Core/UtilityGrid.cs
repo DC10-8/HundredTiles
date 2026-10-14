@@ -25,6 +25,13 @@ namespace HundredTiles.Core
             for (int z = 0; z < LegacySide; z++) Array.Copy(original, z * LegacySide, result, (z + Offset) * Side + Offset, LegacySide);
             return result;
         }
+        public static T[] MigrateHundred<T>(T[] original,T empty)
+        {
+            if(original==null || original.Length!=508*508 || Side<508)throw new ArgumentException("Expected the 100-tile utility grid.");
+            var result=new T[Side*Side];for(int i=0;i<result.Length;i++)result[i]=empty;
+            for(int z=0;z<508;z++)Array.Copy(original,z*508,result,z*Side,508);
+            return result;
+        }
         public static T[] Project<T>(T[] expanded)
         {
             if (expanded == null || expanded.Length != Side * Side) throw new ArgumentException("Expected the expanded utility grid.");

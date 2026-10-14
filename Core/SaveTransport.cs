@@ -63,6 +63,21 @@ namespace HundredTiles.Core
         }
 
         // Caller holds storage lock so root and chunks are read as one version.
+        public static byte[] ReadKnownLayouts(IDictionary<string,byte[]> storage,string key,int currentSize,Func<int,bool> knownSize)
+        {
+            if(storage==null || knownSize==null)throw new ArgumentException("Storage and reviewed sizes required.");
+            byte[] value;
+            if(storage.TryGetValue(key,out value) && value!=null)
+            {
+                if(value.Length!=ManifestSize && value.Length<MaximumEntrySize && knownSize(value.Length))return value;
+                if(value.Length==ManifestSize)
+                {
+                    int declared=BitConverter.ToInt32(value,12);
+                    if(knownSize(declared))return Read(storage,key,declared);
+                }
+            }
+            return Read(storage,key,currentSize);
+        }
         public static byte[] Read(IDictionary<string,byte[]> storage,string key)
         {
             int expectedSize=SaveCodec.EncodedSize;byte[] manifest;

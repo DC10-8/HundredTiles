@@ -107,7 +107,7 @@ namespace HundredTiles.Runtime
                 RuntimeSaveBridge.ValidateSave=delegate {SaveSafety.Validate(hooks);};
                 installed=true;
                 Progress("Installed "+hooks.Count);
-                UnityEngine.Debug.Log("[HundredTiles] Installed: "+hooks.Count+" targets; 10x10 tiles; purchase limit 100.");
+                UnityEngine.Debug.Log("[HundredTiles] Installed: "+hooks.Count+" targets; "+HundredTiles.Core.ExpandedMap.GridSize+"x"+HundredTiles.Core.ExpandedMap.GridSize+" tiles; purchase limit "+HundredTiles.Core.ExpandedMap.TileCount+".");
             }
             catch {harmony.UnpatchAll(Owner);throw;}
         }

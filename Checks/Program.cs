@@ -1,6 +1,8 @@
 using System;
 using HundredTiles.Core;
 
+DistrictMigrationChecks.Run();
+
 #if HUNDREDTILES_324
 Profile324Checks.Run();
 #else

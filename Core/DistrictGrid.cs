@@ -11,6 +11,13 @@ namespace HundredTiles.Core
         public const int Bytes=Side*Side*RecordSize,LegacyBytes=LegacySide*LegacySide*RecordSize;
         public const int EncodedSize=84+Bytes*2+32;
         public const float CellSize=19.2f;
+        public static int EncodedSizeFor(int side)
+        {
+            if(side!=1000 && side!=Side)throw new InvalidDataException("Unsupported district dimensions.");
+            return 116+side*side*RecordSize*2;
+        }
+        public static bool CanReadSize(int size)
+        {return size==EncodedSize || (Side>1000 && size==EncodedSizeFor(1000));}
         public static byte[] Project(byte[] source)
         {
             if(source==null || source.Length!=Bytes)throw new ArgumentException("Expanded district shape differs.");
@@ -50,15 +57,25 @@ namespace HundredTiles.Core
         }
         public static void Decode(byte[] bytes,byte[] legacyDistricts,byte[] legacyParks,byte[] binding,out byte[] districts,out byte[] parks)
         {
-            if(bytes==null || bytes.Length!=EncodedSize)throw new InvalidDataException("District snapshot length differs.");
+            if(bytes==null || !CanReadSize(bytes.Length))throw new InvalidDataException("District snapshot length differs.");
             using(var stream=new MemoryStream(bytes,false))using(var reader=new BinaryReader(stream))
             {
-                if(Encoding.ASCII.GetString(reader.ReadBytes(8))!="HTDIST01" || reader.ReadInt32()!=1 || reader.ReadInt32()!=Side || reader.ReadInt32()!=Origin ||
+                if(Encoding.ASCII.GetString(reader.ReadBytes(8))!="HTDIST01" || reader.ReadInt32()!=1)throw new InvalidDataException("District format differs.");
+                int sourceSide=reader.ReadInt32();
+                if(sourceSide>Side || bytes.Length!=EncodedSizeFor(sourceSide) || reader.ReadInt32()!=Origin ||
                     !Equal(reader.ReadBytes(32),Fingerprint(legacyDistricts,legacyParks)) || !Equal(reader.ReadBytes(32),binding))throw new InvalidDataException("District layout, baseline or map binding differs.");
-                districts=reader.ReadBytes(Bytes);parks=reader.ReadBytes(Bytes);byte[] checksum=reader.ReadBytes(32);
+                int sourceBytes=sourceSide*sourceSide*RecordSize;
+                districts=reader.ReadBytes(sourceBytes);parks=reader.ReadBytes(sourceBytes);byte[] checksum=reader.ReadBytes(32);
                 using(var hash=SHA256.Create())if(!Equal(checksum,hash.ComputeHash(bytes,0,bytes.Length-32)))throw new InvalidDataException("District checksum differs.");
-                Validate(districts,Bytes);Validate(parks,Bytes);
+                Validate(districts,sourceBytes);Validate(parks,sourceBytes);
+                if(sourceSide!=Side){districts=Migrate(districts,sourceSide);parks=Migrate(parks,sourceSide);}
             }
+        }
+        static byte[] Migrate(byte[] source,int sourceSide)
+        {
+            var target=Expand(new byte[LegacyBytes]);
+            for(int z=0;z<sourceSide;z++)Array.Copy(source,z*sourceSide*RecordSize,target,z*Side*RecordSize,sourceSide*RecordSize);
+            return target;
         }
     }
 }

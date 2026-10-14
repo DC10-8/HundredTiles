@@ -4,6 +4,8 @@ namespace HundredTiles.SaveBridge
 {
     public interface ISaveParticipant
     {string Key{get;}byte[] Capture(byte[] binding);void BeginLoad();object Prepare(byte[] bytes,byte[] binding);void ValidateTarget(object prepared);void Commit(object prepared);void ClearSave();void ClearLoad();}
+    public interface IChunkedSaveParticipant : ISaveParticipant {int EncodedSize{get;}}
+    public interface IMigratingSaveParticipant : ISaveParticipant {bool CanReadSize(int size);}
     public static class RuntimeSaveBridge
     {public static ISaveParticipant Participant;public static void RegisterParticipant(ISaveParticipant participant){if(Participant!=null)throw new Exception("Duplicate registration");Participant=participant;}public static Exception LoadFailure(Exception exception)=>exception;}
     public class HookSpec {public System.Reflection.MethodBase Target;public System.Reflection.MethodInfo Prefix,Postfix,Finalizer,Transpiler;}

@@ -7,6 +7,15 @@ namespace HundredTiles.Core
         public const float CellSize=38.4f;
         public const int Values=Side*Side*Channels,LegacyValues=LegacySide*LegacySide*Channels;
         public const int EncodedSize=Values*4+Channels*24+140;
+        public static int EncodedSizeFor(int side)
+        {if(side!=500 && side!=Side)throw new ArgumentException("Unsupported service dimensions.");return side*side*Channels*4+Channels*24+140;}
+        public static ushort[] MigrateHundred(ushort[] source)
+        {
+            if(source==null || source.Length!=500*500*Channels || Side<500)throw new ArgumentException("100-tile service grid shape differs.");
+            var result=new ushort[Values];
+            for(int z=0;z<500;z++)Array.Copy(source,z*500*Channels,result,z*Side*Channels,500*Channels);
+            return result;
+        }
         public static ushort[] Project(ushort[] source)
         {
             if(source==null || source.Length!=Values)throw new ArgumentException("Expanded service grid shape differs.");

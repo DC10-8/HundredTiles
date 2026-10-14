@@ -33,11 +33,15 @@ var capture=typeof(UtilitySaveBridge).GetMethod("CaptureState",BindingFlags.Stat
 SortedDictionary<string,object> State()=>(SortedDictionary<string,object>)capture.Invoke(null,null);
 var expected=UtilitySnapshotCodec.Hash(UtilitySnapshotCodec.Payload(State()));
 byte[] binding=Enumerable.Range(0,32).Select(i=>(byte)i).ToArray();byte[] encoded=participant.Capture(binding);
+#if HUNDREDTILES_324
+Check(encoded.Length==((IChunkedSaveParticipant)participant).EncodedSize,"324 utility chunked snapshot length differs");
+#else
 Check(encoded.Length<16711680,"Utility extension exceeds game byte-array limit");
+#endif
 var projectedElectric=UtilitySaveBridge.Freeze<ElectricityManager.Cell[]>(null,"E.m_electricityGrid");
 var projectedWater=UtilitySaveBridge.Freeze<WaterManager.Cell[]>(null,"W.m_waterGrid");
 Check(projectedElectric.Length==65536 && projectedWater.Length==65536,"Vanilla grids must remain 256x256");
-Check(projectedElectric[0].m_currentCharge==electric.m_electricityGrid[103*508+103].m_currentCharge,"Projection shifts cells instead of changing world coordinates");
+Check(projectedElectric[0].m_currentCharge==electric.m_electricityGrid[103*UtilityGrid.Side+103].m_currentCharge,"Projection shifts cells instead of changing world coordinates");
 var freeze=typeof(UtilitySaveBridge).GetMethod("Freeze");
 foreach(string prefix in new[]{"E.","W."})foreach(string name in prefix=="E."?UtilitySaveBridge.ElectricityFields:UtilitySaveBridge.WaterFields)
 {
@@ -66,7 +70,7 @@ Read();var rawElectric=electric.m_electricityGrid;var rawWater=water.m_waterGrid
 var prepared=participant.Prepare(encoded,binding);participant.ValidateTarget(prepared);participant.Commit(prepared);
 Check(UtilitySnapshotCodec.Hash(UtilitySnapshotCodec.Payload(State())).SequenceEqual(expected),"All utility fields including wrapped queues did not round-trip");
 Check(ReferenceEquals(rawElectric,electric.m_electricityGrid) && ReferenceEquals(rawWater,water.m_waterGrid),"Utility restore replaced live arrays");
-Check(electric.DirtyMax==507 && water.DirtyMax==507,"Entire utility texture must be invalidated");participant.ClearLoad();
+Check(electric.DirtyMax==UtilityGrid.Side-1 && water.DirtyMax==UtilityGrid.Side-1,"Entire utility texture must be invalidated");participant.ClearLoad();
 var invalidReference=State();((ExpandedWaterManager.ExpandedPulseUnit[])invalidReference["W.m_waterPulseUnits"])[32760].m_group=1024;
 Reject<InvalidDataException>(()=>participant.ValidateTarget(invalidReference),"Active supply group index beyond group count accepted");
 var broken=(byte[])encoded.Clone();broken[200]^=1;Read();Reject<InvalidDataException>(()=>participant.Prepare(broken,binding),"Corrupt utilities accepted");
@@ -75,9 +79,9 @@ UtilitySaveBridge.ReadElectricity(null)[0].m_conductivity^=1;Reject<InvalidDataE
 Read();var legacy=(SortedDictionary<string,object>)participant.Prepare(null,null);participant.ValidateTarget(legacy);
 var legacyUnits=(ExpandedElectricityManager.ExpandedPulseUnit[])legacy["E.m_pulseUnits"];
 Check(legacyUnits[0].m_x==electric.m_pulseUnits[0].m_x+103,"Legacy pulse coordinate migration offset differs");
-var invalid=(SortedDictionary<string,object>)prepared;((ExpandedElectricityManager.ExpandedPulseUnit[])invalid["E.m_pulseUnits"])[0].m_x=508;
+var invalid=(SortedDictionary<string,object>)prepared;((ExpandedElectricityManager.ExpandedPulseUnit[])invalid["E.m_pulseUnits"])[0].m_x=UtilityGrid.Side;
 Reject<InvalidDataException>(()=>participant.ValidateTarget(invalid),"Out-of-grid utility queue accepted");participant.ClearLoad();
-Console.WriteLine($"PASS: production utility save participant; {encoded.Length} bytes; both 508x508 grids; four wrapped queues; 1024 groups per supply; all node fields and counters; frozen 256x256 projection; legacy axis offset; checksum/binding/baseline/coordinate refusal. Fixture managers, no Unity execution.");
+Console.WriteLine($"PASS: production utility save participant; {encoded.Length} bytes; both {UtilityGrid.Side}x{UtilityGrid.Side} grids; four wrapped queues; 1024 groups per supply; all node fields and counters; frozen 256x256 projection; legacy axis offset; checksum/binding/baseline/coordinate refusal. Fixture managers, no Unity execution.");
 // Convert the just-captured v2 fixture to the byte-for-byte v1 layout.
 var v1=new byte[encoded.Length-24];Array.Copy(encoded,0,v1,0,12);v1[8]=1;
 Array.Copy(encoded,36,v1,12,encoded.Length-36-32);
@@ -101,5 +105,36 @@ var smaller=new SortedDictionary<string,object>(restoredLarge,StringComparer.Ord
 Reject<InvalidDataException>(()=>UtilityCapacity.Adapt(restoredLarge,smaller),"High-capacity data was silently truncated");
 participant.ClearLoad();
 Console.WriteLine("PASS: utility v1-to-v2 capacity migration; 65024 nodes; high node 65000; wrapped queue preserved; untrusted capacity and shrinking refused.");
+#if HUNDREDTILES_324
+var oldState=State();
+foreach(string key in new[]{"E.m_electricityGrid","W.m_waterGrid"})
+{
+    var full=(Array)oldState[key];var oldGrid=Array.CreateInstance(full.GetType().GetElementType(),508*508);
+    for(int z=0;z<508;z++)Array.Copy(full,z*909,oldGrid,z*508,508);oldState[key]=oldGrid;
+}
+participant.Capture(binding);
+var oldBaseline=(byte[])typeof(UtilitySaveBridge).GetMethod("Baseline",BindingFlags.Static|BindingFlags.NonPublic).Invoke(null,new object[]{UtilitySaveBridge.Freeze<ElectricityManager.Cell[]>(null,"E.m_electricityGrid"),UtilitySaveBridge.Freeze<WaterManager.Cell[]>(null,"W.m_waterGrid")});
+byte[] oldGridBytes=UtilitySnapshotCodec.Encode(oldState,oldBaseline,binding);participant.ClearSave();Read();
+var oldGridRestored=(SortedDictionary<string,object>)participant.Prepare(oldGridBytes,binding);participant.ValidateTarget(oldGridRestored);
+foreach(string key in new[]{"E.m_electricityGrid","W.m_waterGrid"})
+{
+    var full=(Array)oldGridRestored[key];var extracted=Array.CreateInstance(full.GetType().GetElementType(),508*508);
+    for(int z=0;z<508;z++)Array.Copy(full,z*909,extracted,z*508,508);
+    var a=new SortedDictionary<string,object>{{key,oldState[key]}};var b=new SortedDictionary<string,object>{{key,extracted}};
+    Check(UtilitySnapshotCodec.Hash(UtilitySnapshotCodec.Payload(a)).SequenceEqual(UtilitySnapshotCodec.Hash(UtilitySnapshotCodec.Payload(b))),"All old grid fields survive migration");
+}
+Check(((ElectricityManager.Cell[])oldGridRestored["E.m_electricityGrid"])[909*909-1].m_pulseGroup==ushort.MaxValue,"New electricity cells use native empty group");
+Check(((WaterManager.Cell[])oldGridRestored["W.m_waterGrid"])[909*909-1].m_heatingPulseGroup==ushort.MaxValue,"New water cells use native empty groups");
+Check(((ExpandedElectricityManager.ExpandedPulseUnit[])oldGridRestored["E.m_pulseUnits"])[0].m_node==65000,"High nodes survive dimension migration");
+Check(((IMigratingSaveParticipant)participant).CanReadSize(oldGridBytes.Length),"Reviewed old utility transport size accepted");
+var oldGridV1=new byte[oldGridBytes.Length-24];Array.Copy(oldGridBytes,0,oldGridV1,0,8);Array.Copy(BitConverter.GetBytes(1),0,oldGridV1,8,4);Array.Copy(oldGridBytes,36,oldGridV1,12,oldGridBytes.Length-36-32);
+Array.Copy(UtilitySnapshotCodec.Hash(oldGridV1.Take(oldGridV1.Length-32).ToArray()),0,oldGridV1,oldGridV1.Length-32,32);
+participant.ValidateTarget(participant.Prepare(oldGridV1,binding));
+var badOld=(byte[])oldGridBytes.Clone();badOld[badOld.Length-1]^=1;Reject<InvalidDataException>(()=>participant.Prepare(badOld,binding),"Corrupt old grid accepted");
+((ExpandedElectricityManager.ExpandedPulseUnit[])oldState["E.m_pulseUnits"])[0].m_x=508;
+badOld=UtilitySnapshotCodec.Encode(oldState,oldBaseline,binding);Reject<InvalidDataException>(()=>participant.Prepare(badOld,binding),"Old grid out-of-range coordinate accepted");
+participant.ClearLoad();
+Console.WriteLine("PASS: production 508-to-909 utility migration; every electricity/water field, all pulse queues and high node IDs; native defaults in new cells; source capacity preserved.");
+#endif
 static void Check(bool value,string name){if(!value)throw new Exception(name);}
 static void Reject<T>(Action action,string name) where T:Exception {try{action();}catch(T){return;}throw new Exception(name);}

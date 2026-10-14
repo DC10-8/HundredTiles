@@ -8,6 +8,11 @@ static class Profile324Checks
     {
         Require(ExpandedMap.TileCount==324 && ExpandedMap.HeightStride==2161,"compiled profile");
         Require(ServiceGrid.Side==900 && DistrictGrid.Side==1800 && ResourceGrid.Side==1024 && UtilityGrid.Side==909,"compiled grids");
+        var oldService=new ushort[500*500*35];for(int i=0;i<oldService.Length;i++)oldService[i]=(ushort)(i%65536);
+        var newService=ServiceGrid.MigrateHundred(oldService);
+        for(int z=0;z<500;z++)for(int x=0;x<500;x++)for(int channel=0;channel<35;channel++)Require(newService[(z*900+x)*35+channel]==oldService[(z*500+x)*35+channel],"every old service channel retains its coordinate");
+        Require(newService[newService.Length-1]==0,"added service cells start empty");
+        ServiceMigrationChecks.Run(oldService);
         var rows=new int[909];for(int phase=0;phase<128;phase++)for(int row=UtilityGrid.FirstRow(phase);row<=UtilityGrid.LastRow(phase);row++)rows[row]++;
         foreach(int visits in rows)Require(visits==1,"all utility rows calculated once");
         var serviceRows=new int[900];for(uint frame=0;frame<256;frame++)for(int row=ServiceGrid.RowStart(frame);row<ServiceGrid.RowEnd(frame);row++)serviceRows[row]++;

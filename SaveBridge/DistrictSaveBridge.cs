@@ -38,12 +38,13 @@ namespace HundredTiles.SaveBridge
         static void RequireTarget()
         {var manager=Singleton<DistrictManager>.instance;if(manager.m_districtGrid.Length!=DistrictGrid.Side*DistrictGrid.Side || manager.m_parkGrid.Length!=DistrictGrid.Side*DistrictGrid.Side)throw new InvalidDataException("District targets are not expanded.");}
 #if HUNDREDTILES_324
-        internal sealed class Participant : IChunkedSaveParticipant
+        internal sealed class Participant : IChunkedSaveParticipant, IMigratingSaveParticipant
 #else
         internal sealed class Participant : ISaveParticipant
 #endif
         {
             public int EncodedSize {get{return DistrictGrid.EncodedSize;}}
+            public bool CanReadSize(int size) {return DistrictGrid.CanReadSize(size);}
             public string Key {get{return "HundredTiles.Districts.v1";}}
             public byte[] Capture(byte[] binding)
             {

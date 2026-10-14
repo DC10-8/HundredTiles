@@ -300,7 +300,12 @@ namespace HundredTiles.SaveBridge
                     {
                         byte[] value;bool present=storage.TryGetValue(participant.Key,out value);
                         var chunked=participant as IChunkedSaveParticipant;
-                        if(chunked!=null)value=SaveTransport.Read(storage,participant.Key,chunked.EncodedSize);
+                        if(chunked!=null)
+                        {
+                            var migrating=participant as IMigratingSaveParticipant;
+                            value=migrating==null?SaveTransport.Read(storage,participant.Key,chunked.EncodedSize):
+                                SaveTransport.ReadKnownLayouts(storage,participant.Key,chunked.EncodedSize,migrating.CanReadSize);
+                        }
                         if((bytes!=null)!=present || (present && value==null))throw new InvalidDataException("Additional extension set is incomplete: "+participant.Key);
                         additionalBytes.Add(value);
                     }

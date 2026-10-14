@@ -52,6 +52,23 @@ namespace HundredTiles.Utilities
             }
             return Hash(Encoding.UTF8.GetBytes(text.ToString()));
         }
+        static SortedDictionary<string,object> MatchGridSchema(SortedDictionary<string,object> candidate,byte[] schema)
+        {
+            if(Equal(schema,Schema(candidate)))return candidate;
+#if HUNDREDTILES_324
+            if(candidate.ContainsKey("E.m_electricityGrid") && candidate.ContainsKey("W.m_waterGrid"))
+            {
+                var old=new SortedDictionary<string,object>(candidate,StringComparer.Ordinal);
+                foreach(string key in new[]{"E.m_electricityGrid","W.m_waterGrid"})
+                {
+                    var array=(Array)candidate[key];
+                    old[key]=Array.CreateInstance(array.GetType().GetElementType(),508*508);
+                }
+                if(Equal(schema,Schema(old)))return old;
+            }
+#endif
+            return null;
+        }
         static void Describe(StringBuilder text,Type type)
         {
             text.Append(type.FullName);
@@ -86,11 +103,12 @@ namespace HundredTiles.Utilities
                 if(version==2 && capacity){var counts=new int[UtilityCapacity.Keys.Length];for(int i=0;i<counts.Length;i++)counts[i]=reader.ReadInt32();layout=UtilityCapacity.Shape(template,counts);}
                 else if(version!=1)throw new InvalidDataException("Unsupported utility snapshot version.");
                 byte[] schema=reader.ReadBytes(32);
-                if(version==1 && !capacity)layout=template;
+                if(version==2 && capacity)layout=MatchGridSchema(layout,schema);
+                if(version==1 && !capacity)layout=MatchGridSchema(template,schema);
                 if(version==1 && capacity)
                 {
                     foreach(int e in new[]{32768,65024})foreach(int w in new[]{32768,65024})foreach(int q in new[]{32768,65024})
-                    {var candidate=UtilityCapacity.Shape(template,new[]{e,w,q,q,q,q});if(Equal(schema,Schema(candidate)))layout=candidate;}
+                    {var candidate=UtilityCapacity.Shape(template,new[]{e,w,q,q,q,q});var matched=MatchGridSchema(candidate,schema);if(matched!=null)layout=matched;}
                 }
                 if(layout==null || !Equal(schema,Schema(layout)) || !Equal(reader.ReadBytes(32),baseline) || !Equal(reader.ReadBytes(32),binding))throw new InvalidDataException("Utility schema, standard projection or map binding differs.");
                 if(stream.Length-stream.Position!=Payload(layout).Length)throw new InvalidDataException("Utility snapshot length differs from its verified capacity.");
