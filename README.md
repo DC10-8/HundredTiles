@@ -1,5 +1,7 @@
 # HundredTiles — Cities: Skylines 1
 
+This development branch includes a gated 18×18 (324-tile) candidate. The default build remains 100 tiles. A normal 324 build refuses activation while migration, compatibility and native validation remain incomplete; trial activation requires an isolated game and redirected user data. See [324 development results and remaining work](docs/324-development.ja.md).
+
 **Experimental release.** Long-term large-city operation and arbitrary mod combinations are unverified. Use copied saves and keep an external backup. See [safety and build verification](docs/Safety-and-build.md) for confirmed checks and limits.
 
 Standard-sized 10×10 city area (100 tiles). Keeps original coordinates and adds 19 tiles to the east and north. Windows Steam game build 1.21.1-f9 is the reviewed build.

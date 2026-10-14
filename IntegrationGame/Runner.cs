@@ -16,9 +16,9 @@ public sealed class Runner : MonoBehaviour
     static bool Release { get { return Mode=="SupplyEntrySave" || Mode=="SupplyEntryReload" || Mode=="SupplyEntryGraphics" || (Landscape && Mode!="LandscapeEntryFresh"); } }
     static bool Outer { get { return Mode.StartsWith("Outer") || Supply; } }
     static bool StartupCopy { get { return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_COPY")=="1"; } }
-    static string SaveName { get { return StartupCopy && Release?"HundredTiles_Startup_Repair_Verification":Landscape?"HundredTiles_Landscape_Repair_Verification":Release?"HundredTiles_Release_Verification":Supply?"HundredTiles_OuterSupply_Verification":Outer?"HundredTiles_OuterGameplay_Verification":"HundredTiles_Isolated_Verification"; } }
-    static string Record { get { return StartupCopy && Release?"startup-saved.marker":Landscape?"landscape-saved.marker":Release?"release-saved.marker":Supply?"supply-saved.marker":Outer?"outer-saved.marker":"saved.marker"; } }
-    bool landscapeFlow,textureChecksRun;
+    static string SaveName { get { return Mode.StartsWith("Trial324")?(Live324Trial.Far?"HundredTiles_324_Far_Verification":"HundredTiles_324_Verification"):StartupCopy && Release?"HundredTiles_Startup_Repair_Verification":Landscape?"HundredTiles_Landscape_Repair_Verification":Release?"HundredTiles_Release_Verification":Supply?"HundredTiles_OuterSupply_Verification":Outer?"HundredTiles_OuterGameplay_Verification":"HundredTiles_Isolated_Verification"; } }
+    static string Record { get { return Mode.StartsWith("Trial324")?(Live324Trial.Far?"trial324-far-saved.marker":"trial324-saved.marker"):StartupCopy && Release?"startup-saved.marker":Landscape?"landscape-saved.marker":Release?"release-saved.marker":Supply?"supply-saved.marker":Outer?"outer-saved.marker":"saved.marker"; } }
+    bool landscapeFlow,textureChecksRun,trialGroundPrepared;float trialGroundReady;
     int phase;float began;bool verifyingReload;volatile bool workerCompleted;string inputHash;
     void Awake(){began=Time.realtimeSinceStartup;}
     void Update()
@@ -45,7 +45,7 @@ public sealed class Runner : MonoBehaviour
                 }
                 if(!textureChecksRun && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_REPAIRS")=="1"){LiveTextureDiagnostics.VerifyRepair();textureChecksRun=true;}
                 bool reload=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")!="Create" && File.Exists(Path.Combine(Entry.Root,Record));
-                if(Mode=="LandscapeEntryFresh" || Mode=="BaseEntryCreate")reload=false;
+                if(Mode=="LandscapeEntryFresh" || Mode=="BaseEntryCreate" || Mode=="Trial324EntryCreate" || Mode=="Trial324EntrySave")reload=false;
                 if(Mode=="OuterCreate" || Mode=="SupplyCreate" || Mode=="SupplyEntrySave" || Mode=="LandscapeEntryCreate")reload=true;
                 Package.Asset selected=null;
                 foreach(var asset in PackageManager.FilterAssets(reload?UserAssetType.SaveGameMetaData:UserAssetType.MapMetaData))
@@ -91,6 +91,32 @@ public sealed class Runner : MonoBehaviour
                 Entry.Log("PASS: editor-to-city load safely refused with restart notice; editor grids and loader state unchanged.");
                 phase=9;StartCoroutine(EditorScreenshot());return;
             }
+            if(phase==1 && Mode=="Trial324EntryCreate")
+            {
+                if(!loading.m_loadingComplete || !loading.m_simulationDataLoaded || loading.m_currentlyLoading)return;
+                Live324Trial.CheckShapes();phase=9;Application.Quit();return;
+            }
+            if((phase==1 || phase==3) && (Mode=="Trial324EntrySave" || Mode=="Trial324EntryReload"))
+            {
+                if(!loading.m_loadingComplete || !loading.m_simulationDataLoaded || loading.m_currentlyLoading)return;
+                bool trialReload=phase==3;if(Live324Trial.Far)Live324Trial.PrepareFar();
+                if(Live324Trial.Far && !trialReload && !trialGroundPrepared){phase=31;workerCompleted=false;Singleton<SimulationManager>.instance.AddAction(delegate{try{if(HundredTiles.Runtime.BulkUnlock.UnlockAll()!=324)throw new Exception("324 preparation purchases incomplete.");Live324Trial.PrepareGround();}catch(Exception error){Fail(error);}finally{workerCompleted=true;}});return;}
+                phase=30;workerCompleted=false;
+                Singleton<SimulationManager>.instance.AddAction(delegate{
+                    try{
+                        Live324Trial.CheckShapes();
+                        if(!trialReload){if(HundredTiles.Runtime.BulkUnlock.UnlockAll()!=324)throw new Exception("Native 324 purchases did not complete.");var terrain=Singleton<TerrainManager>.instance;int index=2161*2161-1;terrain.RawHeights[index]=12345;terrain.BlockHeights[index]=12345;terrain.BlockHeightTargets[index]=12345;Entry.Log("PASS: native transactions unlocked all 324 tiles; far terrain sentinel prepared.");if(Live324Trial.Far)Live324Trial.CreateFar();}
+                        else{if(Singleton<GameAreaManager>.instance.m_areaCount!=324 || Singleton<TerrainManager>.instance.RawHeights[2161*2161-1]!=12345)throw new Exception("Native 324 save did not preserve ownership/far terrain.");if(FileHash()!=inputHash)throw new Exception("324 reload changed its input save.");if(Live324Trial.Far){LiveTerrainToolChecks.Run();Live324Trial.CheckFar();}File.WriteAllText(Path.Combine(Entry.Root,Live324Trial.Far?"trial324-far-reload-passed.marker":"trial324-reload-passed.marker"),"PASS\n"+inputHash);Entry.Log("PASS: separate-process native 324 save reload preserved all 324 purchases and far terrain sentinel; input save unchanged.");}
+                    }catch(Exception error){Fail(error);}finally{workerCompleted=true;}
+                });return;
+            }
+            if(phase==31 && workerCompleted){trialGroundReady=Time.realtimeSinceStartup+2;phase=32;return;}
+            if(phase==32 && Time.realtimeSinceStartup>=trialGroundReady){trialGroundPrepared=true;phase=1;return;}
+            if(phase==30 && workerCompleted)
+            {
+                if(Mode=="Trial324EntryReload"){phase=9;if(Live324Trial.Far)StartCoroutine(Live324Trial.ScreenshotFar());else Application.Quit();return;}
+                var trialPanel=UIView.library.Get<SavePanel>("SavePanel");if(trialPanel==null)trialPanel=UIView.library.Show<SavePanel>("SavePanel");if(trialPanel==null || !trialPanel.SaveGame(SaveName))return;phase=5;Entry.Log("Requested real 324 trial SavePanel save.");return;
+            }
             if(phase==1 || phase==3)
             {
                 if(Mode.IndexOf("Entry",StringComparison.Ordinal)>=0)
@@ -115,6 +141,7 @@ public sealed class Runner : MonoBehaviour
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_REPAIRS")=="1")LiveStartupChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_CONSTRUCTION")=="1")LiveConstructionChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_OUTSIDE_TRAFFIC")=="1")LiveOutsideTrafficChecks.Run();
+                        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_EXPORT324_SOURCE")=="1")LiveLayoutExport.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SEA")=="1")LiveSeaChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_TAXI")=="1")LiveTaxiChecks.Run();
                         if(Outer){if(Mode=="OuterCreate"){OuterObjects.Create();reload=false;verifyingReload=false;}else OuterObjects.Check();}
@@ -188,6 +215,7 @@ public sealed class Runner : MonoBehaviour
     static string FileHash(){using(var stream=File.OpenRead(Path.Combine(Entry.Root,"UserData/Saves/"+SaveName+".crp")))using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-","");}
     static void Fail(Exception error){Entry.Log("FAILURE: "+error);File.WriteAllText(Path.Combine(Entry.Root,"failed.marker"),error.ToString());Bootstrap.FatalFailure=true;}
 }
+
 
 
 

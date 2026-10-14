@@ -109,7 +109,7 @@ namespace HundredTiles.Utilities
         public static void WaterRead()
         {if(readWater==null || waterRead)throw new InvalidOperationException("Water Deserialize stage differs.");PublishBaseline("W.m_waterGrid",UtilityGrid.Expand(readWater));waterRead=true;}
         static void PublishBaseline(string key,Array source)
-        {var target=(Array)Get(key);if(target.Length!=source.Length)throw new InvalidDataException("Utility target grid is not expanded.");Array.Copy(source,target,source.Length);}
+        {var target=(Array)Get(key);if(target.Length!=source.Length)throw new InvalidDataException("Utility target grid is not expanded: "+key+", target="+target.Length+", source="+source.Length);Array.Copy(source,target,source.Length);}
         static SortedDictionary<string,object> LegacyState()
         {
             var state=CaptureState();
@@ -152,8 +152,36 @@ namespace HundredTiles.Utilities
             }
         }
         static int RequiredLength(string key,int current){return Array.IndexOf(UtilityCapacity.Keys,key)<0?current:Math.Max(current,RequestedCapacity==null?32768:RequestedCapacity());}
-        sealed class Participant : ISaveParticipant
+        static int SchemaLengthWithoutManagers()
         {
+            // Registration runs before native managers are patched/created.
+            // Reading Singleton.instance here would allocate a vanilla grid early.
+            int capacity=RequestedCapacity==null?32768:RequestedCapacity();if(!UtilityCapacity.Known(capacity))throw new InvalidDataException("Unknown utility schema capacity.");
+            int size=140+UtilityCapacity.Keys.Length*4;
+            foreach(string prefix in new[]{"E.","W."})foreach(string name in prefix=="E."?ElectricityFields:WaterFields)
+            {
+                Type owner=prefix=="E."?typeof(ElectricityManager):typeof(WaterManager);var field=owner.GetField(name,BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);if(field==null)throw new MissingFieldException(owner.FullName,name);
+                Type type=field.FieldType;if(!type.IsArray){size=checked(size+UtilitySnapshotCodec.TypeSize(type));continue;}
+                Type element=type.GetElementType();int length;
+                if(name=="m_electricityGrid" || name=="m_waterGrid")length=UtilityGrid.Side*UtilityGrid.Side;
+                else if(name.EndsWith("Groups",StringComparison.Ordinal))length=1024;
+                else if(name.EndsWith("Units",StringComparison.Ordinal) || name=="m_nodeData")length=capacity;
+                else throw new InvalidDataException("Unclassified utility array: "+name);
+                if(prefix=="E." && name=="m_pulseGroups")element=typeof(ExpandedElectricityManager.ExpandedPulseGroup);
+                if(prefix=="E." && name=="m_pulseUnits")element=typeof(ExpandedElectricityManager.ExpandedPulseUnit);
+                if(prefix=="W." && name.EndsWith("Units",StringComparison.Ordinal))element=typeof(ExpandedWaterManager.ExpandedPulseUnit);
+                if(name=="m_nodeGroups")length=capacity;
+                size=checked(size+length*UtilitySnapshotCodec.TypeSize(element));
+            }
+            return size;
+        }
+#if HUNDREDTILES_324
+        sealed class Participant : IChunkedSaveParticipant
+#else
+        sealed class Participant : ISaveParticipant
+#endif
+        {
+            public int EncodedSize {get{return SchemaLengthWithoutManagers();}}
             public string Key {get{return "HundredTiles.Utilities.v1";}}
             public byte[] Capture(byte[] binding)
             {
@@ -180,3 +208,5 @@ namespace HundredTiles.Utilities
         }
     }
 }
+
+

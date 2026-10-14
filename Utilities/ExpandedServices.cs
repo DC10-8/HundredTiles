@@ -7,7 +7,7 @@ using UnityEngine;
 using static ImmaterialResourceManager;
 namespace HundredTiles.Utilities {
  public static class ExpandedServices {
- const int ExpandedImmaterialResourceGridResolution=500, ExpandedImmaterialResourceGridMax=499;
+ const int ExpandedImmaterialResourceGridResolution=HundredTiles.Core.ServiceGrid.Side, ExpandedImmaterialResourceGridMax=HundredTiles.Core.ServiceGrid.Side-1;
  const float ExpandedImmaterialResourceGridHalfResolution=225f;
  static readonly Dictionary<ExpandedCellLocation,int> TempAreaIndexes=new Dictionary<ExpandedCellLocation,int>();
  static readonly List<ExpandedAreaQueueItem> TempAreaQueue=new List<ExpandedAreaQueueItem>();
@@ -209,3 +209,4 @@ private struct ExpandedAreaQueueItem
             }
         }
 }}
+

@@ -38,7 +38,7 @@ namespace HundredTiles.ExperimentalPatch
                         if (i + 1 >= input.Count || input[i + 1].opcode != OpCodes.Call ||
                             !(input[i + 1].operand is MethodInfo) || ((MethodInfo)input[i + 1].operand).Name != "Clamp")
                             throw new InvalidOperationException("Object grid bound is not a clamp.");
-                        code.operand = oldSide / 9 * 10 - 1; bounds++;
+                        code.operand = oldSide / 9 * HundredTiles.Core.ExpandedMap.GridSize - 1; bounds++;
                     }
                     else if (value == oldSide)
                     {
@@ -46,9 +46,9 @@ namespace HundredTiles.ExperimentalPatch
                             scales++;
                         else if (i > 0 && input[i - 1].opcode == OpCodes.Ldloc_1 && i + 3 < input.Count &&
                             input[i + 1].opcode == OpCodes.Mul && input[i + 2].opcode == OpCodes.Ldloc_0 && input[i + 3].opcode == OpCodes.Add)
-                        { code.operand = oldSide / 9 * 10; strides++; }
+                        { code.operand = oldSide / 9 * HundredTiles.Core.ExpandedMap.GridSize; strides++; }
                         else if (i > 0 && input[i - 1].opcode == OpCodes.Mul && i + 1 < input.Count && input[i + 1].opcode == OpCodes.Div)
-                        { code.operand = oldSide / 9 * 10; renderDivisors++; }
+                        { code.operand = oldSide / 9 * HundredTiles.Core.ExpandedMap.GridSize; renderDivisors++; }
                         else throw new InvalidOperationException("Unreviewed object grid width use.");
                     }
                 }
@@ -56,7 +56,7 @@ namespace HundredTiles.ExperimentalPatch
                     (input[i - 1].opcode == OpCodes.Ldloc_0 || input[i - 1].opcode == OpCodes.Ldloc_1) &&
                     i + 3 < input.Count && input[i + 1].opcode == OpCodes.Mul &&
                     input[i + 2].opcode == OpCodes.Ldc_I4 && Equals(input[i + 2].operand, oldSide) && input[i + 3].opcode == OpCodes.Div)
-                { code.opcode = OpCodes.Ldc_I4; code.operand = 50; renderScales++; }
+                { code.opcode = OpCodes.Ldc_I4; code.operand = HundredTiles.Core.ExpandedMap.GridSize*5; renderScales++; }
                 output.Add(code);
             }
             if (reads != 4 || bounds != 4 || strides != (rendererOnly ? 0 : 1) || scales != 4 ||

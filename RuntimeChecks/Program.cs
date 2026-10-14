@@ -32,6 +32,16 @@ class Program
     }
     static int Run()
     {
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_324_PROFILE")=="1")
+        {
+            Installer.InitializeManagedDirectory(Directory.GetParent(gameDirectory).FullName);
+            var plan=HundredTiles.ExperimentalPatch.PatchPlan.Embedded();
+            if(HundredTiles.Core.ExpandedMap.TileCount!=324 || plan.CanActivate)throw new Exception("324 prototype profile must remain blocked for native activation.");
+            int changed=0;foreach(var method in plan.Methods.Values){var target=HundredTiles.ExperimentalPatch.ReviewedMethod.Resolve(typeof(TerrainManager).Assembly,method);var instructions=HarmonyLib.PatchProcessor.GetOriginalInstructions(target);HundredTiles.ExperimentalPatch.PlannedTranspiler.Transform(instructions,method);changed++;}
+            int hooks=Installer.Connections().Count;if(hooks!=458)throw new Exception("324 hook coverage differs: "+hooks);
+            UnityEngine.Vector3 result=new UnityEngine.Vector3();HundredTiles.SaveBridge.BoundaryHooks.Camera(new UnityEngine.Vector3(30000,20,30000),ref result);if(result.x!=25920 || result.z!=25920 || result.y!=20)throw new Exception("324 camera clamp differs.");
+            Console.WriteLine("PASS: 324 candidate transforms "+changed+" pinned native methods; "+hooks+" merged hooks; camera boundary at 25920; prototype activation remains blocked. Reflection only.");return 0;
+        }
         string iptTest=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_IPT_CACHE");
         if(!string.IsNullOrEmpty(iptTest))
         {

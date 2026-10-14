@@ -54,14 +54,14 @@ namespace HundredTiles.SaveBridge
                             throw new InvalidDataException("Legacy objects contain reserved extension flags.");
             }
             else ObjectPositionCodec.Decode(bytes, Pack(trees), Pack(props), binding, out treeRecords, out propRecords);
-            var state = new Prepared { Trees = trees, Props = props, TreeGrid = new uint[600 * 600], PropGrid = new ushort[300 * 300] };
+            var state = new Prepared { Trees = trees, Props = props, TreeGrid = new uint[(ExpandedMap.GridSize*60) * (ExpandedMap.GridSize*60)], PropGrid = new ushort[(ExpandedMap.GridSize*30) * (ExpandedMap.GridSize*30)] };
             for (int i = 0; i < trees.Length; i++)
             {
                 var record = treeRecords[i];
                 trees[i].m_posX = record.X.Value; trees[i].m_posZ = record.Z.Value;
                 trees[i].m_flags = RestoreFlags(trees[i].m_flags, record); trees[i].m_nextGridTree = 0;
                 if (i == 0 || trees[i].m_flags == 0) continue;
-                int index = PackedObjectPosition.GridCoordinate(record.Z, 32) * 600 + PackedObjectPosition.GridCoordinate(record.X, 32);
+                int index = PackedObjectPosition.GridCoordinate(record.Z, 32) * (ExpandedMap.GridSize*60) + PackedObjectPosition.GridCoordinate(record.X, 32);
                 trees[i].m_nextGridTree = state.TreeGrid[index]; state.TreeGrid[index] = (uint)i;
             }
             for (int i = 0; i < props.Length; i++)
@@ -70,7 +70,7 @@ namespace HundredTiles.SaveBridge
                 props[i].m_posX = record.X.Value; props[i].m_posZ = record.Z.Value;
                 props[i].m_flags = RestoreFlags(props[i].m_flags, record); props[i].m_nextGridProp = 0;
                 if (i == 0 || props[i].m_flags == 0) continue;
-                int index = PackedObjectPosition.GridCoordinate(record.Z, 64) * 300 + PackedObjectPosition.GridCoordinate(record.X, 64);
+                int index = PackedObjectPosition.GridCoordinate(record.Z, 64) * (ExpandedMap.GridSize*30) + PackedObjectPosition.GridCoordinate(record.X, 64);
                 props[i].m_nextGridProp = state.PropGrid[index]; state.PropGrid[index] = (ushort)i;
             }
             return state;
@@ -79,7 +79,7 @@ namespace HundredTiles.SaveBridge
         public static void ValidateTarget(Prepared state)
         {
             var tree = Singleton<TreeManager>.instance; var prop = Singleton<PropManager>.instance;
-            if (state == null || tree.m_treeGrid.Length != 360000 || prop.m_propGrid.Length != 90000 ||
+            if (state == null || tree.m_treeGrid.Length != (ExpandedMap.GridSize*60)*(ExpandedMap.GridSize*60) || prop.m_propGrid.Length != (ExpandedMap.GridSize*30)*(ExpandedMap.GridSize*30) ||
                 tree.m_trees.m_buffer.Length != ObjectPositionCodec.TreeCapacity || prop.m_props.m_buffer.Length != ObjectPositionCodec.PropCapacity)
                 throw new InvalidDataException("Object restore targets differ.");
         }
@@ -111,3 +111,5 @@ namespace HundredTiles.SaveBridge
         { var result = new ObjectPositionRecord[props.Length]; for (int i = 0; i < result.Length; i++) result[i] = Record(props[i].m_posX, props[i].m_posZ, props[i].m_flags); return result; }
     }
 }
+
+

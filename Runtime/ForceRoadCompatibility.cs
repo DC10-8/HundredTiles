@@ -12,7 +12,7 @@ namespace HundredTiles.Runtime {
  public static class ForceRoadCompatibility {
   public static IEnumerable<CodeInstruction> SpatialGrid(IEnumerable<CodeInstruction> instructions) {
    var result=new List<CodeInstruction>();int count=0;
-   foreach(var source in instructions){var item=new CodeInstruction(source);if(item.opcode==OpCodes.Ldc_I4 || item.opcode==OpCodes.Ldc_I4_S){int value=Convert.ToInt32(item.operand);if(value==269 || value==270){item.opcode=OpCodes.Ldc_I4;item.operand=value==269?299:300;count++;}}result.Add(item);}
+   foreach(var source in instructions){var item=new CodeInstruction(source);if(item.opcode==OpCodes.Ldc_I4 || item.opcode==OpCodes.Ldc_I4_S){int value=Convert.ToInt32(item.operand);if(value==269 || value==270){item.opcode=OpCodes.Ldc_I4;item.operand=value==269?HundredTiles.Core.ExpandedMap.GridSize*30-1:HundredTiles.Core.ExpandedMap.GridSize*30;count++;}}result.Add(item);}
    if(count!=1)throw new InvalidOperationException("ForceRoadConnect grid shape changed.");return result;
   }
   public static bool Reviewed;
@@ -36,3 +36,4 @@ namespace HundredTiles.Runtime {
   }
  }
 }
+

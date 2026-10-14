@@ -37,9 +37,10 @@ namespace HundredTiles.Runtime
         public static IEnumerable<CodeInstruction> HistoricalGrid(IEnumerable<CodeInstruction> instructions)
         {
             var output=new List<CodeInstruction>();int count=0,grids=0;
-            foreach(var source in instructions){var instruction=new CodeInstruction(source);if(instruction.opcode==OpCodes.Ldfld && instruction.operand is FieldInfo){var field=(FieldInfo)instruction.operand;if(field.DeclaringType==typeof(BuildingManager) && field.Name=="m_buildingGrid")grids++;}if(instruction.opcode==OpCodes.Ldc_I4 && instruction.operand is int){int value=(int)instruction.operand;if(value==270 || value==269){instruction.operand=value==270?300:299;count++;}}output.Add(instruction);}
+            foreach(var source in instructions){var instruction=new CodeInstruction(source);if(instruction.opcode==OpCodes.Ldfld && instruction.operand is FieldInfo){var field=(FieldInfo)instruction.operand;if(field.DeclaringType==typeof(BuildingManager) && field.Name=="m_buildingGrid")grids++;}if(instruction.opcode==OpCodes.Ldc_I4 && instruction.operand is int){int value=(int)instruction.operand;if(value==270 || value==269){instruction.operand=value==270?HundredTiles.Core.ExpandedMap.GridSize*30:HundredTiles.Core.ExpandedMap.GridSize*30-1;count++;}}output.Add(instruction);}
             if(count!=3 || grids!=1)throw new InvalidOperationException("AutoHistoricalPlop grid adapter expected one grid and three constants.");
             return output;
         }
     }
 }
+

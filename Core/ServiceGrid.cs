@@ -3,7 +3,7 @@ namespace HundredTiles.Core
 {
     public static class ServiceGrid
     {
-        public const int Side=500,Origin=225,LegacySide=256,LegacyOrigin=128,Offset=97,Channels=35;
+        public const int Side=ExpandedMap.GridSize*50,Origin=225,LegacySide=256,LegacyOrigin=128,Offset=97,Channels=35;
         public const float CellSize=38.4f;
         public const int Values=Side*Side*Channels,LegacyValues=LegacySide*LegacySide*Channels;
         public const int EncodedSize=Values*4+Channels*24+140;

@@ -7,7 +7,7 @@ namespace HundredTiles.Core
 {
     public static class DistrictGrid
     {
-        public const int Side=1000,Origin=450,LegacySide=512,Offset=194,RecordSize=8;
+        public const int Side=ExpandedMap.GridSize*100,Origin=450,LegacySide=512,Offset=194,RecordSize=8;
         public const int Bytes=Side*Side*RecordSize,LegacyBytes=LegacySide*LegacySide*RecordSize;
         public const int EncodedSize=84+Bytes*2+32;
         public const float CellSize=19.2f;

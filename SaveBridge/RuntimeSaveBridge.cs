@@ -22,6 +22,7 @@ namespace HundredTiles.SaveBridge
         static readonly List<ISaveParticipant> participants = new List<ISaveParticipant> { objects, new DistrictSaveBridge.Participant() };
         static bool restored;
         public static bool NeedsLandscape;
+        public static int PreservedRawResolution=1080;
         static OwnershipState saveOwnership,saveLegacyOwnership,readOwnership,importedOwnership;
         static bool loadFailed;
         public static Action ValidateSave;
@@ -236,10 +237,10 @@ namespace HundredTiles.SaveBridge
                 importedOwnership=expanded;
                 legacy=Ownership.Project(expanded);
             }
-            if(areas.m_areaGrid.Length!=100) throw new InvalidDataException("Ownership target is not expanded.");
-            Array.Copy(expanded.Grid,areas.m_areaGrid,100);
+            if(areas.m_areaGrid.Length!=ExpandedMap.TileCount) throw new InvalidDataException("Ownership target is not expanded.");
+            Array.Copy(expanded.Grid,areas.m_areaGrid,ExpandedMap.TileCount);
             areas.m_areaCount=expanded.Count;
-            Set(areas,"m_startTile",expanded.Start); areas.m_maxAreaCount=100;
+            Set(areas,"m_startTile",expanded.Start); areas.m_maxAreaCount=ExpandedMap.TileCount;
             readOwnership=legacy;
         }
         public static void TerrainRead()
@@ -316,10 +317,11 @@ namespace HundredTiles.SaveBridge
                     participants[i].ValidateTarget(prepared);additionalStates.Add(prepared);
                 }
                 var areas=Singleton<GameAreaManager>.instance;
-                if(areas.m_areaGrid.Length!=100) throw new InvalidDataException("Ownership restore target is not expanded.");
+                if(areas.m_areaGrid.Length!=ExpandedMap.TileCount) throw new InvalidDataException("Ownership restore target is not expanded.");
                 // Decode/fingerprint check occurs before any live array is changed.
                 MapSaveState state=loading.Resolve(bytes);
-                NeedsLandscape=bytes==null;
+                PreservedRawResolution=ExpandedMap.GridSize==18 && bytes!=null?BitConverter.ToInt32(bytes,12)-1:1080;
+                NeedsLandscape=bytes==null || PreservedRawResolution<ExpandedMap.RawResolution && ExpandedMap.GridSize==18;
                 // For vanilla saves retain the current frame here. The child's
                 // AfterDeserialize subsequently supplies the frame for <173 saves.
                 if(bytes==null) state.WaterFrame=(uint)Get(water,"m_waterFrameIndex");
@@ -341,8 +343,8 @@ namespace HundredTiles.SaveBridge
                 foreach(string name in maskNames) Array.Copy(masks,(ulong[])Get(water,name),64);
                 Set(water,"m_bitCells",WaterGrid.CellsPerBit);
                 Set(water,"m_waterFrameIndex",state.WaterFrame); Set(water,"m_waterFrameIndex2",state.WaterFrame);
-                Array.Copy(ownership.Grid,areas.m_areaGrid,100); areas.m_areaCount=ownership.Count;
-                areas.m_maxAreaCount=100; Set(areas,"m_startTile",ownership.Start); Set(areas,"m_areasUpdated",true);
+                Array.Copy(ownership.Grid,areas.m_areaGrid,ExpandedMap.TileCount); areas.m_areaCount=ownership.Count;
+                areas.m_maxAreaCount=ExpandedMap.TileCount; Set(areas,"m_startTile",ownership.Start); Set(areas,"m_areasUpdated",true);
                 ResourceBridge.Commit(resourceState);
                 for(int i=0;i<participants.Count;i++)participants[i].Commit(additionalStates[i]);
                 typeof(TerrainManager).GetMethod("RefreshPatchFlatness",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(terrain,null);
@@ -375,3 +377,4 @@ namespace HundredTiles.SaveBridge
         }
     }
 }
+

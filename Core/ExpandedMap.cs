@@ -5,11 +5,15 @@ namespace HundredTiles.Core
     // Planning/migration primitives only. No game managers are patched by this library.
     public static class ExpandedMap
     {
-        public const int TileCount = 100;
+#if HUNDREDTILES_324
+        public const int GridSize = 18;
+#else
         public const int GridSize = 10;
+#endif
+        public const int TileCount = GridSize * GridSize;
         public const int TileSize = 1920;
         public const int RawCellSize = 16;
-        public const int RawResolution = 1200;
+        public const int RawResolution = GridSize * 120;
         public const int HeightStride = RawResolution + 1;
         // Retain the original 9x9 lattice and every existing world coordinate.
         // The extra row/column extend toward positive X and Z.

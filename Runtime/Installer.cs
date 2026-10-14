@@ -13,6 +13,15 @@ namespace HundredTiles.Runtime
         public const string Owner="HundredTiles.Runtime";
         static bool installed;
         public static bool IsInstalled { get { return installed; } }
+        static bool IsIsolatedTrial()
+        {
+#if HUNDREDTILES_324_TRIAL
+            string root=System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(UnityEngine.Application.dataPath));
+            string actual=System.IO.Path.GetFullPath(ColossalFramework.IO.DataLocation.localApplicationData),expected=System.IO.Path.Combine(root,"UserData");
+            if(HundredTiles.Core.ExpandedMap.TileCount==324 && System.IO.File.Exists(System.IO.Path.Combine(root,"isolated-test.marker")) && string.Equals(actual,expected,StringComparison.OrdinalIgnoreCase)){UnityEngine.Debug.LogWarning("[HundredTiles] ISOLATED 324 TRIAL: incomplete runtime validation; user data is redirected.");return true;}
+#endif
+            return false;
+        }
         public static string FailureReason;
         static void Progress(string text)
         {
@@ -69,7 +78,7 @@ namespace HundredTiles.Runtime
             if(installed)return;
             InitializeManagedDirectory(UnityEngine.Application.dataPath);
             // Guard precedes participant registration, reflection and all patches.
-            if(!PatchPlan.Embedded().CanActivate)throw new InvalidOperationException("Activation blocked: remaining spatial/render boundaries and Unity save/reload validation are incomplete.");
+            if(!PatchPlan.Embedded().CanActivate && !IsIsolatedTrial())throw new InvalidOperationException("Activation blocked: remaining spatial/render boundaries and Unity save/reload validation are incomplete.");
             if(ColossalFramework.Singleton<TerrainManager>.exists)throw new InvalidOperationException("Enable HundredTiles before game startup. Restart the game after enabling this mod.");
             var hooks=Connections();
             Progress("Connections resolved");

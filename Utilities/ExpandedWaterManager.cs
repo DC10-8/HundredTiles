@@ -231,8 +231,8 @@ namespace HundredTiles.Utilities
                 /* Start framing rewrite.
                  * Original does two rows per frame, we'll do four, but have to check upper bound.
                  */
-                int startRow = num * 4;
-                int endRow = Mathf.Min(startRow + 3, ExpandedWaterGridMax);
+                int startRow = HundredTiles.Core.UtilityGrid.FirstRow(num);
+                int endRow = HundredTiles.Core.UtilityGrid.LastRow(num);
 
                 if (startRow <= endRow)
                 {
@@ -1295,3 +1295,4 @@ namespace HundredTiles.Utilities
         }
     }
 }
+

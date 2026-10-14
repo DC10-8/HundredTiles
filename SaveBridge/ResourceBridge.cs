@@ -40,7 +40,7 @@ namespace HundredTiles.SaveBridge
             if(legacyRead==null)throw new InvalidOperationException("Resource deserialization incomplete.");
             var state=bytes==null?ResourceCodec.Expand(legacyRead):ResourceCodec.Decode(bytes,legacyRead,terrain,owner);
             var manager=Singleton<NaturalResourceManager>.instance;
-            if(manager.m_naturalResources.Length!=ResourceGrid.Cells || manager.m_areaResources.Length!=100)
+            if(manager.m_naturalResources.Length!=ResourceGrid.Cells || manager.m_areaResources.Length!=ExpandedMap.TileCount)
                 throw new InvalidDataException("Resource restore target is not expanded.");
             return Unpack(state);
         }
@@ -50,7 +50,7 @@ namespace HundredTiles.SaveBridge
             if(manager.m_naturalResources.Length!=state.Cells.Length || manager.m_areaResources.Length!=state.Cache.Length)
                 throw new InvalidDataException("Resource restore target shape differs.");
             Array.Copy(state.Cells,manager.m_naturalResources,state.Cells.Length);Array.Copy(state.Cache,manager.m_areaResources,state.Cache.Length);
-            manager.AreaModified(0,0,568,568);manager.AreaModifiedB(0,0,568,568);
+            manager.AreaModified(0,0,ResourceGrid.Side-1,ResourceGrid.Side-1);manager.AreaModifiedB(0,0,ResourceGrid.Side-1,ResourceGrid.Side-1);
         }
         public static void ClearSave() {saveCells=null;saveCache=null;}
         public static void ClearLoad() {readCells=null;readCache=null;legacyRead=null;}
@@ -89,3 +89,4 @@ namespace HundredTiles.SaveBridge
         }
     }
 }
+

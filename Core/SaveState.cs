@@ -44,9 +44,12 @@ namespace HundredTiles.Core
         }
 
         public static MapSaveState FromExpanded(MapSaveState expanded)
+        {return FromLayout(expanded,MapLayout.Active);}
+        public static MapSaveState FromLayout(MapSaveState expanded,MapLayout layout)
         {
-            expanded.Validate(ExpandedMap.HeightStride);
-            var legacy = new MapSaveState { Heights=Crop(expanded.Heights), BlockOffsets=Crop(expanded.BlockOffsets), Water=Crop(expanded.Water), WaterFrame=expanded.WaterFrame };
+            if(layout==null)throw new ArgumentNullException(nameof(layout));expanded.Validate(layout.HeightStride);
+            var legacy = new MapSaveState { Heights=new ushort[Stride*Stride],BlockOffsets=new ushort[Stride*Stride],Water=new WaterCellState[Stride*Stride],WaterFrame=expanded.WaterFrame };
+            for(int z=0;z<Stride;z++){Array.Copy(expanded.Heights,z*layout.HeightStride,legacy.Heights,z*Stride,Stride);Array.Copy(expanded.BlockOffsets,z*layout.HeightStride,legacy.BlockOffsets,z*Stride,Stride);Array.Copy(expanded.Water,z*layout.HeightStride,legacy.Water,z*Stride,Stride);}
             Canonicalize(legacy);
             return legacy;
         }
@@ -87,23 +90,27 @@ namespace HundredTiles.Core
 
     public static class SaveCodec
     {
-        public const int Version = 1;
+        public const int Version = ExpandedMap.GridSize==18?2:1;
         public const int HeaderSize = 64;
         public const int PayloadSize = ExpandedMap.HeightStride * ExpandedMap.HeightStride * 12;
         public const int EncodedSize = HeaderSize + PayloadSize + 32;
         static readonly byte[] Magic = { 72,84,73,76,69,83,48,49 }; // HTILES01
 
         public static byte[] Encode(MapSaveState state)
+        {return Encode(state,MapLayout.Active);}
+        public static int EncodedSizeFor(MapLayout layout){if(layout==null)throw new ArgumentNullException(nameof(layout));return checked(HeaderSize+layout.HeightStride*layout.HeightStride*12+32);}
+        public static bool IsKnownEncodedSize(int size){return size==EncodedSizeFor(MapLayout.Hundred) || size==EncodedSizeFor(MapLayout.ThreeTwentyFour);}
+        public static byte[] Encode(MapSaveState state,MapLayout layout)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
-            state.Validate(ExpandedMap.HeightStride);
-            using (var stream = new MemoryStream(EncodedSize))
+            if(layout==null)throw new ArgumentNullException(nameof(layout));state.Validate(layout.HeightStride);
+            using (var stream = new MemoryStream(EncodedSizeFor(layout)))
             {
                 var writer = new BinaryWriter(stream);
-                writer.Write(Magic); writer.Write(Version); writer.Write(ExpandedMap.HeightStride);
-                writer.Write(ExpandedMap.WorldMin); writer.Write(ExpandedMap.TileSize);
-                writer.Write(state.WaterFrame); writer.Write(PayloadSize);
-                writer.Write(Digest(LegacyProjection.FromExpanded(state)));
+                writer.Write(Magic); writer.Write(layout.TileSide==18?2:1); writer.Write(layout.HeightStride);
+                writer.Write(layout.WorldMin); writer.Write(ExpandedMap.TileSize);
+                writer.Write(state.WaterFrame); writer.Write(layout.HeightStride*layout.HeightStride*12);
+                writer.Write(Digest(LegacyProjection.FromLayout(state,layout)));
                 WriteState(writer,state);
                 writer.Flush();
                 byte[] bytes = stream.ToArray();
@@ -115,8 +122,14 @@ namespace HundredTiles.Core
 
         public static MapSaveState Decode(byte[] bytes, out byte[] legacyDigest)
         {
-            legacyDigest = null;
-            if (bytes == null || bytes.Length != EncodedSize) throw new InvalidDataException("Invalid expanded save length.");
+            MapLayout source;var state=DecodeOriginal(bytes,out legacyDigest,out source);
+            if(source.TileSide>ExpandedMap.GridSize)throw new InvalidDataException("Downgrading a larger map is not supported.");
+            return source.TileSide==ExpandedMap.GridSize?state:MapLayout.Active.ImportTerrainWater(state,source.HeightStride);
+        }
+        public static MapSaveState DecodeOriginal(byte[] bytes,out byte[] legacyDigest,out MapLayout source)
+        {
+            legacyDigest = null;source=null;
+            if (bytes == null || (bytes.Length != EncodedSizeFor(MapLayout.Hundred) && bytes.Length!=EncodedSizeFor(MapLayout.ThreeTwentyFour))) throw new InvalidDataException("Invalid expanded save length.");
             using (var hash = SHA256.Create())
             {
                 byte[] digest = hash.ComputeHash(bytes,0,bytes.Length-32);
@@ -126,22 +139,24 @@ namespace HundredTiles.Core
             {
                 var reader = new BinaryReader(stream);
                 foreach (byte b in Magic) if (reader.ReadByte() != b) throw new InvalidDataException("Unknown expanded save format.");
-                if (reader.ReadInt32() != Version || reader.ReadInt32() != ExpandedMap.HeightStride ||
-                    reader.ReadInt32() != ExpandedMap.WorldMin || reader.ReadInt32() != ExpandedMap.TileSize)
+                int version=reader.ReadInt32(),stride=reader.ReadInt32();
+                if(version==1 && stride==1201)source=MapLayout.Hundred;else if(version==2 && stride==2161)source=MapLayout.ThreeTwentyFour;else throw new InvalidDataException("Unsupported save version or map layout.");
+                if(bytes.Length!=EncodedSizeFor(source) || reader.ReadInt32() != source.WorldMin || reader.ReadInt32() != ExpandedMap.TileSize)
                     throw new InvalidDataException("Unsupported save version or map layout.");
                 uint frame = reader.ReadUInt32();
-                if (reader.ReadInt32() != PayloadSize) throw new InvalidDataException("Invalid expanded payload dimensions.");
+                int payloadSize=stride*stride*12;
+                if (reader.ReadInt32() != payloadSize) throw new InvalidDataException("Invalid expanded payload dimensions.");
                 legacyDigest = reader.ReadBytes(32);
-                int count = ExpandedMap.HeightStride * ExpandedMap.HeightStride;
+                int count = stride * stride;
                 var state = new MapSaveState { Heights=new ushort[count],BlockOffsets=new ushort[count],Water=new WaterCellState[count],WaterFrame=frame };
                 for (int i=0;i<count;i++)
                 {
                     state.Heights[i]=reader.ReadUInt16(); state.BlockOffsets[i]=reader.ReadUInt16();
                     state.Water[i]=new WaterCellState { Height=reader.ReadUInt16(),Pollution=reader.ReadUInt16(),VelocityX=reader.ReadInt16(),VelocityZ=reader.ReadInt16() };
                 }
-                if (stream.Position != HeaderSize + PayloadSize) throw new InvalidDataException("Expanded payload length mismatch.");
+                if (stream.Position != HeaderSize + payloadSize) throw new InvalidDataException("Expanded payload length mismatch.");
                 // Also validate internal linkage before returning decoded state.
-                RequireSame(Digest(LegacyProjection.FromExpanded(state)),legacyDigest);
+                RequireSame(Digest(LegacyProjection.FromLayout(state,source)),legacyDigest);
                 return state;
             }
         }

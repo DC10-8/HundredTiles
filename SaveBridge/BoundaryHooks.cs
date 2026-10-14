@@ -10,8 +10,8 @@ namespace HundredTiles.SaveBridge
         public static bool Camera(Vector3 position,ref Vector3 __result)
         {
             __result=position;
-            __result.x=Mathf.Clamp(position.x,-8640f,10560f);
-            __result.z=Mathf.Clamp(position.z,-8640f,10560f);
+            __result.x=Mathf.Clamp(position.x,-8640f,HundredTiles.Core.ExpandedMap.WorldMax);
+            __result.z=Mathf.Clamp(position.z,-8640f,HundredTiles.Core.ExpandedMap.WorldMax);
             return false;
         }
         public static IList<HookSpec> Specifications()
@@ -59,6 +59,7 @@ namespace HundredTiles.SaveBridge
         public static void DetailCell(ref int __0,ref int __1)
         {__0=Math.Max(0,Math.Min(4799,__0));__1=Math.Max(0,Math.Min(4799,__1));}
         public static bool Cinematic(Vector3 position,ref bool __result)
-        {__result=position.x>=-8640f && position.x<=10560f && position.z>=-8640f && position.z<=10560f;return false;}
+        {__result=position.x>=-8640f && position.x<=HundredTiles.Core.ExpandedMap.WorldMax && position.z>=-8640f && position.z<=HundredTiles.Core.ExpandedMap.WorldMax;return false;}
     }
 }
+

@@ -7,6 +7,7 @@ namespace HundredTiles.Core
     {
         public static readonly MapLayout Hundred = new MapLayout(10);
         public static readonly MapLayout ThreeTwentyFour = new MapLayout(18);
+        public static MapLayout Active {get{return ExpandedMap.GridSize==18?ThreeTwentyFour:Hundred;}}
         public readonly int TileSide,TileCount,WorldMin,WorldMax,WorldWidth,HeightStride;
         public readonly int ObjectSide32,ObjectSide64,ServiceSide,DistrictSide,ResourceSide,UtilitySide;
         public readonly int MaximumObjectCode;

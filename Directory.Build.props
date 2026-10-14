@@ -1,6 +1,11 @@
 <Project>
  <Import Project="Directory.Build.user.props" Condition="Exists('Directory.Build.user.props')" />
  <PropertyGroup>
+  <HundredTilesMapProfile Condition="'$(HundredTilesMapProfile)' == ''">100</HundredTilesMapProfile>
+  <DefineConstants Condition="'$(HundredTilesMapProfile)' == '324'">$(DefineConstants);HUNDREDTILES_324</DefineConstants>
+  <BaseOutputPath Condition="'$(HundredTilesMapProfile)' == '324'">$(MSBuildProjectDirectory)/bin/324/</BaseOutputPath>
+  <DefineConstants Condition="'$(HundredTilesTrialRuntime)' == 'true'">$(DefineConstants);HUNDREDTILES_324_TRIAL</DefineConstants>
+  <BaseOutputPath Condition="'$(HundredTilesTrialRuntime)' == 'true'">$(MSBuildProjectDirectory)/bin/324-trial/</BaseOutputPath>
   <GameManaged Condition="'$(GameManaged)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed</GameManaged>
   <HarmonyDirectory Condition="'$(HarmonyDirectory)' == ''">$(MSBuildThisFileDirectory)Libs</HarmonyDirectory>
   <Deterministic>true</Deterministic>
@@ -10,4 +15,8 @@
   <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   <RestoreLockedMode>true</RestoreLockedMode>
  </PropertyGroup>
+ <Target Name="ValidateHundredTilesProfile" BeforeTargets="PrepareForBuild">
+  <Error Condition="'$(HundredTilesMapProfile)' != '100' and '$(HundredTilesMapProfile)' != '324'" Text="HundredTilesMapProfile must be 100 or 324." />
+  <Error Condition="'$(HundredTilesTrialRuntime)' == 'true' and '$(HundredTilesMapProfile)' != '324'" Text="Isolated trial runtime requires profile 324." />
+ </Target>
 </Project>

@@ -71,9 +71,9 @@ namespace HundredTiles.Runtime
                 if(instruction.opcode==OpCodes.Ldc_I4 && instruction.operand is int)
                 {
                     int value=(int)instruction.operand;
-                    if(value==1081){instruction.operand=1201;constants++;}
-                    else if(value==1168561){instruction.operand=1442401;constants++;}
-                    else if(value==1080){instruction.operand=1200;constants++;}
+                    if(value==1081){instruction.operand=HundredTiles.Core.ExpandedMap.HeightStride;constants++;}
+                    else if(value==1168561){instruction.operand=HundredTiles.Core.ExpandedMap.HeightStride*HundredTiles.Core.ExpandedMap.HeightStride;constants++;}
+                    else if(value==1080){instruction.operand=HundredTiles.Core.ExpandedMap.RawResolution;constants++;}
                 }
             if(__originalMethod.Name=="ApplyBrush")for(int i=0;i+3<output.Count;i++)
             {
@@ -93,3 +93,4 @@ namespace HundredTiles.Runtime
         }
     }
 }
+

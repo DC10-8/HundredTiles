@@ -52,9 +52,10 @@ namespace HundredTiles.Utilities
                 return UtilitySnapshotCodec.Decode(bytes,state,Baseline(baseline),binding);
             }
             public void ValidateTarget(object prepared){Validate((SortedDictionary<string,object>)prepared);foreach(string name in Names)if(Live(name).Length!=((Array)((SortedDictionary<string,object>)prepared)[name]).Length)throw new InvalidDataException("Service target differs.");}
-            public void Commit(object prepared){var state=(SortedDictionary<string,object>)prepared;foreach(string name in Names)Array.Copy((Array)state[name],Live(name),Live(name).Length);Singleton<ImmaterialResourceManager>.instance.AreaModified(0,0,499,499);}
+            public void Commit(object prepared){var state=(SortedDictionary<string,object>)prepared;foreach(string name in Names)Array.Copy((Array)state[name],Live(name),Live(name).Length);Singleton<ImmaterialResourceManager>.instance.AreaModified(0,0,ServiceGrid.Side-1,ServiceGrid.Side-1);}
             public void ClearSave(){saving=null;}
             public void ClearLoad(){readFinal=readTemp=null;read=false;}
         }
     }
 }
+

@@ -1,6 +1,9 @@
 using System;
 using HundredTiles.Core;
 
+#if HUNDREDTILES_324
+Profile324Checks.Run();
+#else
 PackedPositionChecks.Run();
 MapLayoutChecks.Run();
 LandscapeChecks.Run();
@@ -87,3 +90,6 @@ Array.Clear(districtIds);
 foreach(int location in DistrictNames.Calculate(districtIds))Check(location==0,"Empty district grid");
 Check(Math.Abs(DistrictNames.WorldX(0)+8640)<.01 && Math.Abs(DistrictNames.WorldZ(249999)-10521.6)<.01,"District name world bounds");
 Console.WriteLine("PASS: district name anchors beyond ushort range; all-sample queue; asymmetric origin; empty districts.");
+
+#endif
+

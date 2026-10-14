@@ -54,7 +54,7 @@ static class LiveConstructionChecks
         errors=NetTool.CreateNode(info,a,middle,b,NetTool.m_nodePositionsSimulation,1000,false,false,true,false,false,false,0,out node,out segment,out cost,out production);
         if(errors!=ToolBase.ToolErrors.None || segment==0)throw new Exception("Network construction failed "+name+": "+errors);
         var data=Singleton<NetManager>.instance.m_segments.m_buffer[segment];
-        if(data.Info!=info || Singleton<NetManager>.instance.m_nodes.m_buffer[data.m_startNode].m_position.x<9000)throw new Exception("Network created at wrong position.");
+        if(data.Info!=info || Singleton<NetManager>.instance.m_nodes.m_buffer[data.m_startNode].m_position.x<9000)throw new Exception("Network created at wrong position: requested prefab="+info.name+", actual prefab="+(data.Info==null?"null":data.Info.name)+", requested end="+position+", actual start="+Singleton<NetManager>.instance.m_nodes.m_buffer[data.m_startNode].m_position+", control start="+a.m_position+", control end="+b.m_position+", segment="+segment);
         Entry.Log("PASS: native NetTool preview and construction for "+name+" segment "+segment+" in added tiles.");return segment;
     }
     public static ushort PlaceBuilding(string name,Vector3 position)
@@ -64,13 +64,14 @@ static class LiveConstructionChecks
         Set("m_mouseRay",new Ray(position+Vector3.up*500,Vector3.down));Set("m_mouseRayLength",1000f);Set("m_mouseRayValid",true);building.SimulationStep();
         var flags=BindingFlags.Instance|BindingFlags.NonPublic;
         var errors=(ToolBase.ToolErrors)typeof(BuildingTool).GetField("m_placementErrors",flags).GetValue(building);
+        Entry.Log("Building preview "+name+": requested="+position+", actual="+typeof(BuildingTool).GetField("m_mousePosition",flags).GetValue(building)+", errors="+errors+", enabled="+building.enabled);
         if(errors!=ToolBase.ToolErrors.None)throw new Exception("Building preview rejected "+name+": "+errors);
         uint before=Singleton<SimulationManager>.instance.m_currentBuildIndex;
         var create=typeof(BuildingTool).GetMethod("CreateBuilding",flags,null,Type.EmptyTypes,null);
         var coroutine=(System.Collections.IEnumerator)create.Invoke(building,null);while(coroutine.MoveNext()){}
         ushort found=0;var buildings=Singleton<BuildingManager>.instance.m_buildings.m_buffer;
         for(int i=1;i<buildings.Length;i++)if(buildings[i].m_buildIndex>=before && buildings[i].m_flags!=Building.Flags.None && buildings[i].Info==building.m_prefab && (buildings[i].m_position-position).sqrMagnitude<4096){found=(ushort)i;break;}
-        if(found==0)throw new Exception("Native BuildingTool coroutine did not construct "+name);
+        if(found==0){for(int i=1;i<buildings.Length;i++)if(buildings[i].m_buildIndex>=before && buildings[i].m_flags!=Building.Flags.None)Entry.Log("Building candidate "+i+": index="+buildings[i].m_buildIndex+", position="+buildings[i].m_position+", prefab="+(buildings[i].Info==null?"null":buildings[i].Info.name));throw new Exception("Native BuildingTool coroutine did not construct "+name);}
         Entry.Log("PASS: native BuildingTool preview and construction for "+name+" in added tiles.");return found;
     }
 }

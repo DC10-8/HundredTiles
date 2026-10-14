@@ -1,4 +1,4 @@
-param([string]$GameRoot='C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines',[ValidateSet('Auto','Create','Reload','BaseEntryCreate','BaseEntryReload','Graphics','OuterCreate','OuterReload','OuterGraphics','SupplyCreate','SupplyReload','SupplyEntry','SupplyEntrySave','SupplyEntryReload','SupplyEntryGraphics','LandscapeEntryCreate','LandscapeEntryReload','LandscapeEntryFresh','EditorEntry')][string]$Mode='Auto',[switch]$Options,[switch]$WaterTextures)
+param([string]$GameRoot='C:\Program Files (x86)\Steam\steamapps\common\Cities_Skylines',[ValidateSet('Auto','Create','Reload','BaseEntryCreate','BaseEntryReload','Graphics','OuterCreate','OuterReload','OuterGraphics','SupplyCreate','SupplyReload','SupplyEntry','SupplyEntrySave','SupplyEntryReload','SupplyEntryGraphics','LandscapeEntryCreate','LandscapeEntryReload','LandscapeEntryFresh','EditorEntry','Trial324EntryCreate','Trial324EntrySave','Trial324EntryReload')][string]$Mode='Auto',[switch]$Options,[switch]$WaterTextures)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot
 $testRoot=Join-Path $projectRoot 'artifacts\isolated-game'
@@ -32,4 +32,6 @@ $startInfo.WindowStyle=[System.Diagnostics.ProcessWindowStyle]::Hidden
 $gameProcess=[System.Diagnostics.Process]::Start($startInfo)
 Set-Content -LiteralPath (Join-Path $testRoot 'process.id') -Value $gameProcess.Id
 Write-Output "Isolated Unity verification started: PID $($gameProcess.Id)."
+
+
 

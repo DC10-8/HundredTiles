@@ -55,7 +55,7 @@ namespace HundredTiles.Runtime
                 if(instruction.opcode==OpCodes.Ldc_I4 || instruction.opcode==OpCodes.Ldc_I4_S)
                 {
                     int value=Convert.ToInt32(instruction.operand),next=value;
-                    switch(value){case 269:next=299;break;case 270:next=300;break;case 539:next=599;break;case 540:next=600;break;case 45:next=50;break;}
+                    switch(value){case 269:next=HundredTiles.Core.ExpandedMap.GridSize*30-1;break;case 270:next=HundredTiles.Core.ExpandedMap.GridSize*30;break;case 539:next=HundredTiles.Core.ExpandedMap.GridSize*60-1;break;case 540:next=HundredTiles.Core.ExpandedMap.GridSize*60;break;case 45:next=HundredTiles.Core.ExpandedMap.GridSize*5;break;}
                     if(next!=value){instruction.opcode=OpCodes.Ldc_I4;instruction.operand=next;replaced++;}
                 }
                 output.Add(instruction);
@@ -65,3 +65,4 @@ namespace HundredTiles.Runtime
         }
     }
 }
+

@@ -14,10 +14,14 @@ namespace HundredTiles.Core
     {
         public const float Step = 0.263671875f;
         public const float LegacyEncodeScale = 3.7925925f;
+#if HUNDREDTILES_324
+        public const int MaximumCode = 98303;
+#else
         public const int MaximumCode = 40049;
+#endif
 
         public static PackedObjectAxis Encode(float world)
-        {return Encode(world,MapLayout.Hundred);}
+        {return Encode(world,MapLayout.Active);}
         public static PackedObjectAxis Encode(float world,MapLayout layout)
         {
             if(layout==null)throw new ArgumentNullException(nameof(layout));
@@ -36,7 +40,7 @@ namespace HundredTiles.Core
         }
 
         public static float Decode(PackedObjectAxis axis)
-        {return Decode(axis,MapLayout.Hundred);}
+        {return Decode(axis,MapLayout.Active);}
         public static float Decode(PackedObjectAxis axis,MapLayout layout)
         {
             if(layout==null)throw new ArgumentNullException(nameof(layout));
@@ -60,7 +64,7 @@ namespace HundredTiles.Core
         {
             if (cellSize != 32 && cellSize != 64)
                 throw new ArgumentOutOfRangeException(nameof(cellSize));
-            int side = 19200 / cellSize;
+            int side = ExpandedMap.GridSize * ExpandedMap.TileSize / cellSize;
             int coordinate = (int)Math.Floor((Decode(axis) - ExpandedMap.WorldMin) / cellSize);
             return Math.Max(0, Math.Min(side - 1, coordinate));
         }

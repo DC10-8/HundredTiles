@@ -30,6 +30,17 @@ namespace HundredTiles.Utilities
             using(var stream=new MemoryStream())using(var writer=new BinaryWriter(stream))
             {foreach(var pair in state)Write(writer,pair.Value,pair.Value.GetType());return stream.ToArray();}
         }
+        internal static int EncodedLength(SortedDictionary<string,object> state)
+        {
+            int size=140+(state.ContainsKey(UtilityCapacity.Keys[0])?UtilityCapacity.Keys.Length*4:0);
+            foreach(var pair in state){var array=pair.Value as Array;size=checked(size+(array==null?TypeSize(pair.Value.GetType()):checked(array.Length*TypeSize(array.GetType().GetElementType()))));}
+            return size;
+        }
+        internal static int TypeSize(Type type)
+        {
+            if(type==typeof(byte) || type==typeof(bool))return 1;if(type==typeof(short) || type==typeof(ushort))return 2;if(type==typeof(int) || type==typeof(uint))return 4;if(type==typeof(long))return 8;
+            if(!type.IsValueType)throw new InvalidOperationException("Unsupported utility schema type.");int size=0;foreach(var field in Fields(type))size=checked(size+TypeSize(field.FieldType));return size;
+        }
         static byte[] Schema(SortedDictionary<string,object> state)
         {
             var text=new StringBuilder();
@@ -62,7 +73,8 @@ namespace HundredTiles.Utilities
         internal static SortedDictionary<string,object> Decode(byte[] bytes,SortedDictionary<string,object> template,byte[] baseline,byte[] binding)
         {
             bool capacity=template.ContainsKey(UtilityCapacity.Keys[0]);
-            if(bytes==null || bytes.Length<140 || (capacity && bytes.Length>16711680) || (!capacity && bytes.Length!=140+Payload(template).Length))throw new InvalidDataException("Utility snapshot length differs.");
+            int maximum=EncodedLength(template);if(capacity){var maximumCounts=new int[UtilityCapacity.Keys.Length];for(int i=0;i<maximumCounts.Length;i++)maximumCounts[i]=65024;maximum=EncodedLength(UtilityCapacity.Shape(template,maximumCounts));}
+            if(bytes==null || bytes.Length<140 || bytes.Length>maximum || (!capacity && bytes.Length!=EncodedLength(template)))throw new InvalidDataException("Utility snapshot length differs.");
             var body=new byte[bytes.Length-32];Array.Copy(bytes,body,body.Length);
             var checksum=new byte[32];Array.Copy(bytes,body.Length,checksum,0,32);
             if(!Equal(Hash(body),checksum))throw new InvalidDataException("Utility snapshot checksum differs.");

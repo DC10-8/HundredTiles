@@ -29,7 +29,7 @@ namespace HundredTiles.SaveBridge
         }
         public static void SnapOutside(NetInfo info,ref NetTool.ControlPoint point)
         {
-            const float min=-8640f,max=10560f,center=960f;
+            const float min=HundredTiles.Core.ExpandedMap.WorldMin,max=HundredTiles.Core.ExpandedMap.WorldMax,center=(min+max)/2f;
             var position=point.m_position;float width=info.m_halfWidth;
             if(Mathf.Abs(position.x-center)>=Mathf.Abs(position.z-center))
             {

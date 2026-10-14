@@ -22,7 +22,7 @@ namespace HundredTiles.SaveBridge
   }
   public static bool Unavailable(GameAreaManager areas,Vector3 position)
   {
-   const float min=-8640f+40f,max=10560f-40f;
+   const float min=HundredTiles.Core.ExpandedMap.WorldMin+40f,max=HundredTiles.Core.ExpandedMap.WorldMax-40f;
    return position.x<min || position.x>max || position.z<min || position.z>max || areas.PointOutOfArea(position);
   }
   public static IEnumerable<CodeInstruction> AreaCheck(IEnumerable<CodeInstruction> instructions,MethodBase __originalMethod)

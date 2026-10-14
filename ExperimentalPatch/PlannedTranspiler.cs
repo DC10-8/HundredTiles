@@ -79,7 +79,8 @@ namespace HundredTiles.ExperimentalPatch
 
         public static PatchPlan Embedded()
         {
-            using (var stream = typeof(PatchPlan).Assembly.GetManifestResourceStream("HundredTiles.ExperimentalPatch.ReviewedPlan.tsv"))
+            string resource=HundredTiles.Core.ExpandedMap.GridSize==18?"HundredTiles.ExperimentalPatch.ReviewedPlan324.tsv":"HundredTiles.ExperimentalPatch.ReviewedPlan.tsv";
+            using (var stream = typeof(PatchPlan).Assembly.GetManifestResourceStream(resource))
             {
                 if (stream == null) throw new InvalidOperationException("Embedded plan missing");
                 using (var reader = new StreamReader(stream)) return Load(reader);

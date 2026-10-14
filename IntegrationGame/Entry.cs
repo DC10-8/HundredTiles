@@ -23,5 +23,16 @@ public static class Entry
         return File.Exists(path)?Assembly.LoadFrom(path):null;
     }
     [MethodImpl(MethodImplOptions.NoInlining)]static void Initialize(){Bootstrap.InstallEarly();}
-    public static void Log(string message){lock(logLock)File.AppendAllText(Path.Combine(Root,"integration.log"),DateTime.UtcNow.ToString("o")+" "+message+Environment.NewLine);}
+    public static void Log(string message)
+    {
+        lock(logLock)
+        {
+            string line=DateTime.UtcNow.ToString("o")+" "+message+Environment.NewLine;
+            for(int attempt=0;;attempt++)
+            {
+                try{using(var stream=new FileStream(Path.Combine(Root,"integration.log"),FileMode.Append,FileAccess.Write,FileShare.ReadWrite))using(var writer=new StreamWriter(stream))writer.Write(line);return;}
+                catch(IOException){if(attempt>=9)throw;System.Threading.Thread.Sleep(20);}
+            }
+        }
+    }
 }

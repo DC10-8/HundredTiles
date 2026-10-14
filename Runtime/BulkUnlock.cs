@@ -17,7 +17,7 @@ namespace HundredTiles.Runtime
             try {
                 Singleton<SimulationManager>.instance.AddAction(delegate {
                     string message;
-                    try {int count=UnlockAll();message=count==100 ? "100タイルすべて開放済みです" : "開放できた区画: "+count+" / 100（再実行できます）";}
+                    try {int count=UnlockAll();message=count==HundredTiles.Core.ExpandedMap.TileCount ? "100タイルすべて開放済みです" : "開放できた区画: "+count+" / 100（再実行できます）";}
                     catch(Exception error){UnityEngine.Debug.LogError("[HundredTiles] Unlock all: "+error);message="開放に失敗しました。ゲームログを確認してください";}
                     finally{Interlocked.Exchange(ref pending,0);}
                     ThreadHelper.dispatcher.Dispatch(delegate {status(message);});
@@ -31,7 +31,7 @@ namespace HundredTiles.Runtime
             var loading=Singleton<LoadingManager>.instance;
             return loading.m_loadingComplete && loading.m_simulationDataLoaded && !loading.m_currentlyLoading
                 && (Singleton<ToolManager>.instance.m_properties.m_mode & ItemClass.Availability.Game)!=0
-                && Singleton<GameAreaManager>.instance.m_areaGrid.Length==100;
+                && Singleton<GameAreaManager>.instance.m_areaGrid.Length==HundredTiles.Core.ExpandedMap.TileCount;
         }
         // Called on the simulation thread; use the patched native transaction
         // so terrain detail, zones and wrapper notifications stay consistent.
@@ -40,15 +40,16 @@ namespace HundredTiles.Runtime
             if(!Ready())throw new InvalidOperationException("An expanded city must be loaded.");
             var areas=Singleton<GameAreaManager>.instance;
             bool progress=true;
-            while(areas.m_areaCount<100 && progress)
+            while(areas.m_areaCount<HundredTiles.Core.ExpandedMap.TileCount && progress)
             {
                 progress=false;
-                for(int i=0;i<100;i++)
-                    if(areas.m_areaGrid[i]==0 && areas.CanUnlock(i%10,i/10) && areas.UnlockArea(i))progress=true;
+                for(int i=0;i<HundredTiles.Core.ExpandedMap.TileCount;i++)
+                    if(areas.m_areaGrid[i]==0 && areas.CanUnlock(i%HundredTiles.Core.ExpandedMap.GridSize,i/HundredTiles.Core.ExpandedMap.GridSize) && areas.UnlockArea(i))progress=true;
             }
-            if(areas.m_areaCount==100)ExtendedSea.Initialize();
-            UnityEngine.Debug.Log("[HundredTiles] Unlock all completed: "+areas.m_areaCount+" / 100.");
+            if(areas.m_areaCount==HundredTiles.Core.ExpandedMap.TileCount)ExtendedSea.Initialize();
+            UnityEngine.Debug.Log("[HundredTiles] Unlock all completed: "+areas.m_areaCount+" / "+HundredTiles.Core.ExpandedMap.TileCount+".");
             return areas.m_areaCount;
         }
     }
 }
+

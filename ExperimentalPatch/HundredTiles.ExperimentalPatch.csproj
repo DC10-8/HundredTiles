@@ -3,5 +3,6 @@
   <ItemGroup><PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net35" Version="1.0.3" PrivateAssets="all" /></ItemGroup>
   <ItemGroup><Reference Include="CitiesHarmony.Harmony"><HintPath>$(HarmonyDirectory)/CitiesHarmony.Harmony.dll</HintPath><Private>false</Private></Reference></ItemGroup>
   <ItemGroup><EmbeddedResource Include="ReviewedPlan.tsv" LogicalName="HundredTiles.ExperimentalPatch.ReviewedPlan.tsv" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="ReviewedPlan324.tsv" LogicalName="HundredTiles.ExperimentalPatch.ReviewedPlan324.tsv" /></ItemGroup>
   <ItemGroup><ProjectReference Include="../Core/HundredTiles.Core.csproj" /></ItemGroup>
 </Project>

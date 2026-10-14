@@ -13,7 +13,8 @@ namespace HundredTiles.Runtime
   static string SettingsPath {get{return Path.Combine(DataLocation.localApplicationData,"HundredTiles.language.txt");}}
   public static int Current {get{if(language<0){language=0;try{if(File.Exists(SettingsPath) && File.ReadAllText(SettingsPath).Trim()=="en")language=1;}catch(Exception error){Debug.LogWarning("[HundredTiles] Language settings: "+error.Message);}}return language;}}
   public static void Set(int value){if(value!=0 && value!=1)throw new ArgumentOutOfRangeException("value");if(Current==value)return;language=value;try{File.WriteAllText(SettingsPath,value==0?"ja":"en");}catch(Exception error){Debug.LogWarning("[HundredTiles] Language preference was not saved: "+error.Message);}var notify=Changed;if(notify!=null)notify();}
-  public static string Text(string japanese,string english){return Current==0?japanese:english;}
+  static string Layout(string value){string count=HundredTiles.Core.ExpandedMap.TileCount.ToString(),side=HundredTiles.Core.ExpandedMap.GridSize.ToString();return value.Replace("100タイル",count+"タイル").Replace("100 tiles",count+" tiles").Replace("10×10",side+"×"+side).Replace(" / 100"," / "+count);}
+  public static string Text(string japanese,string english){return Layout(Current==0?japanese:english);}
   static readonly Dictionary<string,string> Messages=new Dictionary<string,string>{
    {"MODの起動に失敗しています。起動失敗の詳細を確認してください","The mod failed to start. Check the startup error below."},
    {"都市を読み込んでから押してください","Load a city before running this action."},
@@ -28,8 +29,8 @@ namespace HundredTiles.Runtime
   };
   // Status callbacks retain their canonical messages so a completed or running
   // action can be re-rendered instantly without starting it again.
-  public static string Status(string message){if(Current==0)return message;string value;if(Messages.TryGetValue(message,out value))return value;
-   var partial=Regex.Match(message,@"^開放できた区画: (\d+) / 100（再実行できます）$");if(partial.Success)return "Unlocked tiles: "+partial.Groups[1].Value+" / 100 (you can retry).";
+  public static string Status(string message){if(Current==0)return Layout(message);string value;if(Messages.TryGetValue(message,out value))return Layout(value);
+   var partial=Regex.Match(message,@"^開放できた区画: (\d+) / 100（再実行できます）$");if(partial.Success)return Layout("Unlocked tiles: "+partial.Groups[1].Value+" / 100 (you can retry).");
    var nature=Regex.Match(message,@"^自然の生成・修復完了（川の接続 (\d+)、追加樹木 (\d+)本、水源 (\d+)、保護物で見送り (\d+)）$");if(nature.Success)return "Nature complete: river connections "+nature.Groups[1].Value+", trees added "+nature.Groups[2].Value+", water sources "+nature.Groups[3].Value+", protected crossings skipped "+nature.Groups[4].Value+".";
    return message;
   }

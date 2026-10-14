@@ -39,7 +39,7 @@ namespace HundredTiles.Runtime
                 Buffers=(WaterSimulation.Cell[][])Field("m_waterBuffers").GetValue(water);
                 // BeginRead uses this frame's parity to select the authoritative buffer.
                 int current=(int)(~((uint)Field("m_waterFrameIndex").GetValue(water)>>6)&1);
-                Depth=new ushort[1201*1201];
+                Depth=new ushort[HundredTiles.Core.ExpandedMap.HeightStride*HundredTiles.Core.ExpandedMap.HeightStride];
                 for(int i=0;i<Depth.Length;i++)Depth[i]=Buffers[current][i].m_height;
             }
             catch{status.SetValue(water,previous);Monitor.PulseAll(gate);Monitor.Exit(gate);throw;}
@@ -49,15 +49,16 @@ namespace HundredTiles.Runtime
         public void Seed(ushort[] levels,ushort[] ground)
         {
             var masks=new ulong[][]{(ulong[])Field("m_waterExists1").GetValue(water),(ulong[])Field("m_waterExists2").GetValue(water),(ulong[])Field("m_waterExists3").GetValue(water)};
-            for(int z=0;z<=1200;z++)for(int x=0;x<=1200;x++)
+            for(int z=0;z<=HundredTiles.Core.ExpandedMap.RawResolution;z++)for(int x=0;x<=HundredTiles.Core.ExpandedMap.RawResolution;x++)
             {
-                int i=z*1201+x;if(levels[i]==0 || (x<=1080 && z<=1080))continue;
+                int i=z*HundredTiles.Core.ExpandedMap.HeightStride+x;if(levels[i]==0 || (x<=1080 && z<=1080))continue;
                 ushort depth=(ushort)Math.Max(0,levels[i]-ground[i]);
                 for(int b=0;b<Buffers.Length;b++)
                 {Buffers[b][i].m_height=depth;Buffers[b][i].m_velocityX=0;Buffers[b][i].m_velocityZ=0;}
-                if(depth!=0)foreach(var mask in masks)mask[z/19]|=1UL<<(x/19);
+                if(depth!=0)foreach(var mask in masks)mask[z/HundredTiles.Core.WaterGrid.CellsPerBit]|=1UL<<(x/HundredTiles.Core.WaterGrid.CellsPerBit);
             }
         }
         public void Dispose(){status.SetValue(water,previous);Monitor.PulseAll(gate);Monitor.Exit(gate);}
     }
 }
+

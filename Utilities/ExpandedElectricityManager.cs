@@ -111,8 +111,8 @@ namespace HundredTiles.Utilities
                 /* Start framing rewrite.
                  * Original does two rows per frame, we'll do four, but have to check upper bound.
                  */
-                int startRow = num * 4;
-                int endRow = Mathf.Min(startRow + 3, ExpandedElectricityGridMax);
+                int startRow = HundredTiles.Core.UtilityGrid.FirstRow(num);
+                int endRow = HundredTiles.Core.UtilityGrid.LastRow(num);
 
                 if (startRow <= endRow)
                 {
@@ -409,8 +409,8 @@ namespace HundredTiles.Utilities
             // Buildings.
             int num6 = Mathf.Max((int)(((((num - ExpandedElectricityGridHalfResolution) * ELECTRICITYGRID_CELL_SIZE) - 96f) / 64f) + 135f), 0);
             int num7 = Mathf.Max((int)(((((num2 - ExpandedElectricityGridHalfResolution) * ELECTRICITYGRID_CELL_SIZE) - 96f) / 64f) + 135f), 0);
-            int num8 = Mathf.Min((int)(((((num3 - ExpandedElectricityGridHalfResolution + 1f) * ELECTRICITYGRID_CELL_SIZE) + 96f) / 64f) + 135f), 299);
-            int num9 = Mathf.Min((int)(((((num4 - ExpandedElectricityGridHalfResolution + 1f) * ELECTRICITYGRID_CELL_SIZE) + 96f) / 64f) + 135f), 299);
+            int num8 = Mathf.Min((int)(((((num3 - ExpandedElectricityGridHalfResolution + 1f) * ELECTRICITYGRID_CELL_SIZE) + 96f) / 64f) + 135f), HundredTiles.Core.ExpandedMap.GridSize*30-1);
+            int num9 = Mathf.Min((int)(((((num4 - ExpandedElectricityGridHalfResolution + 1f) * ELECTRICITYGRID_CELL_SIZE) + 96f) / 64f) + 135f), HundredTiles.Core.ExpandedMap.GridSize*30-1);
 
             // Local references.
             BuildingManager buildingManager = Singleton<BuildingManager>.instance;
@@ -422,7 +422,7 @@ namespace HundredTiles.Utilities
             {
                 for (int l = num6; l <= num8; l++)
                 {
-                    ushort num10 = buildingGrid[(k * 300) + l];
+                    ushort num10 = buildingGrid[(k * (HundredTiles.Core.ExpandedMap.GridSize*30)) + l];
                     while (num10 != 0)
                     {
                         Building.Flags flags = buildings[num10].m_flags;
@@ -677,8 +677,8 @@ namespace HundredTiles.Utilities
             float num4 = num2 + ELECTRICITYGRID_CELL_SIZE;
             int num5 = Mathf.Max((int)((num / 64f) + 135f), 0);
             int num6 = Mathf.Max((int)((num2 / 64f) + 135f), 0);
-            int num7 = Mathf.Min((int)((num3 / 64f) + 135f), 299);
-            int num8 = Mathf.Min((int)((num4 / 64f) + 135f), 299);
+            int num7 = Mathf.Min((int)((num3 / 64f) + 135f), HundredTiles.Core.ExpandedMap.GridSize*30-1);
+            int num8 = Mathf.Min((int)((num4 / 64f) + 135f), HundredTiles.Core.ExpandedMap.GridSize*30-1);
 
             // Local references.
             NetManager netManager = Singleton<NetManager>.instance;
@@ -688,7 +688,7 @@ namespace HundredTiles.Utilities
             {
                 for (int j = num5; j <= num7; j++)
                 {
-                    ushort num9 = netNodeGrid[(i * 300) + j];
+                    ushort num9 = netNodeGrid[(i * (HundredTiles.Core.ExpandedMap.GridSize*30)) + j];
                     while (num9 != 0)
                     {
                         ConductToNode(num9, ref netNodes[num9], group, num, num2, num3, num4, nodeGroups, pulseGroupCount, ref pulseUnitEnd, ref canContinue);
@@ -860,3 +860,5 @@ namespace HundredTiles.Utilities
         }
     }
 }
+
+
