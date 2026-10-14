@@ -3,7 +3,8 @@ $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot
 $testRoot=Join-Path $projectRoot 'artifacts\isolated-game'
 if (-not (Test-Path -LiteralPath (Join-Path $testRoot 'isolated-test.marker'))) { throw 'Prepared isolated test marker missing.' }
-if (Get-Process Cities -ErrorAction SilentlyContinue) { throw 'An existing Cities process is running. No second game will be started.' }
+$citiesProcesses=@(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'Cities.exe'" -ErrorAction Stop)
+if ($citiesProcesses.Count-ne 0) { throw 'An existing Cities process is running. No second game will be started.' }
 if (-not (Test-Path -LiteralPath (Join-Path $testRoot 'Cities_Data\Managed\Assembly-CSharp.dll'))) { throw 'Isolated game data is not prepared.' }
 if (-not (Get-Process steam -ErrorAction SilentlyContinue)) { Start-Process -FilePath (Join-Path (Split-Path (Split-Path (Split-Path $GameRoot))) 'steam.exe') -ArgumentList '-silent' -WindowStyle Hidden }
 $startInfo=New-Object System.Diagnostics.ProcessStartInfo

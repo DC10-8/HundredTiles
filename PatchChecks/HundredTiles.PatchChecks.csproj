@@ -10,6 +10,7 @@
     <Compile Include="../ExperimentalPatch/ResourceScheduleTranspiler.cs" Link="ResourceScheduleTranspiler.cs" />
     <Compile Include="../ExperimentalPatch/ObjectGridTranspiler.cs" Link="ObjectGridTranspiler.cs" />
     <Compile Include="../Core/ResourceGrid.cs" Link="ResourceGrid.cs" />
+    <Compile Include="../Core/ExpandedMap.cs" Link="ExpandedMap.cs" />
     <EmbeddedResource Include="../ExperimentalPatch/ReviewedPlan.tsv" LogicalName="HundredTiles.ExperimentalPatch.ReviewedPlan.tsv" />
   </ItemGroup>
 </Project>

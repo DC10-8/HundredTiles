@@ -3,7 +3,8 @@ $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot
 $fixture=[IO.Path]::GetFullPath((Join-Path $projectRoot 'artifacts\isolated-game'))
 if(-not(Test-Path -LiteralPath (Join-Path $fixture 'isolated-test.marker'))){throw 'Prepare the isolated game first.'}
-if(Get-Process Cities -ErrorAction SilentlyContinue){throw 'A Cities process is running; fixture files were not changed.'}
+$citiesProcesses=@(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'Cities.exe'" -ErrorAction Stop)
+if($citiesProcesses.Count-ne 0){throw 'A Cities process is running; fixture files were not changed.'}
 function WithinFixture([string]$path){$full=[IO.Path]::GetFullPath($path);if(-not $full.StartsWith($fixture+'\',[StringComparison]::OrdinalIgnoreCase)){throw "Path is outside the fixture: $full"};return $full}
 $mods=WithinFixture (Join-Path $fixture 'UserData\Addons\Mods')
 $record=Join-Path $fixture 'trial324-backup-path.txt'

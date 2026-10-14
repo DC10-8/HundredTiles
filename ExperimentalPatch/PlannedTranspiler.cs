@@ -117,7 +117,21 @@ namespace HundredTiles.ExperimentalPatch
             }
             // Copy construction preserves labels/exception markers; never mutate
             // input instructions owned by Harmony or by another transpiler.
+#if HUNDREDTILES_324
+            if(plan.Name=="TerrainTool.EndStroke")EnableCityUndo(output);
+#endif
             return output;
+        }
+        public static void EnableCityUndo(IList<CodeInstruction> code)
+        {
+            // The pinned method charges/refunds the normal city stroke, then skips
+            // recording Undo. Continue into the existing bounded Undo recorder.
+            // No availability flags or terrain budget checks are changed.
+            if(code.Count<40 || code[5].opcode!=OpCodes.Brfalse || code[37].opcode!=OpCodes.Br || code[36].opcode!=OpCodes.Stfld ||
+                !(code[36].operand is FieldInfo) || ((FieldInfo)code[36].operand).Name!="m_currentCost" ||
+                !(code[39].operand is MethodInfo) || ((MethodInfo)code[39].operand).Name!="get_UndoBuffer")
+                throw new InvalidOperationException("Reviewed city Undo control flow differs.");
+            code[37].operand=code[5].operand;
         }
 
         public static IEnumerable<CodeInstruction> Transpile(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)

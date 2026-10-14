@@ -60,7 +60,7 @@ static class LiveTerrainToolChecks
             int cellX=far?2140:1155,cellZ=far?2080:1155;int index=cellZ*HundredTiles.Core.ExpandedMap.HeightStride+cellX;
             if(terrain.RawHeights[index]!=(ushort)(targetHeight*64))throw new Exception("Actual outer landscaping brush missed the requested world point: "+terrain.RawHeights[index]);
             typeof(TerrainTool).GetMethod("EndStroke",flags).Invoke(tool,null);
-            if(far && (controller.m_mode & ItemClass.Availability.Game)==0){if(!tool.IsUndoAvailable())throw new Exception("Far native terrain stroke did not create undo data.");tool.ApplyUndo();TerrainModify.RefreshAllModifications();for(int i=0;i<before.Length;i++)if(terrain.RawHeights[i]!=before[i])throw new Exception("Far native Undo did not restore terrain at "+i);Entry.Log("PASS: native terrain Undo restores every 324-profile raw height sample.");}
+            if(far){if(!tool.IsUndoAvailable())throw new Exception("Far native terrain stroke did not create undo data.");tool.ApplyUndo();TerrainModify.RefreshAllModifications();for(int i=0;i<before.Length;i++)if(terrain.RawHeights[i]!=before[i])throw new Exception("Far native Undo did not restore terrain at "+i);Entry.Log("PASS: native city terrain Undo restores every 324-profile raw height sample; game availability unchanged.");}
             Entry.Log("PASS: actual city landscaping brush edits the added corner at its original world origin; all active backup samples verified.");
         }
         finally

@@ -8,6 +8,26 @@ using System.Reflection;
 static class Live324Trial
 {
     public static bool Far {get{return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_324_FAR")=="1";}}
+    public static bool CompareRender {get{return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_324_RENDER_COMPARE")=="1";}}
+    public static void CreateRenderComparison()
+    {
+        LiveTerrainToolChecks.LevelArea(new Vector3(2050,400,2650),900,400);
+        LiveConstructionChecks.BuildNetwork("Basic Road",new Vector3(2000,0,2700));
+        LiveConstructionChecks.BuildNetwork("Train Track",new Vector3(2000,0,2900));
+        LiveTerrainToolChecks.LevelArea(new Vector3(25450,80,23350),900,80);
+        LiveConstructionChecks.BuildNetwork("Basic Road",new Vector3(25400,0,23400));
+        LiveConstructionChecks.BuildNetwork("Train Track",new Vector3(25400,0,23600));
+        typeof(NetManager).GetMethod("SimulationStepImpl",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(Singleton<NetManager>.instance,new object[]{0});
+        TerrainModify.RefreshAllModifications();
+        foreach(var point in new[]{new Vector3(2200,400,2700),new Vector3(25600,80,23400),new Vector3(25600,400,24700)})
+        {
+            // Direct CreateNode is not the interactive tool coroutine. Complete its
+            // terrain surface update before judging the mesh against the ground.
+            TerrainModify.UpdateArea(point.x-300,point.z-80,point.x+100,point.z+280,true,true,true);
+            TerrainModify.RefreshAllModifications();
+        }
+        Entry.Log("Prepared matched road/rail render controls: original area at 400m, far area at 80m, existing far area at 400m. No save requested.");
+    }
     public static bool Migration {get{return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_324_MIGRATION")=="1";}}
     public const string MigrationSource="HundredTiles_Startup_Repair_Verification";
     public static void CheckMigratedTerrain()
@@ -83,6 +103,16 @@ static class Live324Trial
         for(int i=0;i<60;i++)yield return null;yield return new WaitForEndOfFrame();
         var close=new Texture2D(Screen.width,Screen.height,TextureFormat.RGB24,false);close.ReadPixels(new Rect(0,0,Screen.width,Screen.height),0,0);close.Apply();File.WriteAllBytes(Path.Combine(Entry.Root,"trial324-far-render-close.png"),close.EncodeToPNG());UnityEngine.Object.Destroy(close);
         Entry.Log("324 close network render calls="+graph.m_drawCallData.m_defaultCalls+"/"+graph.m_drawCallData.m_lodCalls);
+        if(CompareRender)
+        {
+            foreach(var point in new[]{new Vector3(2200,400,2700),new Vector3(25600,80,23400)})
+            {
+                camera.m_targetPosition=camera.m_currentPosition=point;camera.m_targetHeight=camera.m_currentHeight=point.y;
+                for(int i=0;i<60;i++)yield return null;yield return new WaitForEndOfFrame();
+                var frame=new Texture2D(Screen.width,Screen.height,TextureFormat.RGB24,false);frame.ReadPixels(new Rect(0,0,Screen.width,Screen.height),0,0);frame.Apply();
+                File.WriteAllBytes(Path.Combine(Entry.Root,point.x<9000?"trial324-render-control-original400.png":"trial324-render-control-far80.png"),frame.EncodeToPNG());UnityEngine.Object.Destroy(frame);
+            }
+        }
         Entry.Log("PASS: 324 far GPU height texture agrees with native detail height; captured rendered corner for visual review.");
         File.WriteAllText(Path.Combine(Entry.Root,"trial324-far-graphics-passed.marker"),"PASS");Application.Quit();
     }
