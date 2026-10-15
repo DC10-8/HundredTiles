@@ -96,6 +96,7 @@ public sealed class Runner : MonoBehaviour
                         if(Mode=="Stress100EntrySave"){if(HundredTiles.Runtime.BulkUnlock.UnlockAll()!=100)throw new Exception("Population source must have 100 native purchases.");LiveLargeCityChecks.Create();}
                         else if(Mode=="Stress324EntryMigrate"){Live324Trial.CheckShapes();Live324Trial.CheckMigratedTerrain();if(HundredTiles.Runtime.BulkUnlock.UnlockAll()!=324)throw new Exception("Population migration purchases incomplete.");Live324Trial.CheckMigratedWaterAfterUnlock();if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SEA")=="1")LiveSeaChecks.Run();}
                         LiveLargeCityChecks.Check(Mode=="Stress324LongRunEntrySave");
+                        if(Mode.EndsWith("Reload") && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_WATER_SAVE")=="1")Live324Trial.CheckSavedWater();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_LONG_PATH")=="1")LiveLongPathChecks.Run();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_NETWORK_CAPACITY")=="1")LiveNetworkCapacityChecks.Run();
                         if(Mode.EndsWith("Reload") && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_OUTSIDE_TRAFFIC")=="1")LiveOutsideTrafficChecks.Run();

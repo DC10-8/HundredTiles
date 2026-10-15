@@ -58,6 +58,24 @@ static class Live324Trial
         }
         Entry.Log("PASS: all 1,442,401 source-100 water cells, pollution and both velocity axes preserved in both native buffers after 324 unlock/sea initialization.");
     }
+    public static void CheckSavedWater()
+    {
+        var storage=Singleton<SimulationManager>.instance.m_serializableDataStorage;byte[] bytes;
+        lock(storage)bytes=SaveTransport.Read(storage,HundredTiles.SaveBridge.RuntimeSaveBridge.DataKey);
+        byte[] digest;MapLayout layout;var source=SaveCodec.DecodeOriginal(bytes,out digest,out layout);
+        if(layout.TileCount!=HundredTiles.Core.ExpandedMap.TileCount)throw new Exception("Water round-trip profile differs.");
+        var terrain=Singleton<TerrainManager>.instance;
+        using(var handoff=(IDisposable)Activator.CreateInstance(typeof(HundredTiles.Runtime.ExtendedSea).Assembly.GetType("HundredTiles.Runtime.LandscapeWater"),new object[]{terrain.WaterSimulation}))
+        {
+            var buffers=(WaterSimulation.Cell[][])typeof(WaterSimulation).GetField("m_waterBuffers",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(terrain.WaterSimulation);
+            for(int i=0;i<source.Heights.Length;i++)
+            {
+                if(terrain.RawHeights[i]!=source.Heights[i] || unchecked((ushort)(terrain.BlockHeights[i]-terrain.BlockHeightTargets[i]))!=source.BlockOffsets[i])throw new Exception("Native saved terrain/offset differs at "+i);
+                foreach(var buffer in buffers){var actual=buffer[i];var expected=source.Water[i];if(actual.m_height!=expected.Height || actual.m_pollution!=expected.Pollution || actual.m_velocityX!=expected.VelocityX || actual.m_velocityZ!=expected.VelocityZ)throw new Exception("Native saved water differs at "+i);}
+            }
+        }
+        Entry.Log("PASS: full native saved terrain, derived block offsets and both water buffers preserve "+source.Heights.Length+" cells, depth/pollution/X/Z velocity after separate-process reload.");
+    }
     static string Objects {get{return Path.Combine(Entry.Root,"trial324-far-objects.txt");}}
     public static void PrepareFar()
     {LiveTerrainToolChecks.Prepare();LiveConstructionChecks.Prepare();if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SURFACE_TRACE")=="1")TerrainSurfaceTrace.Install();}

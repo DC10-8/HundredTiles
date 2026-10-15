@@ -56,10 +56,24 @@ static class LiveLongPathChecks
     }
     static void BusRoute(NetManager graph,ref Randomizer random)
     {
+        // A closed street circuit avoids depending on a traffic mod's policy
+        // for bus U-turns at the ends of the separate diagonal path fixture.
+        var road=PrefabCollection<NetInfo>.FindLoaded("Basic Road");ushort firstNode=0,previousNode=0;
+        var corners=new[]{new Vector3(23000,0,24500),new Vector3(23600,0,24500),new Vector3(23600,0,25100),new Vector3(23000,0,25100),new Vector3(23000,0,24500)};
+        for(int side=0;side<4;side++)for(int step=side==0?0:1;step<=5;step++)
+        {
+            var point=Vector3.Lerp(corners[side],corners[side+1],step/5f);point.y=Singleton<TerrainManager>.instance.SampleRawHeightSmooth(point);ushort node;
+            if(side==3 && step==5)node=firstNode;
+            else if(!graph.CreateNode(out node,ref random,road,point,Singleton<SimulationManager>.instance.m_currentBuildIndex++))throw new Exception("Far bus street node creation failed.");
+            if(firstNode==0)firstNode=node;
+            if(previousNode!=0){ushort segment;var direction=(graph.m_nodes.m_buffer[node].m_position-graph.m_nodes.m_buffer[previousNode].m_position);direction.y=0;direction.Normalize();if(!graph.CreateSegment(out segment,ref random,road,previousNode,node,direction,-direction,Singleton<SimulationManager>.instance.m_currentBuildIndex++,Singleton<SimulationManager>.instance.m_currentBuildIndex,false))throw new Exception("Far bus street segment creation failed.");}
+            previousNode=node;
+        }
+        typeof(NetManager).GetMethod("SimulationStepImpl",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(graph,new object[]{0});
         var manager=Singleton<TransportManager>.instance;var info=manager.GetTransportInfo(TransportInfo.TransportType.Bus);ushort line;
         if(info==null || !manager.CreateLine(out line,ref random,info,true))throw new Exception("Native far bus line creation failed.");
-        var first=new Vector3(24500,0,24500);first.y=Singleton<TerrainManager>.instance.SampleRawHeightSmooth(first);
-        var second=new Vector3(24850,0,24850);second.y=Singleton<TerrainManager>.instance.SampleRawHeightSmooth(second);
+        var first=new Vector3(23150,0,24500);first.y=Singleton<TerrainManager>.instance.SampleRawHeightSmooth(first);
+        var second=new Vector3(23450,0,25100);second.y=Singleton<TerrainManager>.instance.SampleRawHeightSmooth(second);
         if(!manager.m_lines.m_buffer[line].AddStop(line,-1,first,false) || !manager.m_lines.m_buffer[line].AddStop(line,-1,second,false) || !manager.m_lines.m_buffer[line].AddStop(line,-1,first,false) || !manager.m_lines.m_buffer[line].Complete)throw new Exception("Native far bus stops/loop creation failed.");
         typeof(NetManager).GetMethod("SimulationStepImpl",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(graph,new object[]{0});
         var timer=System.Diagnostics.Stopwatch.StartNew();bool ready=false;int segments=0;
@@ -75,6 +89,6 @@ static class LiveLongPathChecks
             if(ready && segments==2)break;Thread.Sleep(1);
         }
         if(!ready || segments!=2)throw new Exception("Native far bus line paths did not become ready: line="+line+", legs="+segments);
-        Entry.Log("PASS: native bus TransportManager line "+line+" and two far stops near 24500/24850 form a complete loop; both native transit path legs ready. Vehicle dispatch, passenger boarding and full rides are not asserted.");
+        Entry.Log("PASS: native bus TransportManager line "+line+" and two far stops on a connected closed street circuit at x=23000..23600/z=24500..25100 form a complete loop; both native transit path legs ready. Vehicle dispatch, passenger boarding and full rides are not asserted.");
     }
 }
