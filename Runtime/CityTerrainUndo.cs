@@ -19,7 +19,7 @@ namespace HundredTiles.Runtime
             if(tool==null){status(UiLanguage.Text("地形ツールが見つかりません","Terrain tool is unavailable."));return;}
             var stroke=typeof(TerrainTool).GetField("m_strokeInProgress",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
             if(stroke==null)throw new MissingFieldException("TerrainTool.m_strokeInProgress");
-            if((bool)stroke.GetValue(tool)){status(UiLanguage.Text("ブラシ操作を終了してから押してください","Finish the brush stroke first."));return;}
+            if(StrokeInProgress(tool,stroke)){status(UiLanguage.Text("ブラシ操作を終了してから押してください","Finish the brush stroke first."));return;}
             if(Interlocked.CompareExchange(ref pending,1,0)!=0)return;
             try
             {
@@ -28,7 +28,7 @@ namespace HundredTiles.Runtime
                     string message;
                     try
                     {
-                        if((bool)stroke.GetValue(tool))message=UiLanguage.Text("ブラシ操作を終了してから押してください","Finish the brush stroke first.");
+                        if(StrokeInProgress(tool,stroke))message=UiLanguage.Text("ブラシ操作を終了してから押してください","Finish the brush stroke first.");
                         else if(!tool.IsUndoAvailable())message=UiLanguage.Text("戻せる地形編集がありません","No terrain stroke to undo.");
                         else
                         {
@@ -42,6 +42,21 @@ namespace HundredTiles.Runtime
                 });
             }
             catch{Interlocked.Exchange(ref pending,0);throw;}
+        }
+        public static bool StrokeInProgress(TerrainTool tool,System.Reflection.FieldInfo nativeStroke)
+        {
+            if((bool)nativeStroke.GetValue(tool))return true;
+            // The reviewed Extra Landscaping Tools redirect keeps its own state.
+            // Native state alone cannot protect an in-progress redirected stroke.
+            foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                if(assembly.GetName().Name=="NaturalResourcesBrush")
+                {
+                    var type=assembly.GetType("NaturalResourcesBrush.Detours.TerrainToolDetour",true);
+                    var field=type.GetField("m_strokeInProgress",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
+                    if(field==null || field.FieldType!=typeof(bool))throw new MissingFieldException(type.FullName,"m_strokeInProgress");
+                    if((bool)field.GetValue(null))return true;
+                }
+            return false;
         }
     }
 }

@@ -11,6 +11,21 @@ static class LiveTerrainToolChecks
         tool=ToolsModifierControl.SetTool<TerrainTool>();
         if(tool==null)throw new Exception("Native landscaping tool missing.");
     }
+    public static void PointBrush(TerrainTool target,Vector3 center,float height)
+    {
+        var flags=BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic;
+        typeof(TerrainTool).GetField("m_mousePosition",flags).SetValue(target,center);
+        typeof(TerrainTool).GetField("m_startPosition",flags).SetValue(target,new Vector3(center.x,height,center.z));
+        foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())if(assembly.GetName().Name=="NaturalResourcesBrush")
+        {
+            var detour=assembly.GetType("NaturalResourcesBrush.Detours.TerrainToolDetour",true);
+            var staticFlags=BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic;
+            detour.GetField("m_mousePosition",staticFlags).SetValue(null,center);
+            detour.GetField("m_startPosition",staticFlags).SetValue(null,new Vector3(center.x,height,center.z));
+            detour.GetField("m_sizeMode",staticFlags).SetValue(null,Enum.ToObject(detour.GetNestedType("SizeMode"),0));
+            detour.GetField("m_mouseRightDown",staticFlags).SetValue(null,false);detour.GetField("isDitch",staticFlags).SetValue(null,false);
+        }
+    }
     public static void LevelArea(Vector3 center,float size,float height)
     {
         var flags=BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public;
@@ -22,12 +37,11 @@ static class LiveTerrainToolChecks
         properties.m_mode=ItemClass.Availability.MapEditor;
         controller.m_mode=ItemClass.Availability.MapEditor;
         try{var original=(ushort[])Singleton<TerrainManager>.instance.RawHeights.Clone();tool.ResetUndoBuffer();tool.m_mode=TerrainTool.Mode.Level;tool.m_brushSize=size;tool.m_strength=1;
-            typeof(TerrainTool).GetField("m_mousePosition",flags).SetValue(tool,center);
-            typeof(TerrainTool).GetField("m_startPosition",flags).SetValue(tool,new Vector3(center.x,height,center.z));
+            PointBrush(tool,center,height);
             typeof(TerrainTool).GetMethod("ApplyBrush",flags).Invoke(tool,null);typeof(TerrainTool).GetMethod("EndStroke",flags).Invoke(tool,null);
             if(!tool.IsUndoAvailable())throw new Exception("Native editor-condition fixture stroke has no Undo record.");tool.ApplyUndo();
             var raw=Singleton<TerrainManager>.instance.RawHeights;for(int i=0;i<original.Length;i++)if(raw[i]!=original[i])throw new Exception("324 editor Undo differs at "+i);
-            Entry.Log("PASS: native editor-condition Undo restores all 324-profile terrain samples. City-mode Undo availability is unchanged.");
+            Entry.Log("PASS: native editor-condition Undo restores all "+HundredTiles.Core.ExpandedMap.TileCount+"-profile terrain samples. City-mode Undo availability is unchanged.");
             tool.ResetUndoBuffer();typeof(TerrainTool).GetMethod("ApplyBrush",flags).Invoke(tool,null);typeof(TerrainTool).GetMethod("EndStroke",flags).Invoke(tool,null);
         }finally{controller.m_mode=previousControllerMode;properties.m_mode=previousMode;Array.Copy(previous,brush,brush.Length);}
         var terrain=Singleton<TerrainManager>.instance;

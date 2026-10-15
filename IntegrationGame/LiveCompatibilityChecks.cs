@@ -15,25 +15,28 @@ static class LiveCompatibilityChecks
         var flags=BindingFlags.Static|BindingFlags.NonPublic;
         var add=type.GetMethod("AddToGrid",flags);var remove=type.GetMethod("RemoveFromGrid",flags);
         var manager=Singleton<BuildingManager>.instance;var random=new Randomizer(817);
-        foreach(float x in new[]{2000f,9900f})
+        int gridSide=HundredTiles.Core.MapLayout.Active.ObjectSide64;
+        float edge=HundredTiles.Core.ExpandedMap.WorldMax;
+        foreach(float x in new[]{2000f,9900f,edge-300})
         {
             ushort id;var position=new Vector3(x,80,9600);
             if(x==2000)position.z=2000;
+            else if(x==edge-300)position.z=edge-960;
             position.y=Singleton<TerrainManager>.instance.SampleRawHeightSmooth(position);
             if(!manager.CreateBuilding(out id,ref random,PrefabCollection<BuildingInfo>.FindLoaded("Wind Turbine"),position,0,0,88))throw new Exception("Compatibility fixture placement failed.");
-            int index=(int)(position.z/64+135)*300+(int)(position.x/64+135);
+            int index=(int)(position.z/64+135)*gridSide+(int)(position.x/64+135);
             if(!Contains(manager,index,id))throw new Exception("Native initial building grid entry missing.");
             object[] args={id,manager.m_buildings.m_buffer[id]};remove.Invoke(null,args);manager.m_buildings.m_buffer[id]=(Building)args[1];
             if(Contains(manager,index,id))throw new Exception("Move It failed to remove building at "+position);
             position.x+=128;var data=manager.m_buildings.m_buffer[id];data.m_position=position;args[1]=data;add.Invoke(null,args);manager.m_buildings.m_buffer[id]=(Building)args[1];
-            int next=(int)(position.z/64+135)*300+(int)(position.x/64+135);
+            int next=(int)(position.z/64+135)*gridSide+(int)(position.x/64+135);
             if(!Contains(manager,next,id) || Contains(manager,index,id))throw new Exception("Move It relocation corrupted grid links.");
             manager.m_buildings.m_buffer[id].m_flags|=Building.Flags.Completed;
             manager.UpdateBuildingRenderer(id,true);
             Buildings.Add(id);
         }
-        moveIt.GetType("MoveIt.MoveItTool",true).GetMethod("UpdateRender",flags).Invoke(null,new object[]{new Bounds(new Vector3(10000,80,10000),new Vector3(128,100,128))});
-        Entry.Log("PASS: actual Move It removal/insertion at original and added tiles and expanded render update.");
+        moveIt.GetType("MoveIt.MoveItTool",true).GetMethod("UpdateRender",flags).Invoke(null,new object[]{new Bounds(new Vector3(edge-200,80,edge-200),new Vector3(128,100,128))});
+        Entry.Log("PASS: actual Move It removal/insertion at original, added and active-profile far-edge tiles and expanded render update; grid side="+gridSide);
         Heating();
         NoUtilityHeating();
     }
@@ -87,6 +90,12 @@ static class LiveCompatibilityChecks
         while(current!=0){if(current==id)return true;current=manager.m_buildings.m_buffer[current].m_nextGridBuilding;if(++count>manager.m_buildings.m_buffer.Length)throw new Exception("Building grid cycle.");}return false;
     }
     static void Heating()
+    {
+        var saved=LiveNetworkCapacityChecks.CaptureUtilityState();
+        try{HeatingProbe();}
+        finally{LiveNetworkCapacityChecks.RestoreUtilityState(saved);}
+    }
+    static void HeatingProbe()
     {
         NetInfo pipe=null;for(uint i=0;i<PrefabCollection<NetInfo>.LoadedCount();i++)
         {var info=PrefabCollection<NetInfo>.GetLoaded(i);if(info!=null && info.m_class.m_service==ItemClass.Service.Water && info.m_class.m_level==ItemClass.Level.Level2){pipe=info;break;}}

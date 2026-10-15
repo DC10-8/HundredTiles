@@ -41,13 +41,15 @@ static class LiveConstructionChecks
         Entry.Log("PASS: real road/rail control points remain on added ground; native NetTool construction builds segments; BuildingTool simulation and placement build ground and roadside buildings in added tiles.");
     }
     public static ushort BuildNetwork(string name,Vector3 position)
+    {return BuildNetwork(name,position,position+Vector3.right*256);}
+    public static ushort BuildNetwork(string name,Vector3 position,Vector3 endpoint)
     {
         var info=PrefabCollection<NetInfo>.FindLoaded(name);NetTool.ControlPoint a,b;
         position.y=Singleton<TerrainManager>.instance.SampleRawHeightSmooth(position);
         if(!NetTool.MakeControlPoint(new Ray(position+Vector3.up*500,Vector3.down),1000,info,false,NetNode.Flags.All,NetSegment.Flags.All,Building.Flags.All,0,false,out a))throw new Exception("Network start ray failed.");
-        position.x+=256;position.y=Singleton<TerrainManager>.instance.SampleRawHeightSmooth(position);
+        position=endpoint;position.y=Singleton<TerrainManager>.instance.SampleRawHeightSmooth(position);
         if(!NetTool.MakeControlPoint(new Ray(position+Vector3.up*500,Vector3.down),1000,info,false,NetNode.Flags.All,NetSegment.Flags.All,Building.Flags.All,0,false,out b))throw new Exception("Network end ray failed.");
-        a.m_direction=Vector3.right;b.m_direction=Vector3.right;var middle=a;middle.m_position=(a.m_position+b.m_position)*.5f;
+        var route=b.m_position-a.m_position;route.y=0;route.Normalize();a.m_direction=route;b.m_direction=route;var middle=a;middle.m_position=(a.m_position+b.m_position)*.5f;
         ushort node,segment;int cost,production;
         var errors=NetTool.CreateNode(info,a,middle,b,NetTool.m_nodePositionsSimulation,1000,true,false,true,false,false,false,0,out node,out segment,out cost,out production);
         if(errors!=ToolBase.ToolErrors.None)throw new Exception("Network preview rejected "+name+": "+errors);

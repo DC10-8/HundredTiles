@@ -36,6 +36,14 @@ static class LiveSupplyChecks
         if(!electric || !water)throw new Exception("Outer supply did not reach consumers: electricity="+electric+", water="+water);
         Entry.Log("PASS: actual electricity and pipe water propagation reach the added corner; native turbine/pipe identities and supply queries verified.");
     }
+    public static void Observe(string stage)
+    {
+        var point=Point(9900,80,9700);var manager=Singleton<WaterManager>.instance;bool water,sewage;byte pollution;
+        manager.CheckWater(point,out water,out sewage,out pollution);
+        var grid=(WaterManager.Cell[])typeof(WaterManager).GetField("m_waterGrid",BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public).GetValue(manager);
+        int x=HundredTiles.Core.UtilityGrid.WorldToCell(point.x),z=HundredTiles.Core.UtilityGrid.WorldToCell(point.z);var cell=grid[z*HundredTiles.Core.UtilityGrid.Side+x];
+        Entry.Log("Supply snapshot "+stage+": water="+water+", sewage="+sewage+", conductivity="+cell.m_conductivity+", hasWater="+cell.m_hasWater+", temporary="+cell.m_tmpHasWater+", pressure="+cell.m_currentWaterPressure+", frame="+Singleton<SimulationManager>.instance.m_currentFrameIndex);
+    }
     public static void CheckRealElectricityProduction()
     {
         var ids=File.ReadAllLines(Manifest);ushort source=ushort.Parse(ids[0]);

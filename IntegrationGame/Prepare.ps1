@@ -5,7 +5,7 @@ param([string]$GameRoot='C:\Program Files (x86)\Steam\steamapps\common\Cities_Sk
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot
 $testRoot=Join-Path $projectRoot 'artifacts\isolated-game'
-if (Get-Process Cities -ErrorAction SilentlyContinue) { throw 'Close the game before preparing a test instance.' }
+if (@(Get-CimInstance Win32_Process -Filter "Name = 'Cities.exe'" -ErrorAction Stop).Count-ne 0) { throw 'Close the game before preparing a test instance.' }
 if(-not (Test-Path $DoorstopLibrary)){throw 'Native verification requires the separately installed UnityDoorstop winhttp.dll. Supply -DoorstopLibrary.'}
 if(-not (Test-Path (Join-Path $HarmonyModDirectory 'CitiesHarmony.dll'))){throw 'Supply the installed Cities Harmony mod folder with -HarmonyModDirectory.'}
 dotnet build $PSScriptRoot -c Release -m:1 "-p:GameManaged=$(Join-Path $GameRoot 'Cities_Data/Managed')" "-p:HarmonyDirectory=$HarmonyDirectory"

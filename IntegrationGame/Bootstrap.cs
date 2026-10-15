@@ -15,6 +15,7 @@ public static class Bootstrap
     static bool started,runtimeInstalled,runnerCreated;
     static bool EntryMode { get { return (Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")??"").IndexOf("Entry",StringComparison.Ordinal)>=0; } }
     public static volatile bool FatalFailure;
+    static bool EditorMode {get{return (Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")??"").EndsWith("EditorEntry",StringComparison.Ordinal);}}
     public static void InstallEarly()
     {
         var harmony=new Harmony("HundredTiles.IsolatedIntegration.Bootstrap");
@@ -32,7 +33,7 @@ public static class Bootstrap
     static void InstallLate()
     {
         var settings=Path.Combine(Entry.Root,"UserData");Directory.CreateDirectory(settings);
-        File.WriteAllText(Path.Combine(settings,"HundredTiles.startup-profile.txt"),Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")=="EditorEntry"?"editor":"city");
+        File.WriteAllText(Path.Combine(settings,"HundredTiles.startup-profile.txt"),EditorMode?"editor":"city");
         Application.logMessageReceivedThreaded+=ObserveLog;
         var harmony=new Harmony("HundredTiles.IsolatedIntegration");
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_TERRAIN_REWRITE")=="1")
@@ -99,9 +100,16 @@ public static class Bootstrap
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_NETWORK_CAPACITY")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())if(Path.GetFileName(plugin.modPath)=="MoreNetworkCapacityRenew")plugin.isEnabled=true;
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SIMULATION_REPAIRS")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())if(Path.GetFileName(plugin.modPath)=="TrafficManager" || Path.GetFileName(plugin.modPath)=="RoadUtilityPoles" || Path.GetFileName(plugin.modPath)=="RealismLite")plugin.isEnabled=true;
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_REPAIRS")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())if(Path.GetFileName(plugin.modPath)=="CameraSmoothFps" || Path.GetFileName(plugin.modPath)=="TrainRidershipBooster" || Path.GetFileName(plugin.modPath)=="AlwaysTrainCommute")plugin.isEnabled=true;
-        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_MODE")=="EditorEntry")
+        if(EditorMode)
         {if(Installer.IsInstalled)throw new Exception("City patches active in editor startup profile.");Entry.Log("PASS: actual enabled plugin selected editor profile without city patches.");}
         else VerifyRuntime();
+        int active=0;
+        foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())if(plugin.isEnabled)
+        {
+            active++;var names=new System.Collections.Generic.List<string>();foreach(var assembly in plugin.GetAssemblies())names.Add(assembly.GetName().FullName);
+            Entry.Log("FIXTURE ACTIVE MOD: "+Path.GetFileName(plugin.modPath)+"; "+string.Join("; ",names.ToArray()));
+        }
+        Entry.Log("FIXTURE: enabled plugin count="+active+". Loaded assemblies and enabled plugins are distinct scopes.");
     }
     public static void VerifyRuntime()
     {

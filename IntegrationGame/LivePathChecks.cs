@@ -29,4 +29,30 @@ static class LivePathChecks
         }
         finally{manager.ReleasePath(path);}
     }
+    public static void Far()
+    {
+        var ids=File.ReadAllLines(Path.Combine(Entry.Root,"trial324-far-objects.txt"));
+        foreach(bool train in new[]{false,true})
+        {
+            ushort segment=ushort.Parse(ids[train?1:0]);var graph=Singleton<NetManager>.instance;var data=graph.m_segments.m_buffer[segment];
+            var type=train?VehicleInfo.VehicleType.Train:VehicleInfo.VehicleType.Car;var laneType=train?NetInfo.LaneType.Vehicle:NetInfo.LaneType.Vehicle;
+            var position=data.m_middlePosition;PathUnit.Position nearest;
+            if(!PathManager.FindPathPosition(position,data.Info.m_class.m_service,laneType,type,VehicleInfo.VehicleCategory.All,false,false,32,false,false,out nearest) || nearest.m_segment!=segment)throw new Exception("Far native path position lookup differs: "+data.Info.name);
+            byte lane=byte.MaxValue;
+            for(byte i=0;i<data.Info.m_lanes.Length;i++)if((data.Info.m_lanes[i].m_laneType&laneType)!=0 && (data.Info.m_lanes[i].m_vehicleType&type)!=0 && (data.Info.m_lanes[i].m_finalDirection&NetInfo.Direction.Forward)!=0){lane=i;break;}
+            if(lane==byte.MaxValue)throw new Exception("Far network has no forward vehicle lane: "+data.Info.name);
+            var start=new PathUnit.Position{m_segment=segment,m_lane=lane,m_offset=32};var end=new PathUnit.Position{m_segment=segment,m_lane=lane,m_offset=224};
+            var manager=Singleton<PathManager>.instance;var random=new Randomizer(324);uint path;
+            if(!manager.CreatePath(out path,ref random,Singleton<SimulationManager>.instance.m_currentBuildIndex,start,end,laneType,type,VehicleInfo.VehicleCategory.All,1000))throw new Exception("Far native path creation failed.");
+            try
+            {
+                var timer=System.Diagnostics.Stopwatch.StartNew();
+                while((manager.m_pathUnits.m_buffer[path].m_pathFindFlags&12)==0 && timer.ElapsedMilliseconds<10000)Thread.Sleep(1);
+                var result=manager.m_pathUnits.m_buffer[path];
+                if((result.m_pathFindFlags&4)==0 || result.m_positionCount==0)throw new Exception("Far native path failed: "+type+" flags="+result.m_pathFindFlags);
+                Entry.Log("PASS: 324 far spatial lookup and asynchronous "+type+" path worker; positions="+result.m_positionCount+", elapsed ms="+timer.ElapsedMilliseconds+". Single segment only, not a transit journey.");
+            }
+            finally{manager.ReleasePath(path);}
+        }
+    }
 }

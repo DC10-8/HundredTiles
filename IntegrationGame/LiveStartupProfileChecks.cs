@@ -21,7 +21,7 @@ static class LiveStartupProfileChecks
             UiLanguage.Set(1);
             if(profile.items[1]!="Editor (normal grids)" || profile.selectedIndex!=expected || StartupProfile.Selected!=expected)throw new Exception("Profile language switch changed selection.");
             UiLanguage.Set(0);
-            if(profile.items[0]!="都市（100タイル）" || profile.selectedIndex!=expected)throw new Exception("Japanese profile label incorrect.");
+            if(profile.items[0]!="都市（"+HundredTiles.Core.ExpandedMap.TileCount+"タイル）" || profile.selectedIndex!=expected)throw new Exception("Japanese profile label incorrect.");
             profile.selectedIndex=1-expected;
             string path=Path.Combine(DataLocation.localApplicationData,"HundredTiles.startup-profile.txt");
             if(StartupProfile.Selected!=1-expected || File.ReadAllText(path).Trim()!=(editor?"city":"editor"))throw new Exception("Profile change was not persisted.");

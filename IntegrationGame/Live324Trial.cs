@@ -40,6 +40,24 @@ static class Live324Trial
         for(int z=0;z<1201;z++)for(int x=0;x<1201;x++)if(terrain.RawHeights[z*2161+x]!=source.Heights[z*1201+x])throw new Exception("Migrated native terrain differs at "+x+","+z);
         Entry.Log("PASS: complete 100-tile city loaded into native 324 managers; all 1,442,401 original terrain heights preserved. Supply/consumer operation not asserted.");
     }
+    public static void CheckMigratedWaterAfterUnlock()
+    {
+        var storage=Singleton<SimulationManager>.instance.m_serializableDataStorage;byte[] bytes;
+        lock(storage)bytes=SaveTransport.Read(storage,HundredTiles.SaveBridge.RuntimeSaveBridge.DataKey);
+        byte[] digest;MapLayout layout;var source=SaveCodec.DecodeOriginal(bytes,out digest,out layout);
+        if(layout.TileCount!=100)throw new Exception("Expected the 100-tile source water snapshot.");
+        var water=Singleton<TerrainManager>.instance.WaterSimulation;
+        using(var handoff=(IDisposable)Activator.CreateInstance(typeof(HundredTiles.Runtime.ExtendedSea).Assembly.GetType("HundredTiles.Runtime.LandscapeWater"),new object[]{water}))
+        {
+            var buffers=(WaterSimulation.Cell[][])typeof(WaterSimulation).GetField("m_waterBuffers",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(water);
+            foreach(var buffer in buffers)for(int z=0;z<1201;z++)for(int x=0;x<1201;x++)
+            {
+                var actual=buffer[z*2161+x];var expected=source.Water[z*1201+x];
+                if(actual.m_height!=expected.Height || actual.m_pollution!=expected.Pollution || actual.m_velocityX!=expected.VelocityX || actual.m_velocityZ!=expected.VelocityZ)throw new Exception("100-to-324 unlock altered source water at "+x+","+z);
+            }
+        }
+        Entry.Log("PASS: all 1,442,401 source-100 water cells, pollution and both velocity axes preserved in both native buffers after 324 unlock/sea initialization.");
+    }
     static string Objects {get{return Path.Combine(Entry.Root,"trial324-far-objects.txt");}}
     public static void PrepareFar()
     {LiveTerrainToolChecks.Prepare();LiveConstructionChecks.Prepare();if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_SURFACE_TRACE")=="1")TerrainSurfaceTrace.Install();}
