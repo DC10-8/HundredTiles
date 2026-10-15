@@ -120,7 +120,7 @@ public static class Bootstrap
         foreach(var target in Harmony.GetAllPatchedMethods())
         {var info=Harmony.GetPatchInfo(target);if(info!=null)foreach(string owner in info.Owners)if(owner==Installer.Owner){owned++;break;}}
         int extra=0;foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies()){if(assembly.GetName().Name=="TerrainLink")extra+=5;if(assembly.GetName().Name=="RightOfWay")extra+=2;if(assembly.GetName().Name=="AutoHistoricalPlop")extra+=1;}
-        int expected=(terrain?476:moveIt?470:460)+(ForceRoadCompatibility.Reviewed?3:0)+extra;
+        int expected=(terrain?477:moveIt?471:461)+(ForceRoadCompatibility.Reviewed?3:0)+extra;
         if(owned!=expected){Entry.Log("FAILURE: actual local-plugin entry installed "+owned+" targets, expected "+expected+".");FatalFailure=true;return;}
         Entry.Log("PASS: actual PluginManager/IUserMod/HarmonyHelper entry installed the production city-runtime patches.");
     }

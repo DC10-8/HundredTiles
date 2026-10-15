@@ -54,6 +54,7 @@ namespace HundredTiles.Runtime
             hooks.AddRange(DistrictNameHooks.Specifications());hooks.AddRange(UtilityHooks.Specifications());hooks.AddRange(UtilitySerializerHooks.Specifications());
             hooks.AddRange(BoundaryHooks.Specifications());hooks.AddRange(TaxiHooks.Specifications());
             hooks.AddRange(PathHeightHooks.Specifications());
+            hooks.Add(TransportMeshHooks.Specification());
             hooks.AddRange(ServiceSerializerHooks.Specifications());
             hooks.AddRange(ServiceHooks.Specifications());
             var merged=new Dictionary<MethodBase,HookSpec>();

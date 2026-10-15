@@ -33,14 +33,14 @@ class Program
     static int Run()
     {
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_PATH_HEIGHT_EXPORT")=="1")
-        {foreach(var type in new[]{typeof(ShipPathAI),typeof(FlightPathAI)}){var target=type.GetMethod("CheckHeight",BindingFlags.Instance|BindingFlags.NonPublic);Console.WriteLine(type.Name+"|"+HundredTiles.ExperimentalPatch.ReviewedMethod.SemanticHash(target));}return 0;}
+        {foreach(var type in new[]{typeof(ShipPathAI),typeof(FlightPathAI)}){var target=type.GetMethod("CheckHeight",BindingFlags.Instance|BindingFlags.NonPublic);Console.WriteLine(type.Name+"|"+HundredTiles.ExperimentalPatch.ReviewedMethod.SemanticHash(target));}Console.WriteLine("TransportLine.UpdateMeshData|"+HundredTiles.ExperimentalPatch.ReviewedMethod.SemanticHash(typeof(TransportLine).GetMethod("UpdateMeshData")));return 0;}
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_324_PROFILE")=="1")
         {
             Installer.InitializeManagedDirectory(Directory.GetParent(gameDirectory).FullName);
             var plan=HundredTiles.ExperimentalPatch.PatchPlan.Embedded();
             if(HundredTiles.Core.ExpandedMap.TileCount!=324 || plan.CanActivate)throw new Exception("324 prototype profile must remain blocked for native activation.");
             int changed=0;foreach(var method in plan.Methods.Values){var target=HundredTiles.ExperimentalPatch.ReviewedMethod.Resolve(typeof(TerrainManager).Assembly,method);var instructions=HarmonyLib.PatchProcessor.GetOriginalInstructions(target);var transformed=HundredTiles.ExperimentalPatch.PlannedTranspiler.Transform(instructions,method);if(method.Name=="TerrainTool.EndStroke"){if(!object.Equals(transformed[37].operand,instructions[5].operand) || object.Equals(instructions[37].operand,instructions[5].operand))throw new Exception("City Undo branch or input preservation differs.");var invalid=new System.Collections.Generic.List<HarmonyLib.CodeInstruction>();foreach(var instruction in transformed)invalid.Add(new HarmonyLib.CodeInstruction(instruction));invalid[37].opcode=System.Reflection.Emit.OpCodes.Nop;bool rejected=false;try{HundredTiles.ExperimentalPatch.PlannedTranspiler.EnableCityUndo(invalid);}catch(InvalidOperationException){rejected=true;}if(!rejected)throw new Exception("Unknown city Undo flow accepted.");}changed++;}
-            int hooks=Installer.Connections().Count;if(hooks!=460)throw new Exception("324 hook coverage differs: "+hooks);
+            int hooks=Installer.Connections().Count;if(hooks!=461)throw new Exception("324 hook coverage differs: "+hooks);
             UnityEngine.Vector3 result=new UnityEngine.Vector3();HundredTiles.SaveBridge.BoundaryHooks.Camera(new UnityEngine.Vector3(30000,20,30000),ref result);if(result.x!=25920 || result.z!=25920 || result.y!=20)throw new Exception("324 camera clamp differs.");
             var pathSample=PathHeightHooks.SamplePoint(new UnityEngine.Vector3(25000,123,-40000));if(pathSample.x!=25000 || pathSample.z!=-8607 || pathSample.y!=123)throw new Exception("324 outside path sampling still uses the original symmetric boundary.");
             foreach(int coordinate in new[]{-16,0,4799,4800,8563,8639,8640,8655})

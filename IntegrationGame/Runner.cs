@@ -108,7 +108,7 @@ public sealed class Runner : MonoBehaviour
             if(phase==34 && workerCompleted)
             {
                 if(Mode=="Stress324LongRunEntrySave" && !longPopulationStarted){longPopulationStarted=true;phase=35;StartCoroutine(LivePopulationRunChecks.Run(delegate(Exception error){if(error!=null)Fail(error);phase=34;workerCompleted=true;}));return;}
-                if(Mode.EndsWith("Reload")){phase=9;if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_OUTSIDE_TRAFFIC")=="1"){Singleton<SimulationManager>.instance.ForcedSimulationPaused=false;Singleton<SimulationManager>.instance.SimulationPaused=false;StartCoroutine(LiveOutsideTrafficChecks.CheckVehicles());}else Application.Quit();return;}
+                if(Mode.EndsWith("Reload")){phase=9;if(LiveTransitVehicleChecks.Enabled)StartCoroutine(LiveTransitVehicleChecks.Run());else if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_OUTSIDE_TRAFFIC")=="1"){Singleton<SimulationManager>.instance.ForcedSimulationPaused=false;Singleton<SimulationManager>.instance.SimulationPaused=false;StartCoroutine(LiveOutsideTrafficChecks.CheckVehicles());}else Application.Quit();return;}
                 var panel=UIView.library.Get<SavePanel>("SavePanel");if(panel==null)panel=UIView.library.Show<SavePanel>("SavePanel");if(panel==null || !panel.SaveGame(SaveName))return;phase=5;Entry.Log("Requested native population fixture save.");return;
             }
             if(phase==20)

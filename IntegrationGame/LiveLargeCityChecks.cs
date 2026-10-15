@@ -122,8 +122,8 @@ static class LiveLargeCityChecks
         int expectedResidents=longState?int.Parse(File.ReadAllText(Path.Combine(Entry.Root,prefix+"-census.txt"))):Target;
         int residents=Residents();if(residents!=expectedResidents)throw new Exception("Native population changed across save/migration: "+residents+" / "+expectedResidents);
         string expectedStructure=File.ReadAllText(Path.Combine(Entry.Root,prefix+"-structure.sha256")).Trim();
-        string actualStructure=StructureHash();
-        if(actualStructure!=expectedStructure){StructureHash(Path.Combine(Entry.Root,prefix+"-actual-structure.bin"));throw new Exception("Native city building/network/home-binding structure changed across save/migration: expected="+expectedStructure+", actual="+actualStructure);}
+        string actualStructure=StructureHash(Path.Combine(Entry.Root,prefix+"-actual-structure.bin"));
+        if(actualStructure!=expectedStructure)throw new Exception("Native city building/network/home-binding structure changed across save/migration: expected="+expectedStructure+", actual="+actualStructure);
         Entry.Log("PASS: native saved population fixture homes, zoning, exact resident census and city-wide building/network/home-binding fingerprint preserved: generated cohort="+generated+", native resident census="+residents+", active tiles="+HundredTiles.Core.ExpandedMap.TileCount+". Healthy long-duration city operation is not asserted.");
     }
     public static void CaptureLongState()
