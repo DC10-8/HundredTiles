@@ -42,7 +42,7 @@ public sealed class Runner : MonoBehaviour
                     foreach(var metadata in PackageManager.FilterAssets(UserAssetType.SystemMapMetaData))
                     {
                         phase=20;
-                        if(Mode=="MapEditorEntry")loading.LoadLevel(metadata,"MapEditor","InMapEditor",new SimulationMetaData{m_gameInstanceIdentifier=Guid.NewGuid().ToString(),m_newMapAppVersion=222554384u,m_updateMode=SimulationManager.UpdateMode.NewMap});
+                        if(Mode=="MapEditorEntry")loading.LoadLevel(metadata.Instantiate<SystemMapMetaData>().assetRef,"MapEditor","InMapEditor",new SimulationMetaData{m_gameInstanceIdentifier=Guid.NewGuid().ToString(),m_newMapAppVersion=222554384u,m_updateMode=SimulationManager.UpdateMode.NewMap});
                         else loading.LoadLevel(metadata.Instantiate<SystemMapMetaData>().assetRef,"AssetEditor","InAssetEditor",new SimulationMetaData{m_gameInstanceIdentifier=Guid.NewGuid().ToString(),m_updateMode=SimulationManager.UpdateMode.NewAsset},true);
                         Entry.Log("Requested real editor load with HundredTiles enabled: "+Mode+" / "+metadata.name);return;
                     }
