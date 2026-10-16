@@ -8,7 +8,7 @@ static class LiveTerrainToolChecks
     static TerrainTool tool;
     public static void Prepare()
     {
-        tool=ToolsModifierControl.SetTool<TerrainTool>();
+        LiveMainThread.Run(delegate{tool=ToolsModifierControl.SetTool<TerrainTool>();});
         if(tool==null)throw new Exception("Native landscaping tool missing.");
     }
     public static void PointBrush(TerrainTool target,Vector3 center,float height)
@@ -47,6 +47,7 @@ static class LiveTerrainToolChecks
         var terrain=Singleton<TerrainManager>.instance;
         TerrainModify.RefreshAllModifications();
         int minX=(int)((center.x-size*.5f+8640)/16)-2,minZ=(int)((center.z-size*.5f+8640)/16)-2,maxX=(int)((center.x+size*.5f+8640)/16)+3,maxZ=(int)((center.z+size*.5f+8640)/16)+3;
+        minX=Math.Max(0,minX);minZ=Math.Max(0,minZ);maxX=Math.Min(HundredTiles.Core.ExpandedMap.HeightStride-1,maxX);maxZ=Math.Min(HundredTiles.Core.ExpandedMap.HeightStride-1,maxZ);
         for(int z=minZ;z<=maxZ;z++)for(int x=minX;x<=maxX;x++){int k=z*HundredTiles.Core.ExpandedMap.HeightStride+x;terrain.BlockHeights[k]=terrain.BlockHeightTargets[k];}
         TerrainModify.UpdateArea(minX,minZ,maxX,maxZ,true,true,true);
         TerrainModify.RefreshAllModifications();

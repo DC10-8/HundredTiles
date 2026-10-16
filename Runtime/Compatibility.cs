@@ -21,6 +21,8 @@ namespace HundredTiles.Runtime
             ReviewedCompatibility.AddHooks(hooks);
             foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
+                if(assembly.GetName().Name=="UnifiedUILib")UnifiedUiCompatibility.AddHooks(assembly,hooks);
+                if(assembly.GetName().Name=="TrafficManager")TrafficManagerSpatialCompatibility.AddHooks(assembly,hooks);
                 if(assembly.GetName().Name=="ForceRoadConnect")ForceRoadCompatibility.AddHooks(assembly,hooks);
                 if(assembly.GetName().Name=="MoveIt")MoveItCompatibility.AddHooks(assembly,hooks);
                 if(assembly.GetName().Name=="NoUtilityNetworks")HeatingCompatibility.AddHooks(assembly,hooks);

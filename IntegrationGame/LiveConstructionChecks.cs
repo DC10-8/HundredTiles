@@ -6,7 +6,7 @@ using UnityEngine;
 static class LiveConstructionChecks
 {
     static BuildingTool building;
-    public static void Prepare(){building=ToolsModifierControl.SetTool<BuildingTool>();}
+    public static void Prepare(){LiveMainThread.Run(delegate{building=ToolsModifierControl.SetTool<BuildingTool>();});}
     static void Set(string name,object value){typeof(BuildingTool).GetField(name,BindingFlags.Instance|BindingFlags.NonPublic).SetValue(building,value);}
     public static void Run()
     {

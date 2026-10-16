@@ -21,7 +21,7 @@ public sealed class Runner : MonoBehaviour
     static string Record { get { return Population?LiveLargeCityChecks.Record:LiveConsumerChecks.Enabled?(LiveConsumerChecks.LongRun?"trial324-consumers-longrun-saved.marker":LiveConsumerChecks.Wastewater?"trial324-consumers-sewage-saved.marker":"trial324-consumers-saved.marker"):Mode.StartsWith("Trial324")?(Live324Trial.Migration?"trial324-migration-saved.marker":Live324Trial.Far?"trial324-far-saved.marker":"trial324-saved.marker"):StartupCopy && Release?"startup-saved.marker":Landscape?"landscape-saved.marker":Release?"release-saved.marker":Supply?"supply-saved.marker":Outer?"outer-saved.marker":"saved.marker"; } }
     bool landscapeFlow,textureChecksRun,trialGroundPrepared,longConsumerStarted,longPopulationStarted;float trialGroundReady;
     int phase;float began;bool verifyingReload;volatile bool workerCompleted;string inputHash;
-    void Awake(){began=Time.realtimeSinceStartup;}
+    void Awake(){LiveMainThread.Initialize();began=Time.realtimeSinceStartup;}
     void Update()
     {
         try
@@ -98,6 +98,8 @@ public sealed class Runner : MonoBehaviour
                         LiveLargeCityChecks.Check(Mode=="Stress324LongRunEntrySave");
                         if(Mode.EndsWith("Reload") && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_WATER_SAVE")=="1")Live324Trial.CheckSavedWater();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_LONG_PATH")=="1")LiveLongPathChecks.Run();
+                        if(LiveFarOutsideChecks.Enabled)LiveFarOutsideChecks.Prepare();
+                        if(LiveLodVisualChecks.Enabled)LiveLodVisualChecks.Prepare();
                         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_NETWORK_CAPACITY")=="1")LiveNetworkCapacityChecks.Run();
                         if(Mode.EndsWith("Reload") && Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_OUTSIDE_TRAFFIC")=="1")LiveOutsideTrafficChecks.Run();
                         if(Mode.EndsWith("Reload") && FileHash()!=inputHash)throw new Exception("Population reload changed its source file.");

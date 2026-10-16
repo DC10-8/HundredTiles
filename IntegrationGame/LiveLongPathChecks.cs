@@ -59,17 +59,29 @@ static class LiveLongPathChecks
         LiveTerrainToolChecks.Prepare();LiveTerrainToolChecks.LevelArea(new Vector3(23300,80,24800),800,80);
         // A closed street circuit avoids depending on a traffic mod's policy
         // for bus U-turns at the ends of the separate diagonal path fixture.
-        var road=PrefabCollection<NetInfo>.FindLoaded("Basic Road");ushort firstNode=0,previousNode=0;
+        var road=PrefabCollection<NetInfo>.FindLoaded("Basic Road");NetInfo express=null;
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_PASSENGERS")=="1")
+            for(uint index=0;index<PrefabCollection<NetInfo>.LoadedCount();index++)
+            {
+                var candidate=PrefabCollection<NetInfo>.GetLoaded(index);var ai=candidate==null?null:candidate.m_netAI as RoadAI;
+                if(ai==null || !ai.m_highwayRules)continue;bool pedestrian=false,forward=false,backward=false;
+                foreach(var lane in candidate.m_lanes){if((lane.m_laneType&NetInfo.LaneType.Pedestrian)!=0)pedestrian=true;if((lane.m_vehicleType&VehicleInfo.VehicleType.Car)!=0){forward|=(lane.m_finalDirection&NetInfo.Direction.Forward)!=0;backward|=(lane.m_finalDirection&NetInfo.Direction.Backward)!=0;}}
+                if(!pedestrian && forward && !backward && (express==null || candidate.m_halfWidth<express.m_halfWidth))express=candidate;
+            }
+        if(express!=null)Entry.Log("Native passenger fixture non-pedestrian one-way links: "+express.name);
+        ushort firstNode=0,previousNode=0;
         var previousZones=NetTool.m_zoneGridFlags;NetTool.m_zoneGridFlags=NetSegment.Flags2.ZoneLeft|NetSegment.Flags2.ZoneRight;
         var blocks=new System.Collections.Generic.HashSet<ushort>();
         var corners=new[]{new Vector3(23000,0,24500),new Vector3(23600,0,24500),new Vector3(23600,0,25100),new Vector3(23000,0,25100),new Vector3(23000,0,24500)};
         for(int side=0;side<4;side++)for(int step=side==0?0:1;step<=5;step++)
         {
+            var street=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_PASSENGERS")=="1" && (side==1 || side==3)?express:road;
+            if(street==null)throw new Exception("Native non-pedestrian bus link prefab missing.");
             var point=Vector3.Lerp(corners[side],corners[side+1],step/5f);point.y=Singleton<TerrainManager>.instance.SampleRawHeightSmooth(point);ushort node;
             if(side==3 && step==5)node=firstNode;
             else if(!graph.CreateNode(out node,ref random,road,point,Singleton<SimulationManager>.instance.m_currentBuildIndex++))throw new Exception("Far bus street node creation failed.");
             if(firstNode==0)firstNode=node;
-            if(previousNode!=0){ushort segment;var direction=(graph.m_nodes.m_buffer[node].m_position-graph.m_nodes.m_buffer[previousNode].m_position);direction.y=0;direction.Normalize();if(!graph.CreateSegment(out segment,ref random,road,previousNode,node,direction,-direction,Singleton<SimulationManager>.instance.m_currentBuildIndex++,Singleton<SimulationManager>.instance.m_currentBuildIndex,false))throw new Exception("Far bus street segment creation failed.");var data=graph.m_segments.m_buffer[segment];foreach(ushort block in new[]{data.m_blockStartLeft,data.m_blockStartRight,data.m_blockEndLeft,data.m_blockEndRight})if(block!=0)blocks.Add(block);}
+            if(previousNode!=0){ushort segment;var direction=(graph.m_nodes.m_buffer[node].m_position-graph.m_nodes.m_buffer[previousNode].m_position);direction.y=0;direction.Normalize();if(!graph.CreateSegment(out segment,ref random,street,previousNode,node,direction,-direction,Singleton<SimulationManager>.instance.m_currentBuildIndex++,Singleton<SimulationManager>.instance.m_currentBuildIndex,false))throw new Exception("Far bus street segment creation failed.");var data=graph.m_segments.m_buffer[segment];foreach(ushort block in new[]{data.m_blockStartLeft,data.m_blockStartRight,data.m_blockEndLeft,data.m_blockEndRight})if(block!=0)blocks.Add(block);}
             previousNode=node;
         }
         NetTool.m_zoneGridFlags=previousZones;
