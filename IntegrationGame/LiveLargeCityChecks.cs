@@ -15,8 +15,8 @@ static class LiveLargeCityChecks
     }
     public static string Source {get{return "HundredTiles_100_Population_"+Target;}}
     public static string ShortSaveName {get{return "HundredTiles_"+HundredTiles.Core.ExpandedMap.TileCount+"_Population_"+Target;}}
-    public static string SaveName {get{return ShortSaveName+(LivePopulationRunChecks.Enabled?"_LongRun":"");}}
-    public static string Record {get{return "population-"+HundredTiles.Core.ExpandedMap.TileCount+"-"+Target+(LivePopulationRunChecks.Enabled?"-long":"")+"-saved.marker";}}
+    public static string SaveName {get{return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_RECALC_RELOAD")=="1"?"HundredTiles_324_Recalc_Verification":ShortSaveName+(LivePopulationRunChecks.Enabled?"_LongRun":"");}}
+    public static string Record {get{return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_RECALC_RELOAD")=="1"?"recalc-saved.marker":"population-"+HundredTiles.Core.ExpandedMap.TileCount+"-"+Target+(LivePopulationRunChecks.Enabled?"-long":"")+"-saved.marker";}}
     static string Manifest {get{return Path.Combine(Entry.Root,"population-"+Target+"-homes.txt");}}
     public static void Prepare(){LiveTerrainToolChecks.Prepare();}
     public static void Create()

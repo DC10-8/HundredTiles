@@ -1,6 +1,6 @@
 param([string]$ModsDirectory=(Join-Path $env:LOCALAPPDATA 'Colossal Order\Cities_Skylines\Addons\Mods'))
 $ErrorActionPreference='Stop'
-if(Get-Process Cities -ErrorAction SilentlyContinue){throw 'Cities: Skylinesを終了してから導入してください。'}
+if(@(Get-CimInstance Win32_Process -Filter "Name = 'Cities.exe'" -ErrorAction Stop).Count-ne 0){throw 'Cities: Skylinesを終了してから導入してください。'}
 $manifest=Import-Csv -LiteralPath (Join-Path $PSScriptRoot 'files.csv')
 $allowed=@('HundredTiles.Core.dll','HundredTiles.ExperimentalPatch.dll','HundredTiles.SaveBridge.dll','HundredTiles.Utilities.dll','HundredTiles.Runtime.dll','CitiesHarmony.API.dll')
 if($manifest.Count -ne $allowed.Count){throw '配布ファイル一覧が一致しません。'}
@@ -12,4 +12,4 @@ foreach($name in $allowed){Copy-Item -LiteralPath (Join-Path $PSScriptRoot ('Hun
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'HundredTiles\UPSTREAM-LICENSE.txt') -Destination $target
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'HundredTiles\CitiesHarmony-LICENSE.txt') -Destination $target
 Write-Output "導入先: $target"
-Write-Output 'Harmonyを導入し、コンテンツマネージャーでHundredTiles 1.0を有効化した後、ゲームを再起動してください。'
+Write-Output 'Harmonyを導入し、コンテンツマネージャーでHundredTilesを有効化した後、ゲームを再起動してください。'

@@ -8,7 +8,7 @@ namespace HundredTiles.Runtime
  public sealed class Mod : IUserMod
  {
   static bool enabled;
-  public string Name {get{return "HundredTiles 1.0";}}
+  public string Name {get{return HundredTiles.Core.ExpandedMap.TileCount==324?"HundredTiles 324 Beta":"HundredTiles 1.0";}}
   public string Description {get{return UiLanguage.Text("標準サイズ10×10の都市領域。Harmonyが必要です。オプションの起動用途を「エディタ」に変更して再起動すると、MODを有効にしたままエディタを使えます。","Standard-sized 10×10 city area. Requires Harmony. Select the Editor startup profile in options and restart to use editors with the mod enabled.");}}
   public void OnEnabled(){enabled=true;HarmonyHelper.DoOnHarmonyReady(delegate{if(!enabled)return;try{SessionGate.Enable();if(StartupProfile.Selected==0)Installer.Install();}catch(Exception error){Installer.FailureReason=error.Message;Debug.LogError("[HundredTiles] "+error);}});}
   public void OnDisabled(){enabled=false;SessionGate.Disable();}

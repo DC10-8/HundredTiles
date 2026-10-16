@@ -34,11 +34,40 @@ class Program
     {
         if(!OutsideRoadHooks.IsMapEdge(new UnityEngine.Vector3(HundredTiles.Core.ExpandedMap.WorldMax,0,0)) || OutsideRoadHooks.IsMapEdge(new UnityEngine.Vector3(2000,0,2000)) || OutsideRoadHooks.IsMapEdge(new UnityEngine.Vector3(HundredTiles.Core.ExpandedMap.WorldMax,0,50000)) || OutsideRoadHooks.IsMapEdge(new UnityEngine.Vector3(float.NaN,0,HundredTiles.Core.ExpandedMap.WorldMax)))throw new Exception("Road outside fallback boundary scope differs.");
         string tmpeGrid=Environment.GetEnvironmentVariable("HUNDREDTILES_TMPE_GRID_CHECK");
+        string recalc=Environment.GetEnvironmentVariable("HUNDREDTILES_RECALC_CHECK");
+        if(!string.IsNullOrEmpty(recalc))
+        {
+            var hooks=new System.Collections.Generic.List<HookSpec>();NetworkRecalculationCompatibility.AddHooks(Assembly.LoadFrom(recalc),hooks);
+            if(hooks.Count!=1)throw new Exception("Network recalculation hook missing.");
+            var original=HarmonyLib.PatchProcessor.GetOriginalInstructions(hooks[0].Target);
+            var output=new System.Collections.Generic.List<HarmonyLib.CodeInstruction>(NetworkRecalculationCompatibility.DeferCalls(original));
+            if(output.Count!=original.Count)throw new Exception("Recalculation stack shape changed.");
+            bool rejected=false;try{new System.Collections.Generic.List<HarmonyLib.CodeInstruction>(NetworkRecalculationCompatibility.DeferCalls(new HarmonyLib.CodeInstruction[0]));}catch(InvalidOperationException){rejected=true;}
+            if(!rejected)throw new Exception("Unknown recalculation flow was accepted.");
+            rejected=false;try{NetworkRecalculationCompatibility.InvokeWhenReady(null,null,null);}catch(InvalidOperationException){rejected=true;}
+            if(!rejected)throw new Exception("Unrelated reflection invocation was accepted.");
+            Console.WriteLine("PASS: pinned network recalculation rewrites exactly two invokes; unknown IL and unrelated invocation rejected. Reflection only.");return 0;
+        }
         if(!string.IsNullOrEmpty(tmpeGrid))
         {
             var assembly=Assembly.LoadFrom(tmpeGrid);var hooks=new System.Collections.Generic.List<HookSpec>();TrafficManagerSpatialCompatibility.AddHooks(assembly,hooks);
             if(hooks.Count!=4)throw new Exception("TM:PE spatial hook count differs.");
-            foreach(var hook in hooks){var original=HarmonyLib.PatchProcessor.GetOriginalInstructions(hook.Target);var transformed=new System.Collections.Generic.List<HarmonyLib.CodeInstruction>(TrafficManagerSpatialCompatibility.Grid(original,hook.Target));if(transformed.Count!=original.Count)throw new Exception("TM:PE adapter changed instruction count.");}
+            string renew=Environment.GetEnvironmentVariable("HUNDREDTILES_RENEW_GRID_CHECK");MethodInfo capacity=null;
+            if(!string.IsNullOrEmpty(renew))capacity=Assembly.LoadFrom(renew).GetType("MoreNetworkCapacityRenew.DynamicPatcher",true).GetMethod("ValidationTranspiler",BindingFlags.Static|BindingFlags.NonPublic);
+            foreach(var hook in hooks)
+            {
+                var original=HarmonyLib.PatchProcessor.GetOriginalInstructions(hook.Target);var transformed=new System.Collections.Generic.List<HarmonyLib.CodeInstruction>(TrafficManagerSpatialCompatibility.Grid(original,hook.Target));if(transformed.Count!=original.Count)throw new Exception("TM:PE adapter changed instruction count.");
+                if(capacity!=null)
+                {
+                    var before=new System.Collections.Generic.List<HarmonyLib.CodeInstruction>();foreach(var instruction in original)before.Add(new HarmonyLib.CodeInstruction(instruction));
+                    var first=(System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>)capacity.Invoke(null,new object[]{before,hook.Target});
+                    var a=new System.Collections.Generic.List<HarmonyLib.CodeInstruction>(TrafficManagerSpatialCompatibility.Grid(first,hook.Target));
+                    var b=new System.Collections.Generic.List<HarmonyLib.CodeInstruction>((System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>)capacity.Invoke(null,new object[]{transformed,hook.Target}));
+                    if(a.Count!=b.Count)throw new Exception("Capacity/spatial adapter composition changes length.");
+                    for(int i=0;i<a.Count;i++)if(a[i].opcode!=b[i].opcode || !object.Equals(a[i].operand,b[i].operand))throw new Exception("Capacity and spatial adapters depend on ordering: "+hook.Target.Name);
+                }
+            }
+            if(capacity!=null)Console.WriteLine("PASS: reviewed Renew capacity transpiler and spatial adapters commute in both patch orders for all four TM:PE methods.");
             Console.WriteLine("PASS: four pinned TM:PE spatial methods transform for "+HundredTiles.Core.ExpandedMap.TileCount+" tiles; complete dependency review passed. Reflection only.");return 0;
         }
         string unifiedReview=Environment.GetEnvironmentVariable("HUNDREDTILES_UNIFIED_REVIEW");
@@ -56,14 +85,14 @@ class Program
         {
             Installer.InitializeManagedDirectory(Directory.GetParent(gameDirectory).FullName);
             var plan=HundredTiles.ExperimentalPatch.PatchPlan.Embedded();
-            if(HundredTiles.Core.ExpandedMap.TileCount!=324 || plan.CanActivate)throw new Exception("324 prototype profile must remain blocked for native activation.");
+            if(HundredTiles.Core.ExpandedMap.TileCount!=324 || !plan.CanActivate)throw new Exception("Reviewed 324 city runtime activation scope missing.");
             int changed=0;foreach(var method in plan.Methods.Values){var target=HundredTiles.ExperimentalPatch.ReviewedMethod.Resolve(typeof(TerrainManager).Assembly,method);var instructions=HarmonyLib.PatchProcessor.GetOriginalInstructions(target);var transformed=HundredTiles.ExperimentalPatch.PlannedTranspiler.Transform(instructions,method);if(method.Name=="TerrainTool.EndStroke"){if(!object.Equals(transformed[37].operand,instructions[5].operand) || object.Equals(instructions[37].operand,instructions[5].operand))throw new Exception("City Undo branch or input preservation differs.");var invalid=new System.Collections.Generic.List<HarmonyLib.CodeInstruction>();foreach(var instruction in transformed)invalid.Add(new HarmonyLib.CodeInstruction(instruction));invalid[37].opcode=System.Reflection.Emit.OpCodes.Nop;bool rejected=false;try{HundredTiles.ExperimentalPatch.PlannedTranspiler.EnableCityUndo(invalid);}catch(InvalidOperationException){rejected=true;}if(!rejected)throw new Exception("Unknown city Undo flow accepted.");}changed++;}
             int hooks=Installer.Connections().Count;if(hooks!=462)throw new Exception("324 hook coverage differs: "+hooks);
             UnityEngine.Vector3 result=new UnityEngine.Vector3();HundredTiles.SaveBridge.BoundaryHooks.Camera(new UnityEngine.Vector3(30000,20,30000),ref result);if(result.x!=25920 || result.z!=25920 || result.y!=20)throw new Exception("324 camera clamp differs.");
             var pathSample=PathHeightHooks.SamplePoint(new UnityEngine.Vector3(25000,123,-40000));if(pathSample.x!=25000 || pathSample.z!=-8607 || pathSample.y!=123)throw new Exception("324 outside path sampling still uses the original symmetric boundary.");
             foreach(int coordinate in new[]{-16,0,4799,4800,8563,8639,8640,8655})
             {int x=coordinate,z=coordinate;BoundaryHooks.DetailCell(ref x,ref z);if(x!=Math.Max(0,Math.Min(8639,coordinate)) || z!=x)throw new Exception("324 detailed surface boundary differs.");}
-            Console.WriteLine("PASS: 324 candidate transforms "+changed+" pinned native methods; "+hooks+" merged hooks; camera boundary at 25920; prototype activation remains blocked. Reflection only.");return 0;
+            Console.WriteLine("PASS: 324 city runtime transforms "+changed+" pinned native methods; "+hooks+" merged hooks; camera boundary at 25920; reviewed activation scope. Reflection only.");return 0;
         }
         string iptTest=Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_IPT_CACHE");
         if(!string.IsNullOrEmpty(iptTest))

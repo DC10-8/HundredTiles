@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][ValidateSet('100','324Trial')][string]$Profile,[switch]$SkipBuild)
+param([Parameter(Mandatory=$true)][ValidateSet('100','324','324Trial')][string]$Profile,[switch]$SkipBuild)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot
 $fixture=[IO.Path]::GetFullPath((Join-Path $projectRoot 'artifacts\isolated-game'))
@@ -9,10 +9,11 @@ function RequireStopped {
 RequireStopped
 if(-not $SkipBuild){
     if($Profile-eq '324Trial'){dotnet build $PSScriptRoot -c Release -m:1 -p:HundredTilesMapProfile=324 -p:HundredTilesTrialRuntime=true}
+    elseif($Profile-eq '324'){dotnet build $PSScriptRoot -c Release -m:1 -p:HundredTilesMapProfile=324 -p:HundredTilesTrialRuntime=false}
     else{dotnet build $PSScriptRoot -c Release -m:1 -p:HundredTilesMapProfile=100 -p:HundredTilesTrialRuntime=false}
     if($LASTEXITCODE){throw 'Profile build failed; fixture unchanged.'}
 }
-$suffix=if($Profile-eq '324Trial'){'324-trial\Release\net35'}else{'Release\net35'}
+$suffix=if($Profile-eq '324Trial'){'324-trial\Release\net35'}elseif($Profile-eq '324'){'324\Release\net35'}else{'Release\net35'}
 $source=Join-Path $projectRoot ('Runtime\bin\'+$suffix)
 $harness=Join-Path $projectRoot ('IntegrationGame\bin\'+$suffix+'\HundredTiles.IntegrationGame.dll')
 $target=Join-Path $fixture 'UserData\Addons\Mods\HundredTiles'

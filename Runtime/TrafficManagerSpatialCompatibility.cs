@@ -14,6 +14,13 @@ namespace HundredTiles.Runtime
 {
     public static class TrafficManagerSpatialCompatibility
     {
+        public static bool IsSpatialTarget(string key)
+        {
+            return key=="TrafficManager.Manager.Impl.ExtPathManager.FindPathPositionWithSpiralLoop" ||
+                   key=="TrafficManager.Manager.Impl.ExtPathManager.<FindPathPositionWithSpiralLoop>g__FindHelper|12_0" ||
+                   key=="TrafficManager.Manager.Impl.AdvancedParkingManager.<FindParkingSpaceAtRoadSide>g__LoopHandler|32_0" ||
+                   key=="TrafficManager.Manager.Impl.AdvancedParkingManager.<FindParkingSpaceBuilding>g__LoopHandler|33_0";
+        }
         public static void AddHooks(Assembly assembly,IList<HookSpec> hooks)
         {
             string path=assembly.Location;

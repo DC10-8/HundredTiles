@@ -1,0 +1,41 @@
+{
+  "profile": 324,
+  "release": "324 Beta",
+  "date": "2026-10-17",
+  "gameAssemblySha256": "DF557994A03C93D8BB4A14F80B1FBCC0FB29D547658442445D078D069BCDD9FE",
+  "nativeSaveReload": "passed",
+  "nativeSaveSha256": "01FECAD924EF346B75E70B23BBACD6B9DCC07DBBBF4DE33C0C684CF7FAE27F15",
+  "nativeSaveBytes": 285622905,
+  "residents": 628493,
+  "terrainWaterCells": 4669921,
+  "networkNodes": 65024,
+  "enabledPlugins": 26,
+  "deferredRequests": 1722,
+  "scope": "Pinned game and reviewed mod versions; generated load city; not every asset/mod configuration",
+  "dlls": [
+    {
+      "Name": "CitiesHarmony.API.dll",
+      "SHA256": "DD25AFCA06EDE82C433C9A5FEFBF30426BB713D646AB6A452BBB65AA11A0FD3B"
+    },
+    {
+      "Name": "HundredTiles.Core.dll",
+      "SHA256": "014266A15C260D7C08C6B158188511511273CA6BBED642E302ACBBEC29DB61AF"
+    },
+    {
+      "Name": "HundredTiles.ExperimentalPatch.dll",
+      "SHA256": "147329C871F6B827DAFE0C922138927B1E12FFAFF120DD8951FFA56D74CAD906"
+    },
+    {
+      "Name": "HundredTiles.Runtime.dll",
+      "SHA256": "E75302F6944ADE1065828D4A9FA8BE5A1827EB14DD454DF2ED54AC948282D3ED"
+    },
+    {
+      "Name": "HundredTiles.SaveBridge.dll",
+      "SHA256": "F01EB2F19AF1FF3B1288E81D6FD275F511A720AB5286BB829A870335CBED8A31"
+    },
+    {
+      "Name": "HundredTiles.Utilities.dll",
+      "SHA256": "5FDDE056C30A0BA6DFF90E16D911E70AF01D3142E6199D2B230BCC80D0131F1A"
+    }
+  ]
+}

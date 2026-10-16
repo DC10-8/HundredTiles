@@ -109,6 +109,17 @@ public sealed class Runner : MonoBehaviour
             }
             if(phase==34 && workerCompleted)
             {
+                if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_RECALC_SAVE")=="1")
+                {
+                    if(HundredTiles.Runtime.NetworkRecalculationCompatibility.Pending!=0)return;
+                    if(!File.Exists(Path.Combine(Entry.Root,"isolated-test.marker")))throw new Exception("Recalculation save requires isolation.");
+                    HundredTiles.Runtime.SaveSafety.Validate(HundredTiles.Runtime.Installer.Connections());
+                    string output=Path.Combine(Entry.Root,"UserData/Saves/HundredTiles_324_Recalc_Verification.crp");
+                    if(File.Exists(output))throw new Exception("Recalculation output already exists; refusing overwrite.");
+                    var savePanel=UIView.library.Get<SavePanel>("SavePanel");if(savePanel==null)savePanel=UIView.library.Show<SavePanel>("SavePanel");
+                    if(savePanel==null || !savePanel.SaveGame("HundredTiles_324_Recalc_Verification"))return;
+                    phase=36;Entry.Log("Requested native save after completed network recalculation.");return;
+                }
                 if(Mode=="Stress324LongRunEntrySave" && !longPopulationStarted){longPopulationStarted=true;phase=35;StartCoroutine(LivePopulationRunChecks.Run(delegate(Exception error){if(error!=null)Fail(error);phase=34;workerCompleted=true;}));return;}
                 if(Mode.EndsWith("Reload")){phase=9;if(LiveTransitVehicleChecks.Enabled)StartCoroutine(LiveTransitVehicleChecks.Run());else if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_OUTSIDE_TRAFFIC")=="1"){Singleton<SimulationManager>.instance.ForcedSimulationPaused=false;Singleton<SimulationManager>.instance.SimulationPaused=false;StartCoroutine(LiveOutsideTrafficChecks.CheckVehicles());}else Application.Quit();return;}
                 var panel=UIView.library.Get<SavePanel>("SavePanel");if(panel==null)panel=UIView.library.Show<SavePanel>("SavePanel");if(panel==null || !panel.SaveGame(SaveName))return;phase=5;Entry.Log("Requested native population fixture save.");return;
@@ -238,6 +249,15 @@ public sealed class Runner : MonoBehaviour
                 string file=Path.Combine(Entry.Root,"UserData/Saves/"+SaveName+".crp");
                 if(!File.Exists(file) || SavePanel.isSaving)return;
                 string hash=FileHash();File.WriteAllText(Path.Combine(Entry.Root,Record),new FileInfo(file).Length+"\n"+hash);phase=9;Entry.Log("Real .crp saved; SHA-256 "+hash+"; exiting for separate-process reload.");Application.Quit();
+            }
+            if(phase==36)
+            {
+                string file=Path.Combine(Entry.Root,"UserData/Saves/HundredTiles_324_Recalc_Verification.crp");
+                if(!File.Exists(file) || SavePanel.isSaving)return;
+                if(FileHash()!=inputHash)throw new Exception("Recalculation verification changed its source save.");
+                string hash=HundredTiles.ExperimentalPatch.PlannedTranspiler.Hash(File.ReadAllBytes(file));
+                File.WriteAllText(Path.Combine(Entry.Root,"recalc-saved.marker"),new FileInfo(file).Length+"\n"+hash);
+                phase=9;Entry.Log("PASS: real recalculation verification .crp saved; SHA-256 "+hash+"; source unchanged; exiting for separate-process reload.");Application.Quit();
             }
         }
         catch(Exception error){phase=9;Fail(error);Application.Quit();}

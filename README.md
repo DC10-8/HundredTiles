@@ -1,6 +1,6 @@
 # HundredTiles — Cities: Skylines 1
 
-This development branch includes a gated 18×18 (324-tile) candidate. The default build remains 100 tiles. A normal 324 build refuses activation while migration, compatibility and native validation remain incomplete; trial activation requires an isolated game and redirected user data. See [324 development results and remaining work](docs/324-development.ja.md).
+This branch includes an 18×18 (324-tile) beta. The default build remains 100 tiles. Use `Build.ps1 -MapProfile 324` and `Package.ps1 -MapProfile 324` for the reviewed 324 city runtime. See the [324 instructions and supported scope](docs/Release-324-Beta.ja.md) and [native verification record](docs/324-development.ja.md).
 
 **Experimental release.** Long-term large-city operation and arbitrary mod combinations are unverified. Use copied saves and keep an external backup. See [safety and build verification](docs/Safety-and-build.md) for confirmed checks and limits.
 

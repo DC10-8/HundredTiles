@@ -9,6 +9,7 @@ namespace HundredTiles.Runtime
     {
         public static void Validate(IList<HookSpec> hooks)
         {
+            if(NetworkRecalculationCompatibility.Pending!=0)throw new InvalidOperationException("Saving blocked: deferred network recalculation has not completed.");
             foreach(var hook in hooks)
             {
                 var patches=Harmony.GetPatchInfo(hook.Target);

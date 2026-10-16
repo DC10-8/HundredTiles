@@ -22,11 +22,11 @@ public class ImmaterialResourceManager
 {
  public const int RESOURCE_COUNT=35;public const float RESOURCEGRID_CELL_SIZE=38.4f;
  public struct ParkAreaIndex {public int m_index,m_cost;}
- public static byte[] Visited=new byte[500*500];public static int TotalCalls;
+ public static byte[] Visited=new byte[HundredTiles.Core.ServiceGrid.Side*HundredTiles.Core.ServiceGrid.Side];public static int TotalCalls;
  public readonly List<(int,int,int,int)> Dirty=new();
  public void AreaModified(int x1,int z1,int x2,int z2){Dirty.Add((x1,z1,x2,z2));}
  private static bool CalculateLocalResources(int x,int z,ushort[] buffer,int[] global,ushort[] target,int index)
- {Visited[z*500+x]++;for(int i=0;i<35;i++)target[index+i]=(ushort)(buffer[index+i]+global[i]);target[index+16]=1;return true;}
+ {Visited[z*HundredTiles.Core.ServiceGrid.Side+x]++;for(int i=0;i<35;i++)target[index+i]=(ushort)(buffer[index+i]+global[i]);target[index+16]=1;return true;}
  private static void CalculateTotalResources(int[] buffer,long[] mul,int[] target){TotalCalls++;Array.Copy(buffer,target,35);}
  private void SimulationStepImpl(int subStep){}
  public ParkAreaIndex[] GetParkAreaResourceIndexes(byte park,float radius)=>throw new Exception("Vanilla park queue must not run");

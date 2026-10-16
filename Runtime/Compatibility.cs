@@ -23,6 +23,7 @@ namespace HundredTiles.Runtime
             {
                 if(assembly.GetName().Name=="UnifiedUILib")UnifiedUiCompatibility.AddHooks(assembly,hooks);
                 if(assembly.GetName().Name=="TrafficManager")TrafficManagerSpatialCompatibility.AddHooks(assembly,hooks);
+                if(assembly.GetName().Name=="MoreNetworkCapacityRenew")NetworkRecalculationCompatibility.AddHooks(assembly,hooks);
                 if(assembly.GetName().Name=="ForceRoadConnect")ForceRoadCompatibility.AddHooks(assembly,hooks);
                 if(assembly.GetName().Name=="MoveIt")MoveItCompatibility.AddHooks(assembly,hooks);
                 if(assembly.GetName().Name=="NoUtilityNetworks")HeatingCompatibility.AddHooks(assembly,hooks);

@@ -1,6 +1,6 @@
-# 324-tile candidate; native activation is blocked pending complete verification.
+# Reviewed 324-tile city runtime; pinned game and compatibility versions only.
 assembly	DF557994A03C93D8BB4A14F80B1FBCC0FB29D547658442445D078D069BCDD9FE
-coverage	incomplete
+coverage	city-runtime
 method	060001EB	AirportAuxBuildingAI.FindRoadAccess	465	7DDC0AE46238B226CF64375A2E5B90DEA996F54C86908F361C796A3C79AB0C38
 edit	060001EB	189	int	269	539
 edit	060001EB	204	int	269	539

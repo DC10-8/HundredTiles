@@ -14,16 +14,17 @@ for(uint frame=0;frame<256;frame++)
  simulation.m_currentFrameIndex=frame;Step(1);
  Check(ImmaterialResourceManager.TotalCalls==(frame==255?1:0),"Statistics finalize only after all rows");
 }
-Check(ImmaterialResourceManager.Visited.All(v=>v==1),"All 250000 cells processed exactly once in a 256-frame cycle");
+int side=ServiceGrid.Side,cells=side*side;
+Check(ImmaterialResourceManager.Visited.All(v=>v==1),"Every cell processed exactly once in a 256-frame cycle");
 for(int channel=0;channel<35;channel++)
-{Check(totalFinal[channel]==250000*(channel==16?1:channel+1),"Whole-map resource statistics include outer cells");Check(globalFinal[channel]==100+channel && globalTemp[channel]==0 && totalTemp[channel]==0 && multipliers[channel]==0,"Global handoff and next-cycle totals reset");}
-Check(temp.All(v=>v==0) && manager.Dirty.Count==500 && manager.Dirty.Last()==(0,499,499,499),"Every processed row consumes temporaries and marks its exact bounds");
+{Check(totalFinal[channel]==cells*(channel==16?1:channel+1),"Whole-map resource statistics include outer cells");Check(globalFinal[channel]==100+channel && globalTemp[channel]==0 && totalTemp[channel]==0 && multipliers[channel]==0,"Global handoff and next-cycle totals reset");}
+Check(temp.All(v=>v==0) && manager.Dirty.Count==side && manager.Dirty.Last()==(0,side-1,side-1,side-1),"Every processed row consumes temporaries and marks its exact bounds");
 var parks=Singleton<DistrictManager>.instance;
 parks.m_parks.m_buffer[1].m_nameLocation=new UnityEngine.Vector3((454-225+.5f)*38.4f,0,(454-225+.5f)*38.4f);
 Check(!ExpandedServices.ParkIndexes(out var indexes,1,80f),"Vanilla byte-coordinate park queue suppressed");
 Check(indexes.Length>=100 && indexes.All(i=>i.m_index>=0 && i.m_index<ServiceGrid.Values && i.m_index%35==0),"Expanded park traversal stays within resource channels");
-for(int z=450;z<460;z++)for(int x=450;x<460;x++)Check(indexes.Any(i=>i.m_index==(z*500+x)*35 && i.m_cost==0),"All park cells beyond byte coordinate limit retain zero distance");
-parks.m_parks.m_buffer[1].m_nameLocation=new UnityEngine.Vector3((499-225+.5f)*38.4f,0,(499-225+.5f)*38.4f);
+for(int z=450;z<460;z++)for(int x=450;x<460;x++)Check(indexes.Any(i=>i.m_index==(z*side+x)*35 && i.m_cost==0),"All park cells beyond byte coordinate limit retain zero distance");
+parks.m_parks.m_buffer[1].m_nameLocation=new UnityEngine.Vector3((side-1-225+.5f)*38.4f,0,(side-1-225+.5f)*38.4f);
 ExpandedServices.ParkIndexes(out indexes,1,100f);Check(indexes.All(i=>i.m_index>=0 && i.m_index<ServiceGrid.Values),"Park traversal at the new map corner cannot wrap axes");
-Console.WriteLine("PASS: production service simulation prefix executes full 256-frame cycle; 250000 unique cells; 35 totals; final-frame statistics; frozen-global handoff; exact dirty rows; ushort park queue beyond 255 and at the outer corner. Game formulas and managers are fixtures, no Unity.");
+Console.WriteLine("PASS: production service simulation prefix executes full 256-frame cycle; "+cells+" unique cells; 35 totals; final-frame statistics; frozen-global handoff; exact dirty rows; ushort park queue beyond 255 and at the outer corner. Game formulas and managers are fixtures, no Unity.");
 static void Check(bool value,string name){if(!value)throw new Exception(name);}

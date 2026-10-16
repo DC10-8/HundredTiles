@@ -120,6 +120,7 @@ public static class Bootstrap
         int extra=0;foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies()){if(assembly.GetName().Name=="TerrainLink")extra+=5;if(assembly.GetName().Name=="RightOfWay")extra+=2;if(assembly.GetName().Name=="AutoHistoricalPlop")extra+=1;}
         foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())if(assembly.GetName().Name=="UnifiedUILib")extra++;
         foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())if(assembly.GetName().Name=="TrafficManager")extra+=4;
+        foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())if(assembly.GetName().Name=="MoreNetworkCapacityRenew")extra++;
         foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies()){if(assembly.GetName().Name=="NaturalResourcesBrush")extra+=6;if(assembly.GetName().Name=="MoveIt")extra+=10;}
         int expected=462+(ForceRoadCompatibility.Reviewed?3:0)+extra;
         if(owned!=expected){Entry.Log("FAILURE: actual local-plugin entry installed "+owned+" targets, expected "+expected+".");FatalFailure=true;return;}
