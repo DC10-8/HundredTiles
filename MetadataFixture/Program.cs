@@ -6,11 +6,24 @@ foreach(var directory in (Environment.GetEnvironmentVariable("HUNDREDTILES_FIXTU
 using var module=ModuleDefinition.ReadModule(args[0],new ReaderParameters {AssemblyResolver=resolver});
 void Reorder(TypeDefinition type){foreach(var child in type.NestedTypes)Reorder(child);var methods=type.Methods.Reverse().ToArray();type.Methods.Clear();foreach(var method in methods)type.Methods.Add(method);}
 foreach(var type in module.Types)Reorder(type);
+if(args.Length==3 && args[2]=="fps-ui-base"){
+var type=module.Types.Single(t=>t.FullName=="ColossalFramework.UI.UIComponent");
+foreach(string name in new[]{"fps_updateStarted","fps_wrongFlag"})type.Fields.Add(new FieldDefinition(name,FieldAttributes.Public,module.TypeSystem.Boolean));
+}
+if(args.Length==4 && args[2].StartsWith("fps-ui-start")){
+using var ui=ModuleDefinition.ReadModule(args[3]);
+string fieldName=args[2]=="fps-ui-start-wrongfield"?"fps_wrongFlag":"fps_updateStarted";
+var field=ui.Types.Single(t=>t.FullName=="ColossalFramework.UI.UIComponent").Fields.Single(f=>f.Name==fieldName);
+var target=module.Types.Single(t=>t.FullName=="TrafficManager.U.BaseUButton").Methods.Single(m=>m.Name=="Start");
+var il=target.Body.GetILProcessor();var first=target.Body.Instructions[0];
+il.InsertBefore(first,il.Create(OpCodes.Ldarg_0));il.InsertBefore(first,il.Create(args[2]=="fps-ui-start-false"?OpCodes.Ldc_I4_0:OpCodes.Ldc_I4_1));il.InsertBefore(first,il.Create(OpCodes.Stfld,module.ImportReference(field)));
+if(args[2]=="fps-ui-start-mutated")il.InsertBefore(first,il.Create(OpCodes.Nop));
+}
 if(args.Length==5 && args[2]=="method-nop"){
 var target=module.Types.Single(t=>t.FullName==args[3]).Methods.Single(m=>m.Name==args[4]);
 var il=target.Body.GetILProcessor();il.InsertBefore(target.Body.Instructions[0],il.Create(OpCodes.Nop));
 }
-if(args.Length>=3 && args[2].StartsWith("fps")){
+if(args.Length>=3 && args[2].StartsWith("fps") && !args[2].StartsWith("fps-ui-")){
 void Rename(TypeDefinition type){foreach(var child in type.NestedTypes)Rename(child);foreach(var method in type.Methods)if(method.Name=="Update" || method.Name=="LateUpdate" || method.Name=="FixedUpdate")method.Name="FpsBooster"+method.Name;}
 foreach(var type in module.Types)Rename(type);
 }

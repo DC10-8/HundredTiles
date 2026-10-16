@@ -94,6 +94,7 @@ public static class Bootstrap
         }
         if(moveIt)foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())
             if(Path.GetFileName(plugin.modPath)=="MoveIt")plugin.isEnabled=true;
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_FPS_PRELOADER")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())if(Path.GetFileName(plugin.modPath)=="FPS_Booster")plugin.isEnabled=true;
         foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())
             if(Path.GetFileName(plugin.modPath)=="HundredTiles" || Path.GetFileName(plugin.modPath)=="ForceRoadConnect")plugin.isEnabled=true;
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_REVIEWED")=="1")foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())foreach(var assembly in plugin.GetAssemblies())if(assembly.GetName().Name=="BuildingControl" || assembly.GetName().Name=="FreeUtilities" || assembly.GetName().Name=="TerrainLink" || assembly.GetName().Name=="QuayTools" || assembly.GetName().Name=="CustomZoneMixer" || assembly.GetName().Name=="RightOfWay" || assembly.GetName().Name=="SimulationGuard" || assembly.GetName().Name=="FPSCamera" || assembly.GetName().Name=="HyperLoad" || assembly.GetName().Name=="PassengerLineBuilder" || assembly.GetName().Name=="AutoHistoricalPlop" || assembly.GetName().Name=="AreaPOBuilder" || assembly.GetName().Name=="FreeLotEditor" || assembly.GetName().Name=="BuildingLimitRemoval" || assembly.GetName().Name=="ClearFpsBoost" || assembly.GetName().Name=="LoadTimeRemaining")plugin.isEnabled=true;
@@ -114,6 +115,13 @@ public static class Bootstrap
     }
     public static void VerifyRuntime()
     {
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_FPS_PRELOADER")=="1")
+        {
+            Assembly tmpe=null;foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())if(assembly.GetName().Name=="TrafficManager")tmpe=assembly;
+            var start=tmpe.GetType("TrafficManager.U.BaseUButton",true).GetMethod("Start",BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance|BindingFlags.DeclaredOnly);
+            string original;if(!HundredTiles.ExperimentalPatch.ReviewedMethod.TryFpsLifecycleHash(start,out original) || original!="DE5A24CAF345B498E7AB7CDEFD14AD44CF07E94EAE70E1B6868169FB2F7399E9")throw new Exception("Native FPS UI Start prefix/full-body proof missing.");
+            Entry.Log("PASS: actual FPS Booster UI Start prefix observed; complete original BaseUButton.Start body hash preserved.");
+        }
         int owned=0;
         foreach(var target in Harmony.GetAllPatchedMethods())
         {var info=Harmony.GetPatchInfo(target);if(info!=null)foreach(string owner in info.Owners)if(owner==Installer.Owner){owned++;break;}}

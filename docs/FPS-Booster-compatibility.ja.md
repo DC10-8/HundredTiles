@@ -1,0 +1,19 @@
+# FPS BoosterによるUI初期化処理の変更
+
+2026年10月17日、同じ検証済みTrafficManager.dllでも、実行時のBaseUButton.Startが照合に失敗する問題を修正しました。TM:PEのファイル更新が原因ではありません。FPS BoosterのAutoPatcherが、Startの先頭にUIComponent.fps_updateStartedをtrueにする3命令を挿入していました。
+
+修正は、その正確な先頭処理を識別したうえで、残りの全命令・参照先・ローカル変数・例外領域が元のカタログと一致する場合だけ受け入れます。FPS Boosterの既知のOnEnable／OnDisable登録処理についても、同じ全本体照合を行います。BehaviourUpdater.dllはSHA-256 0D3DC3B601E3E6157008BD8BF0CB931FC99005D1B3450EB19027FEBB7F4A4C0Eの確認済み版に限定します。検査を省略したり、Startという名前だけで許可したりする変更ではありません。
+
+## 確認した構成
+
+- TM:PE 11.9.4.25100、TrafficManager.dll SHA-256 2CD504E24B4D89A7361E037610BD5A6BFFC8C2184BF62094F9D3F32CE86A52DF。
+- FPS_Booster 0.9.2.34173、AutoPatcher 2.1.0.8、BehaviourUpdater 2.1.0.5。
+- 実際のPatchLoaderで隔離環境のUnityEngine・ColossalManaged・Assembly-CSharpへFPS Boosterの変換を適用。27有効MOD構成で通常324版の起動を確認。
+- 実行中のBaseUButton.Startから既知の先頭処理を識別し、元の本体ハッシュDE5A24CAF345B498E7AB7CDEFD14AD44CF07E94EAE70E1B6868169FB2F7399E9との完全一致を直接確認。
+- 正しい先頭処理は受け入れ、別フィールド、falseへの変更、本体への追加命令は拒否する再現検査を実施。Verify.ps1の全体回帰検査も通過。
+
+再現用のVerify-FpsLifecycle.ps1には、購入済みゲームのGameManaged、HarmonyDirectory、TrafficManagerDll、BehaviourUpdaterDllを指定します。実ゲームDLLや改変テスト用DLLは公開ソースへ同梱しません。
+
+## 更新
+
+ゲームを終了し、修正版のHundredTiles本体DLL6本をまとめて置換します。Runtime.dllだけを古いExperimentalPatch.dllと混在させないでください。FPS Boosterを無効化する必要はありません。異なるFPS Booster版や別の書き換えについては照合を維持します。

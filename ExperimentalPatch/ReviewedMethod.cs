@@ -101,15 +101,52 @@ namespace HundredTiles.ExperimentalPatch
         }
         public static string SemanticHash(MethodBase method)
         {return PlannedTranspiler.Hash(System.Text.Encoding.UTF8.GetBytes(SemanticDescription(method)));}
+        // Accept only a reviewed FPS Booster lifecycle prefix. The entire
+        // remaining body (including locals, operands and exception regions)
+        // still has to produce the original catalog hash.
+        public static bool TryFpsLifecycleHash(MethodInfo method,out string hash)
+        {
+            hash=null;
+            if(method.IsStatic || method.ReturnType!=typeof(void) || method.GetParameters().Length!=0)return false;
+            var body=method.GetMethodBody();if(body==null)return false;
+            var bytes=body.GetILAsByteArray();int count=0,offset=0;
+            if(method.Name=="Start" && bytes.Length>=7 && bytes[0]==2 && bytes[1]==23 && bytes[2]==125)
+            {
+                var field=method.Module.ResolveField(BitConverter.ToInt32(bytes,3));
+                if(field.IsStatic || field.FieldType!=typeof(bool) || field.Name!="fps_updateStarted" ||
+                   field.DeclaringType.FullName!="ColossalFramework.UI.UIComponent" || field.DeclaringType.Assembly.GetName().Name!="ColossalManaged")return false;
+                count=3;offset=7;
+            }
+            else if((method.Name=="OnEnable" || method.Name=="OnDisable") && bytes.Length>=6 && bytes[0]==2 && bytes[1]==40)
+            {
+                var target=method.Module.ResolveMethod(BitConverter.ToInt32(bytes,2)) as MethodInfo;
+                if(target==null || !target.IsStatic || target.ReturnType!=typeof(void) || target.GetParameters().Length!=1 ||
+                   target.DeclaringType.Assembly.GetName().Name!="BehaviourUpdater")return false;
+                string type=target.DeclaringType.FullName;
+                bool custom=type=="BehaviourUpdater.CustomBehaviourRegistry";
+                if(!custom && type!="BehaviourUpdater.BehaviourRegistry")return false;
+                bool enable=method.Name=="OnEnable";
+                if(enable ? target.Name!="RegisterBehaviour" && (!custom || (target.Name!="RegisterUiBehaviour" && target.Name!="RegisterBehaviourWithStart")) :
+                   target.Name!="UnRegisterBehaviour" && (!custom || target.Name!="UnRegisterUiBehaviour"))return false;
+                count=2;offset=6;
+            }
+            else return false;
+            foreach(var clause in body.ExceptionHandlingClauses)
+                if(clause.TryOffset<offset || clause.HandlerOffset<offset || (clause.Flags==ExceptionHandlingClauseOptions.Filter && clause.FilterOffset<offset))return false;
+            hash=PlannedTranspiler.Hash(System.Text.Encoding.UTF8.GetBytes(SemanticDescription(method,count,offset)));
+            return true;
+        }
         public static string SemanticDescription(MethodBase method)
+        {return SemanticDescription(method,0,0);}
+        static string SemanticDescription(MethodBase method,int skipInstructions,int skipBytes)
         {
             var body=method.GetMethodBody();
             var rows=new List<string>();
             rows.Add(Identity(method));rows.Add(method.IsStatic.ToString());rows.Add(body.InitLocals.ToString());
             foreach(var local in body.LocalVariables)rows.Add("local:"+local.IsPinned+":"+Identity(local.LocalType));
             foreach(var clause in body.ExceptionHandlingClauses)
-                rows.Add("clause:"+clause.Flags+":"+clause.TryOffset+":"+clause.TryLength+":"+clause.HandlerOffset+":"+clause.HandlerLength+":"+(clause.Flags==ExceptionHandlingClauseOptions.Clause?Identity(clause.CatchType):clause.Flags==ExceptionHandlingClauseOptions.Filter?clause.FilterOffset.ToString():""));
-            rows.AddRange(Normalize(method));
+                rows.Add("clause:"+clause.Flags+":"+(clause.TryOffset-skipBytes)+":"+clause.TryLength+":"+(clause.HandlerOffset-skipBytes)+":"+clause.HandlerLength+":"+(clause.Flags==ExceptionHandlingClauseOptions.Clause?Identity(clause.CatchType):clause.Flags==ExceptionHandlingClauseOptions.Filter?(clause.FilterOffset-skipBytes).ToString():""));
+            var instructions=Normalize(method);if(skipInstructions!=0)instructions.RemoveRange(0,skipInstructions);rows.AddRange(instructions);
             // Length framing keeps embedded strings and metadata descriptions unambiguous.
             var text=new System.Text.StringBuilder();foreach(string row in rows)text.Append(row.Length).Append(':').Append(row);
             return text.ToString();

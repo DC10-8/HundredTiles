@@ -19,6 +19,9 @@ public sealed class Runner : MonoBehaviour
     static bool StartupCopy { get { return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_STARTUP_COPY")=="1"; } }
     static string SaveName { get { return Population?LiveLargeCityChecks.SaveName:LiveConsumerChecks.Enabled?LiveConsumerChecks.SaveName:Mode.StartsWith("Trial324")?(Live324Trial.Migration?"HundredTiles_324_Migration_Verification":Live324Trial.Far?"HundredTiles_324_Far_Verification":"HundredTiles_324_Verification"):StartupCopy && Release?"HundredTiles_Startup_Repair_Verification":Landscape?"HundredTiles_Landscape_Repair_Verification":Release?"HundredTiles_Release_Verification":Supply?"HundredTiles_OuterSupply_Verification":Outer?"HundredTiles_OuterGameplay_Verification":"HundredTiles_Isolated_Verification"; } }
     static string Record { get { return Population?LiveLargeCityChecks.Record:LiveConsumerChecks.Enabled?(LiveConsumerChecks.LongRun?"trial324-consumers-longrun-saved.marker":LiveConsumerChecks.Wastewater?"trial324-consumers-sewage-saved.marker":"trial324-consumers-saved.marker"):Mode.StartsWith("Trial324")?(Live324Trial.Migration?"trial324-migration-saved.marker":Live324Trial.Far?"trial324-far-saved.marker":"trial324-saved.marker"):StartupCopy && Release?"startup-saved.marker":Landscape?"landscape-saved.marker":Release?"release-saved.marker":Supply?"supply-saved.marker":Outer?"outer-saved.marker":"saved.marker"; } }
+    static bool FpsPreloader {get{return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_FPS_PRELOADER")=="1";}}
+    static string RecalcOutput {get{return FpsPreloader?"HundredTiles_324_FpsUi_Verification":"HundredTiles_324_Recalc_Verification";}}
+    static string RecalcRecord {get{return FpsPreloader?"fps-ui-saved.marker":"recalc-saved.marker";}}
     bool landscapeFlow,textureChecksRun,trialGroundPrepared,longConsumerStarted,longPopulationStarted;float trialGroundReady;
     int phase;float began;bool verifyingReload;volatile bool workerCompleted;string inputHash;
     void Awake(){LiveMainThread.Initialize();began=Time.realtimeSinceStartup;}
@@ -114,10 +117,10 @@ public sealed class Runner : MonoBehaviour
                     if(HundredTiles.Runtime.NetworkRecalculationCompatibility.Pending!=0)return;
                     if(!File.Exists(Path.Combine(Entry.Root,"isolated-test.marker")))throw new Exception("Recalculation save requires isolation.");
                     HundredTiles.Runtime.SaveSafety.Validate(HundredTiles.Runtime.Installer.Connections());
-                    string output=Path.Combine(Entry.Root,"UserData/Saves/HundredTiles_324_Recalc_Verification.crp");
+                    string output=Path.Combine(Entry.Root,"UserData/Saves/"+RecalcOutput+".crp");
                     if(File.Exists(output))throw new Exception("Recalculation output already exists; refusing overwrite.");
                     var savePanel=UIView.library.Get<SavePanel>("SavePanel");if(savePanel==null)savePanel=UIView.library.Show<SavePanel>("SavePanel");
-                    if(savePanel==null || !savePanel.SaveGame("HundredTiles_324_Recalc_Verification"))return;
+                    if(savePanel==null || !savePanel.SaveGame(RecalcOutput))return;
                     phase=36;Entry.Log("Requested native save after completed network recalculation.");return;
                 }
                 if(Mode=="Stress324LongRunEntrySave" && !longPopulationStarted){longPopulationStarted=true;phase=35;StartCoroutine(LivePopulationRunChecks.Run(delegate(Exception error){if(error!=null)Fail(error);phase=34;workerCompleted=true;}));return;}
@@ -252,11 +255,11 @@ public sealed class Runner : MonoBehaviour
             }
             if(phase==36)
             {
-                string file=Path.Combine(Entry.Root,"UserData/Saves/HundredTiles_324_Recalc_Verification.crp");
+                string file=Path.Combine(Entry.Root,"UserData/Saves/"+RecalcOutput+".crp");
                 if(!File.Exists(file) || SavePanel.isSaving)return;
                 if(FileHash()!=inputHash)throw new Exception("Recalculation verification changed its source save.");
                 string hash=HundredTiles.ExperimentalPatch.PlannedTranspiler.Hash(File.ReadAllBytes(file));
-                File.WriteAllText(Path.Combine(Entry.Root,"recalc-saved.marker"),new FileInfo(file).Length+"\n"+hash);
+                File.WriteAllText(Path.Combine(Entry.Root,RecalcRecord),new FileInfo(file).Length+"\n"+hash);
                 phase=9;Entry.Log("PASS: real recalculation verification .crp saved; SHA-256 "+hash+"; source unchanged; exiting for separate-process reload.");Application.Quit();
             }
         }
