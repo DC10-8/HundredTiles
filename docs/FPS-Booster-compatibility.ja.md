@@ -17,3 +17,8 @@
 ## 更新
 
 ゲームを終了し、修正版のHundredTiles本体DLL6本をまとめて置換します。Runtime.dllだけを古いExperimentalPatch.dllと混在させないでください。FPS Boosterを無効化する必要はありません。異なるFPS Booster版や別の書き換えについては照合を維持します。
+
+## 2026年10月17日の再確認
+
+FPS Booster 0.9.2.34173、AutoPatcher 2.1.0.8、BehaviourUpdater 2.1.0.5、TM:PE 11.9.4.25100を含む27有効MODの隔離実ゲームで、BaseUButton.Startの確認、保存、別プロセス再ロードが合格しました。人口628,493人の検証都市で都市構造、地形・水流、65,024ネットワークノードと電気・水道状態を照合しました。更新した6本のDLLはこの検証済みSHA-256と一致しています。
+

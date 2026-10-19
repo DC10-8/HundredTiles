@@ -233,3 +233,8 @@ TM:PEのディスクDLLは同じ版でしたが、FPS BoosterがBaseUButton.Star
 元の入力セーブは不変です。成功した保存・再ロードでは互換性照合失敗、保存競合、再計算例外を記録していません。最初の検証用ローダーは内部プロパティ接続を誤って起動前に失敗したため中止し、隔離プロセスだけを停止して修正しました。この失敗を合格結果には含めません。
 
 Verify.ps1の回帰検査、Verify-FpsLifecycle.ps1の再現・改変拒否、異なる2つのクリーンソースからの6 DLL一致も通過しました。対応した版と原理はFPS-Booster-compatibility.ja.mdを参照してください。
+
+## 2026年10月17日の再ロード検証と10月19日のDLL再導入
+
+ユーザー報告の Reviewed compatibility helper changed: TrafficManager.U.BaseUButton.Start は、実行時にFPS Boosterが追加するUI起動フラグが既知の完全な本体ハッシュ照合に含まれていない場合に発生します。修正版は既知の先頭3命令だけを識別し、その後の本体全体が固定ハッシュと一致する場合に限って許可します。隔離した実ゲームでは保存した324タイル都市を別プロセスで再ロードし、都市・水流・電気水道の検査に合格しました。導入先DLL6本は docs/324-release-validation.json の各SHA-256と照合済みです。
+

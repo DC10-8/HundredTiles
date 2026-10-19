@@ -38,5 +38,14 @@
       "SHA256": "59757B72F469B1513DD87CB51CFC9537FBE40876548992CD1BF92F976432B916"
     }
   ],
-  "fpsUiLifecycle": "passed: native prefix/full-body proof; save and separate-process reload; wrong-field/value/body rejected"
+  "fpsUiLifecycle": "passed: native prefix/full-body proof; save and separate-process reload; wrong-field/value/body rejected",
+  "latestNativeReload": {
+    "verifiedAt": "2026-10-17",
+    "save": "HundredTiles_324_FpsUi_Verification.crp",
+    "saveSha256": "EE927795FBE784CAA20F2FF0FA9B16B26C4229E5754972DE67F1B69897481D83",
+    "separateProcess": true,
+    "result": "passed",
+    "verifiedInstallSha256": "matches six release DLL hashes"
+  },
+  "redistributedAt": "2026-10-19"
 }
