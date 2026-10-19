@@ -82,10 +82,12 @@ static class Live324Trial
     public static void PrepareGround(){LiveTerrainToolChecks.LevelArea(new Vector3(25450,400,24650),900,400);}
     public static void CreateFar()
     {
+        // Reproduce the reported location without first editing its terrain.
+        ushort untouchedRoad=LiveConstructionChecks.BuildNetwork("Basic Road",new Vector3(8958,0,11515),new Vector3(9260,0,11479));
+        File.WriteAllText(Path.Combine(Entry.Root,"roadbed-untouched-road.txt"),untouchedRoad.ToString());
         // Native terrain edits keep detailed terrain and tool raycasts consistent.
         LiveTerrainToolChecks.Run();
         ushort road=LiveConstructionChecks.BuildNetwork("Basic Road",new Vector3(25400,0,24700));
-        AssertImmediateRoadSurface(road);
         ushort rail=LiveConstructionChecks.BuildNetwork("Train Track",new Vector3(25400,0,24900));
         typeof(NetManager).GetMethod("SimulationStepImpl",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(Singleton<NetManager>.instance,new object[]{0});
         typeof(ZoneManager).GetMethod("SimulationStepImpl",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(Singleton<ZoneManager>.instance,new object[]{0});
@@ -93,14 +95,30 @@ static class Live324Trial
         File.WriteAllText(Objects,road+"\n"+rail+"\n"+building);
         LiveSupplyChecks.Create();CheckFar();
     }
-    static void AssertImmediateRoadSurface(ushort segmentId)
+    public static void CheckNewRoadSurfaces()
+    {
+        AssertRoadSurface(ushort.Parse(File.ReadAllText(Path.Combine(Entry.Root,"roadbed-untouched-road.txt"))));
+        AssertRoadSurface(ushort.Parse(File.ReadAllLines(Objects)[0]));
+    }
+    static void AssertRoadSurface(ushort segmentId)
     {
         var net=Singleton<NetManager>.instance;var segment=net.m_segments.m_buffer[segmentId];
         var point=segment.m_middlePosition;var terrain=Singleton<TerrainManager>.instance;
+        // Called after SimulationManager's native terrain batch has completed.
+        // No forced simulation step or manual terrain refresh is performed.
         var cell=terrain.GetSurfaceCell((int)((point.x+8640f)/4f),(int)((point.z+8640f)/4f));
+        var patches=(TerrainPatch[])typeof(TerrainManager).GetField("m_patches",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).GetValue(terrain);
+        int patch=terrain.GetPatchIndex(point);
+        int cx=(int)((point.x+8640f)/4f),cz=(int)((point.z+8640f)/4f);
+        var detailSurface=(TerrainManager.SurfaceCell[])typeof(TerrainManager).GetField("m_detailSurface",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).GetValue(terrain);
+        var rawCell=detailSurface[(patches[patch].m_simDetailIndex-1)*230400+(cz%480)*480+(cx%480)];
+        int gx=(int)(point.x/64f+135),gz=(int)(point.z/64f+135);
+        ushort cursor=net.m_segmentGrid[gz*540+gx];bool found=false;
+        for(int n=0;cursor!=0 && n<65024;n++){if(cursor==segmentId){found=true;break;}cursor=net.m_segments.m_buffer[cursor].m_nextGridSegment;}
+        Entry.Log("Road surface after native segment update: position="+point+", patch="+patch+", detail="+patches[patch].m_simDetailIndex+", registered="+found+", nodes="+net.m_nodes.m_buffer[segment.m_startNode].m_flags+"/"+net.m_nodes.m_buffer[segment.m_endNode].m_flags+", lower="+segment.Info.m_netAI.GetSegmentLowerTerrain()+", surface resolution="+terrain.m_surfaceModified.m_resolution+", clip="+cell.m_clipped+", pavement="+cell.m_pavementA+"/"+cell.m_pavementB+", raw clip="+rawCell.m_clipped+", raw pavement="+rawCell.m_pavementA);
         if(cell.m_clipped==0 || (segment.Info.m_createPavement && cell.m_pavementA==0 && cell.m_pavementB==0))
-            throw new Exception("A newly-built far road has no native pavement before any manual terrain refresh.");
-        Entry.Log("PASS: new far road pavement exists immediately after native network placement; clip="+cell.m_clipped+", pavement="+cell.m_pavementA+"/"+cell.m_pavementB+".");
+            throw new Exception("A newly-built expanded road has no native pavement after the native segment update.");
+        Entry.Log("PASS: new expanded road pavement exists after the native segment update, without manual terrain refresh; clip="+cell.m_clipped+", pavement="+cell.m_pavementA+"/"+cell.m_pavementB+".");
     }
     public static void CheckFar()
     {
@@ -162,6 +180,15 @@ static class Live324Trial
         camera.m_targetPosition=camera.m_currentPosition=new Vector3(25600,400,24900);
         for(int i=0;i<60;i++)yield return null;yield return new WaitForEndOfFrame();
         var railClose=new Texture2D(Screen.width,Screen.height,TextureFormat.RGB24,false);railClose.ReadPixels(new Rect(0,0,Screen.width,Screen.height),0,0);railClose.Apply();File.WriteAllBytes(Path.Combine(Entry.Root,"trial324-far-rail-close.png"),railClose.EncodeToPNG());UnityEngine.Object.Destroy(railClose);
+        if(File.Exists(Path.Combine(Entry.Root,"roadbed-untouched-road.txt")))
+        {
+            var position=new Vector3(9100,0,11495);position.y=terrain.SampleDetailHeight(position);
+            camera.m_targetPosition=camera.m_currentPosition=position;camera.m_targetHeight=camera.m_currentHeight=position.y;
+            camera.m_targetSize=camera.m_currentSize=300;
+            for(int i=0;i<60;i++)yield return null;yield return new WaitForEndOfFrame();
+            var frame=new Texture2D(Screen.width,Screen.height,TextureFormat.RGB24,false);frame.ReadPixels(new Rect(0,0,Screen.width,Screen.height),0,0);frame.Apply();
+            File.WriteAllBytes(Path.Combine(Entry.Root,"roadbed-surfacepainter-reported-area.png"),frame.EncodeToPNG());UnityEngine.Object.Destroy(frame);
+        }
         if(CompareRender)
         {
             foreach(var point in new[]{new Vector3(2200,400,2700),new Vector3(25600,80,23400)})

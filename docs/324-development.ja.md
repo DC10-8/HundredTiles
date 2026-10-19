@@ -239,3 +239,15 @@ TM:PEのディスクDLLは同じ版でしたが、FPS BoosterがBaseUButton.Star
 元の入力セーブは不変です。成功した保存・再ロードでは互換性照合失敗、保存競合、再計算例外を記録していません。最初の検証用ローダーは内部プロパティ接続を誤って起動前に失敗したため中止し、隔離プロセスだけを停止して修正しました。この失敗を合格結果には含めません。
 
 Verify.ps1の回帰検査、Verify-FpsLifecycle.ps1の再現・改変拒否、異なる2つのクリーンソースからの6 DLL一致も通過しました。対応した版と原理はFPS-Booster-compatibility.ja.mdを参照してください。
+# Surface Painterの地表参照修正（2026年10月20日）
+
+最新の路盤修正は`Roadbed-SurfacePainter-20261020.ja.md`を参照してください。
+Surface Painterの独自GetSurfaceCellに残る9×9の行幅・境界を現在の寸法に合わせ、
+旧塗装範囲外ではネイティブの道路地表データを保持します。地形更新バッチの
+途中の空データを欠落扱いする補助処理も修正しました。
+
+今回の本番DLLは、Surface Painter、Extra Landscaping Tools、More Network Capacity Renewとの
+4 MOD隔離環境で新規道路のclip/pavement=255、全324区画購入、保存と別プロセス再ロードを確認しました。
+配布ハッシュと今回の検証範囲は324-release-validation.jsonに記録し、以前の大規模都市・27 MODの
+別ビルドの結果は324-release-validation-20261019.jsonへ分離しています。
+

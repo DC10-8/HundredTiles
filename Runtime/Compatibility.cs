@@ -21,6 +21,7 @@ namespace HundredTiles.Runtime
             ReviewedCompatibility.AddHooks(hooks);
             foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
+                if(assembly.GetName().Name=="SurfacePainter")SurfacePainterCompatibility.AddHooks(assembly,hooks);
                 if(assembly.GetName().Name=="UnifiedUILib")UnifiedUiCompatibility.AddHooks(assembly,hooks);
                 if(assembly.GetName().Name=="TrafficManager")TrafficManagerSpatialCompatibility.AddHooks(assembly,hooks);
                 if(assembly.GetName().Name=="MoreNetworkCapacityRenew")NetworkRecalculationCompatibility.AddHooks(assembly,hooks);

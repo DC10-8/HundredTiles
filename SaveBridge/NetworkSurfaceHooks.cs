@@ -56,6 +56,10 @@ namespace HundredTiles.SaveBridge
             int z = Mathf.Clamp((int)((middle.z - ExpandedMap.WorldMin) / 4f), 0, ExpandedMap.GridSize * 480 - 1);
             var terrain = Singleton<TerrainManager>.instance;
             if (terrain == null) return;
+            // Interactive construction runs inside SimulationManager's terrain
+            // batch. Its derived cells are populated by EndUpdateArea; an early
+            // sample is not a missing surface and must not trigger a refresh.
+            if (terrain.m_modifyingLevel != 0) return;
             var cell = terrain.GetSurfaceCell(x, z);
             bool missingClip = actualInfo.m_clipTerrain && cell.m_clipped == 0;
             bool missingFinish = (actualInfo.m_createPavement && cell.m_pavementA == 0 && cell.m_pavementB == 0) ||

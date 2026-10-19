@@ -58,9 +58,13 @@ static class LiveConstructionChecks
         var data=Singleton<NetManager>.instance.m_segments.m_buffer[segment];
         var actualStart=Singleton<NetManager>.instance.m_nodes.m_buffer[data.m_startNode].m_position;
         var actualEnd=Singleton<NetManager>.instance.m_nodes.m_buffer[data.m_endNode].m_position;
-        var delta=b.m_position-a.m_position;float length=delta.sqrMagnitude;
-        float startT=Vector3.Dot(actualStart-a.m_position,delta)/length,endT=Vector3.Dot(actualEnd-a.m_position,delta)/length;
-        if(data.Info!=info || startT<-.01f || startT>1.01f || endT<-.01f || endT>1.01f || (actualStart-(a.m_position+delta*startT)).sqrMagnitude>1 || (actualEnd-(a.m_position+delta*endT)).sqrMagnitude>1)throw new Exception("Network created at wrong position: requested prefab="+info.name+", actual prefab="+(data.Info==null?"null":data.Info.name)+", requested end="+position+", actual start="+actualStart+", control start="+a.m_position+", control end="+b.m_position+", segment="+segment);
+        // Native construction may subdivide a road to follow terrain height.
+        // Validate its horizontal route without requiring a straight Y profile.
+        var routeStart=a.m_position;var routeEnd=b.m_position;routeStart.y=0;routeEnd.y=0;
+        var projectedStart=actualStart;var projectedEnd=actualEnd;projectedStart.y=0;projectedEnd.y=0;
+        var delta=routeEnd-routeStart;float length=delta.sqrMagnitude;
+        float startT=Vector3.Dot(projectedStart-routeStart,delta)/length,endT=Vector3.Dot(projectedEnd-routeStart,delta)/length;
+        if(data.Info!=info || startT<-.01f || startT>1.01f || endT<-.01f || endT>1.01f || (projectedStart-(routeStart+delta*startT)).sqrMagnitude>1 || (projectedEnd-(routeStart+delta*endT)).sqrMagnitude>1)throw new Exception("Network created at wrong position: requested prefab="+info.name+", actual prefab="+(data.Info==null?"null":data.Info.name)+", requested end="+position+", actual start="+actualStart+", control start="+a.m_position+", control end="+b.m_position+", segment="+segment);
         Entry.Log("PASS: native NetTool preview and construction for "+name+" segment "+segment+" in added tiles.");return segment;
     }
     public static ushort PlaceBuilding(string name,Vector3 position)

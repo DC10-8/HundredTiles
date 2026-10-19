@@ -22,7 +22,7 @@ public sealed class Runner : MonoBehaviour
     static bool FpsPreloader {get{return Environment.GetEnvironmentVariable("HUNDREDTILES_TEST_FPS_PRELOADER")=="1";}}
     static string RecalcOutput {get{return FpsPreloader?"HundredTiles_324_FpsUi_Verification":"HundredTiles_324_Recalc_Verification";}}
     static string RecalcRecord {get{return FpsPreloader?"fps-ui-saved.marker":"recalc-saved.marker";}}
-    bool landscapeFlow,textureChecksRun,trialGroundPrepared,longConsumerStarted,longPopulationStarted;float trialGroundReady;
+    bool landscapeFlow,textureChecksRun,trialGroundPrepared,longConsumerStarted,longPopulationStarted,roadSurfacesChecked;float trialGroundReady;
     int phase;float began;bool verifyingReload;volatile bool workerCompleted;string inputHash;
     void Awake(){LiveMainThread.Initialize();began=Time.realtimeSinceStartup;}
     void Update()
@@ -178,6 +178,12 @@ public sealed class Runner : MonoBehaviour
             if(phase==32 && Time.realtimeSinceStartup>=trialGroundReady){trialGroundPrepared=true;phase=1;return;}
             if(phase==30 && workerCompleted)
             {
+                if(Mode=="Trial324EntrySave" && Live324Trial.Far && !LiveConsumerChecks.Enabled && !roadSurfacesChecked)
+                {
+                    var terrain=Singleton<TerrainManager>.instance;
+                    if(terrain.m_modifyingLevel!=0 || terrain.m_modifyingSurface)return;
+                    Live324Trial.CheckNewRoadSurfaces();roadSurfacesChecked=true;
+                }
                 if(LiveConsumerChecks.LongRun && !longConsumerStarted){longConsumerStarted=true;phase=33;StartCoroutine(LiveConsumerChecks.NormalRun(delegate(Exception error){if(error!=null)Fail(error);phase=30;workerCompleted=true;}));return;}
                 if(Mode=="Trial324EntryReload"){phase=9;StartCoroutine(FinishTrialReload());return;}
                 var trialPanel=UIView.library.Get<SavePanel>("SavePanel");if(trialPanel==null)trialPanel=UIView.library.Show<SavePanel>("SavePanel");if(trialPanel==null || !trialPanel.SaveGame(SaveName))return;phase=5;Entry.Log("Requested real 324 trial SavePanel save.");return;

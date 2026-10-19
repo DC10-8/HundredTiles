@@ -32,6 +32,20 @@ class Program
     }
     static int Run()
     {
+        string surfacePainter=Environment.GetEnvironmentVariable("HUNDREDTILES_SURFACE_PAINTER_CHECK");
+        if(!string.IsNullOrEmpty(surfacePainter))
+        {
+            var assembly=Assembly.LoadFrom(surfacePainter);var hooks=new System.Collections.Generic.List<HookSpec>();
+            SurfacePainterCompatibility.AddReviewedHooks(assembly,surfacePainter,hooks);
+            if(hooks.Count!=3)throw new Exception("Surface Painter hooks missing.");
+            var source=HarmonyLib.PatchProcessor.GetOriginalInstructions(hooks[0].Target);
+            var output=new System.Collections.Generic.List<HarmonyLib.CodeInstruction>(SurfacePainterCompatibility.Grid(source));
+            if(output.Count!=source.Count)throw new Exception("Surface Painter stack shape changed.");
+            foreach(var hook in hooks)Console.WriteLine(hook.Target.Name+"|"+HundredTiles.ExperimentalPatch.ReviewedMethod.SemanticHash(hook.Target));
+            TerrainManager.SurfaceCell cell=default(TerrainManager.SurfaceCell),result=default(TerrainManager.SurfaceCell);cell.m_clipped=255;cell.m_pavementA=233;
+            if(SurfacePainterCompatibility.UpdateCell(cell,4500,4500,ref result) || result.m_clipped!=255 || result.m_pavementA!=233 || SurfacePainterCompatibility.PaintCoordinates(0,4320) || SurfacePainterCompatibility.PaintCoordinates(-1,0) || !SurfacePainterCompatibility.PaintCoordinates(4319,4319))throw new Exception("Surface Painter native surface preservation differs.");
+            Console.WriteLine("PASS: Surface Painter terrain dimension transform and legacy paint boundary preserve expanded road clipping/pavement.");return 0;
+        }
         if(Environment.GetEnvironmentVariable("HUNDREDTILES_ACTIVATION_GUARD_TEST")=="1")
         {
             if(Installer.CitySessionActive(false,false))throw new Exception("Main-menu activation was rejected.");

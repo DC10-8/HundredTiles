@@ -1,22 +1,16 @@
 {
   "profile": 324,
-  "release": "324 Beta",
-  "date": "2026-10-17",
+  "release": "324 Beta - Surface Painter roadbed fix",
+  "date": "2026-10-20",
   "gameAssemblySha256": "DF557994A03C93D8BB4A14F80B1FBCC0FB29D547658442445D078D069BCDD9FE",
   "nativeSaveReload": "passed",
-  "nativeSaveSha256": "EE927795FBE784CAA20F2FF0FA9B16B26C4229E5754972DE67F1B69897481D83",
-  "nativeSaveBytes": 285608968,
-  "residents": 628493,
+  "nativeSaveSha256": "37CC3DCB532112C061D2646D897BB2149194A4837E3CA2AD5BDDD29808476849",
+  "nativeSaveBytes": 274403766,
   "terrainWaterCells": 4669921,
-  "networkNodes": 65024,
-  "enabledPlugins": 27,
-  "deferredRequests": 1722,
-  "scope": "Pinned game and reviewed mod versions; generated load city; not every asset/mod configuration",
+  "networkNodeCapacity": 65024,
+  "enabledPlugins": 4,
+  "scope": "New isolated 324-tile city; HundredTiles, More Network Capacity Renew, Extra Landscaping Tools and Surface Painter; not a large-city or arbitrary-mod certification",
   "dlls": [
-    {
-      "Name": "CitiesHarmony.API.dll",
-      "SHA256": "DD25AFCA06EDE82C433C9A5FEFBF30426BB713D646AB6A452BBB65AA11A0FD3B"
-    },
     {
       "Name": "HundredTiles.Core.dll",
       "SHA256": "014266A15C260D7C08C6B158188511511273CA6BBED642E302ACBBEC29DB61AF"
@@ -26,28 +20,30 @@
       "SHA256": "49872558DF4C12E6785285781E9E029E98194DEFE2CE6F31AA3892E631BABBB2"
     },
     {
-      "Name": "HundredTiles.Runtime.dll",
-      "SHA256": "AD8975AAEA54C3B0D6EF478771C9F9AAE28C7244CA7A90671559649A563D99DE"
-    },
-    {
       "Name": "HundredTiles.SaveBridge.dll",
-      "SHA256": "11ADFE665AFB98DF27D3DC8CAD4F62B7773BD563D1718270C03CAC7D9D4351D9"
+      "SHA256": "B8243203B8C4C468882A9BC8B0E738FA8B4F0A491560CA445425F38C2BBD8E3E"
     },
     {
       "Name": "HundredTiles.Utilities.dll",
-      "SHA256": "59757B72F469B1513DD87CB51CFC9537FBE40876548992CD1BF92F976432B916"
+      "SHA256": "A9819491A1D2B768DD0FF4F1A7AF8F42BACE0428B6E706A3CB64B730C5DFA02D"
+    },
+    {
+      "Name": "HundredTiles.Runtime.dll",
+      "SHA256": "899492BC28CB7D88AAA9FE5E238E970917CA724D6C56064644C77FD8950A9086"
+    },
+    {
+      "Name": "CitiesHarmony.API.dll",
+      "SHA256": "DD25AFCA06EDE82C433C9A5FEFBF30426BB713D646AB6A452BBB65AA11A0FD3B"
     }
   ],
-  "fpsUiLifecycle": "passed: native prefix/full-body proof; save and separate-process reload; wrong-field/value/body rejected",
-  "latestNativeReload": {
-    "verifiedAt": "2026-10-17",
-    "save": "HundredTiles_324_FpsUi_Verification.crp",
-    "saveSha256": "EE927795FBE784CAA20F2FF0FA9B16B26C4229E5754972DE67F1B69897481D83",
+  "roadSurface": "Passed: native terrain batch completion produces clip=255 and pavementA=255 at reported-area patch 189 and far patch 323 without manual terrain refresh",
+  "nativeReload": {
     "separateProcess": true,
     "result": "passed",
-    "runtimeDllSha256": "B72488D529DC9770C5A49B2DB644E67F0D10ED1125B4154186892CCEEC2AD886"
+    "inputSaveUnchanged": true,
+    "all324PurchasesPreserved": true
   },
-  "redistributedAt": "2026-10-19",
-  "activationTiming": "passed: delayed main-menu activation allowed; activation during city load or after simulation data load refused",
-  "activationTimingCheck": "RuntimeChecks: HUNDREDTILES_ACTIVATION_GUARD_TEST passed"
+  "surfacePainterSha256": "627A7CFA571D32071689DEC6E979995178D4BB3DDEE05410114A8F8E6E885133",
+  "previousValidation": "324-release-validation-20261019.json",
+  "report": "Roadbed-SurfacePainter-20261020.ja.md"
 }

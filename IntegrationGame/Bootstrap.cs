@@ -90,6 +90,7 @@ public static class Bootstrap
         if(terrain)foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())
         {
             if(Path.GetFileName(plugin.modPath)=="NaturalResourcesBrush")plugin.isEnabled=true;
+            if(Path.GetFileName(plugin.modPath)=="SurfacePainter")plugin.isEnabled=true;
             if(Path.GetFileName(plugin.modPath)=="MoveIt")plugin.isEnabled=false;
         }
         if(moveIt)foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())
@@ -129,6 +130,7 @@ public static class Bootstrap
         foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())if(assembly.GetName().Name=="UnifiedUILib")extra++;
         foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())if(assembly.GetName().Name=="TrafficManager")extra+=4;
         foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())if(assembly.GetName().Name=="MoreNetworkCapacityRenew")extra++;
+        foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())if(assembly.GetName().Name=="SurfacePainter")extra+=3;
         foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies()){if(assembly.GetName().Name=="NaturalResourcesBrush")extra+=6;if(assembly.GetName().Name=="MoveIt")extra+=10;}
         int expected=463+(ForceRoadCompatibility.Reviewed?3:0)+extra;
         if(owned!=expected){Entry.Log("FAILURE: actual local-plugin entry installed "+owned+" targets, expected "+expected+".");FatalFailure=true;return;}
