@@ -57,6 +57,7 @@ namespace HundredTiles.Runtime
             hooks.AddRange(BoundaryHooks.Specifications());hooks.AddRange(TaxiHooks.Specifications());
             hooks.AddRange(PathHeightHooks.Specifications());
             hooks.Add(TransportMeshHooks.Specification());
+            hooks.Add(NetworkSurfaceHooks.Specification());
             hooks.Add(OutsideRoadHooks.Specification());
             hooks.AddRange(ServiceSerializerHooks.Specifications());
             hooks.AddRange(ServiceHooks.Specifications());

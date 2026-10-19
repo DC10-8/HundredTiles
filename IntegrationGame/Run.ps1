@@ -3,10 +3,18 @@ $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot
 $testRoot=Join-Path $projectRoot 'artifacts\isolated-game'
 if (-not (Test-Path -LiteralPath (Join-Path $testRoot 'isolated-test.marker'))) { throw 'Prepared isolated test marker missing.' }
-$citiesProcesses=@(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'Cities.exe'" -ErrorAction Stop)
+$citiesProcesses=@(Get-Process -Name Cities -ErrorAction SilentlyContinue)
 if ($citiesProcesses.Count-ne 0) { throw 'An existing Cities process is running. No second game will be started.' }
 if (-not (Test-Path -LiteralPath (Join-Path $testRoot 'Cities_Data\Managed\Assembly-CSharp.dll'))) { throw 'Isolated game data is not prepared.' }
-if (-not (Get-Process steam -ErrorAction SilentlyContinue)) { Start-Process -FilePath (Join-Path (Split-Path (Split-Path (Split-Path $GameRoot))) 'steam.exe') -ArgumentList '-silent' -WindowStyle Hidden }
+if (-not (Get-Process steam -ErrorAction SilentlyContinue)) {
+    Start-Process -FilePath (Join-Path (Split-Path (Split-Path (Split-Path $GameRoot))) 'steam.exe') -ArgumentList '-silent' -WindowStyle Hidden
+    $steamReady=$false
+    for($attempt=0;$attempt -lt 30 -and -not $steamReady;$attempt++){
+        Start-Sleep -Seconds 1
+        $steamReady=$null -ne (Get-Process steam -ErrorAction SilentlyContinue | Select-Object -First 1)
+    }
+    if(-not $steamReady){throw 'Steam did not start for isolated Unity verification.'}
+}
 $startInfo=New-Object System.Diagnostics.ProcessStartInfo
 $startInfo.FileName=Join-Path $testRoot 'Cities.exe'
 $startInfo.WorkingDirectory=$testRoot
@@ -23,6 +31,7 @@ if($env:HUNDREDTILES_TEST_TAXI -eq '1'){$startInfo.EnvironmentVariables['HUNDRED
 if($env:HUNDREDTILES_TEST_REVIEWED -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_REVIEWED']='1'}
 if($env:HUNDREDTILES_TEST_SAVE_SAFETY -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_SAVE_SAFETY']='1'}
 if($env:HUNDREDTILES_TEST_NETWORK_CAPACITY -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_NETWORK_CAPACITY']='1'}
+if($env:HUNDREDTILES_TEST_324_FAR -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_324_FAR']='1'}
 if($env:HUNDREDTILES_TEST_SIMULATION_REPAIRS -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_SIMULATION_REPAIRS']='1'}
 if($Options){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_OPTIONS']='1'}
 if($env:HUNDREDTILES_TEST_STARTUP_COPY -eq '1'){$startInfo.EnvironmentVariables['HUNDREDTILES_TEST_STARTUP_COPY']='1'}

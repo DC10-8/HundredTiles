@@ -85,12 +85,22 @@ static class Live324Trial
         // Native terrain edits keep detailed terrain and tool raycasts consistent.
         LiveTerrainToolChecks.Run();
         ushort road=LiveConstructionChecks.BuildNetwork("Basic Road",new Vector3(25400,0,24700));
+        AssertImmediateRoadSurface(road);
         ushort rail=LiveConstructionChecks.BuildNetwork("Train Track",new Vector3(25400,0,24900));
         typeof(NetManager).GetMethod("SimulationStepImpl",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(Singleton<NetManager>.instance,new object[]{0});
         typeof(ZoneManager).GetMethod("SimulationStepImpl",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(Singleton<ZoneManager>.instance,new object[]{0});
         ushort building=LiveConstructionChecks.PlaceBuilding("Wind Turbine",new Vector3(25700,0,24600));
         File.WriteAllText(Objects,road+"\n"+rail+"\n"+building);
         LiveSupplyChecks.Create();CheckFar();
+    }
+    static void AssertImmediateRoadSurface(ushort segmentId)
+    {
+        var net=Singleton<NetManager>.instance;var segment=net.m_segments.m_buffer[segmentId];
+        var point=segment.m_middlePosition;var terrain=Singleton<TerrainManager>.instance;
+        var cell=terrain.GetSurfaceCell((int)((point.x+8640f)/4f),(int)((point.z+8640f)/4f));
+        if(cell.m_clipped==0 || (segment.Info.m_createPavement && cell.m_pavementA==0 && cell.m_pavementB==0))
+            throw new Exception("A newly-built far road has no native pavement before any manual terrain refresh.");
+        Entry.Log("PASS: new far road pavement exists immediately after native network placement; clip="+cell.m_clipped+", pavement="+cell.m_pavementA+"/"+cell.m_pavementB+".");
     }
     public static void CheckFar()
     {

@@ -1,6 +1,6 @@
 param([string]$ModsDirectory=(Join-Path $env:LOCALAPPDATA 'Colossal Order\Cities_Skylines\Addons\Mods'))
 $ErrorActionPreference='Stop'
-if(@(Get-CimInstance Win32_Process -Filter "Name = 'Cities.exe'" -ErrorAction Stop).Count-ne 0){throw 'Cities: Skylinesを終了してから導入してください。'}
+if(@(Get-Process -Name Cities -ErrorAction SilentlyContinue).Count-ne 0){throw 'Cities: Skylinesを終了してから導入してください。'}
 $manifest=Import-Csv -LiteralPath (Join-Path $PSScriptRoot 'files.csv')
 $allowed=@('HundredTiles.Core.dll','HundredTiles.ExperimentalPatch.dll','HundredTiles.SaveBridge.dll','HundredTiles.Utilities.dll','HundredTiles.Runtime.dll','CitiesHarmony.API.dll')
 if($manifest.Count -ne $allowed.Count){throw '配布ファイル一覧が一致しません。'}
