@@ -27,7 +27,7 @@
     },
     {
       "Name": "HundredTiles.Runtime.dll",
-      "SHA256": "B72488D529DC9770C5A49B2DB644E67F0D10ED1125B4154186892CCEEC2AD886"
+      "SHA256": "AD8975AAEA54C3B0D6EF478771C9F9AAE28C7244CA7A90671559649A563D99DE"
     },
     {
       "Name": "HundredTiles.SaveBridge.dll",
@@ -45,7 +45,9 @@
     "saveSha256": "EE927795FBE784CAA20F2FF0FA9B16B26C4229E5754972DE67F1B69897481D83",
     "separateProcess": true,
     "result": "passed",
-    "verifiedInstallSha256": "matches six release DLL hashes"
+    "runtimeDllSha256": "B72488D529DC9770C5A49B2DB644E67F0D10ED1125B4154186892CCEEC2AD886"
   },
-  "redistributedAt": "2026-10-19"
+  "redistributedAt": "2026-10-19",
+  "activationTiming": "passed: delayed main-menu activation allowed; activation during city load or after simulation data load refused",
+  "activationTimingCheck": "RuntimeChecks: HUNDREDTILES_ACTIVATION_GUARD_TEST passed"
 }

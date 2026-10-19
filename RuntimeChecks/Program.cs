@@ -32,6 +32,13 @@ class Program
     }
     static int Run()
     {
+        if(Environment.GetEnvironmentVariable("HUNDREDTILES_ACTIVATION_GUARD_TEST")=="1")
+        {
+            if(Installer.CitySessionActive(false,false))throw new Exception("Main-menu activation was rejected.");
+            if(!Installer.CitySessionActive(true,false))throw new Exception("Activation during city loading was allowed.");
+            if(!Installer.CitySessionActive(false,true))throw new Exception("Activation after city data loaded was allowed.");
+            Console.WriteLine("PASS: delayed main-menu activation is allowed; activation during/after city load is refused.");return 0;
+        }
         if(!OutsideRoadHooks.IsMapEdge(new UnityEngine.Vector3(HundredTiles.Core.ExpandedMap.WorldMax,0,0)) || OutsideRoadHooks.IsMapEdge(new UnityEngine.Vector3(2000,0,2000)) || OutsideRoadHooks.IsMapEdge(new UnityEngine.Vector3(HundredTiles.Core.ExpandedMap.WorldMax,0,50000)) || OutsideRoadHooks.IsMapEdge(new UnityEngine.Vector3(float.NaN,0,HundredTiles.Core.ExpandedMap.WorldMax)))throw new Exception("Road outside fallback boundary scope differs.");
         string tmpeGrid=Environment.GetEnvironmentVariable("HUNDREDTILES_TMPE_GRID_CHECK");
         string recalc=Environment.GetEnvironmentVariable("HUNDREDTILES_RECALC_CHECK");

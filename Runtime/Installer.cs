@@ -23,6 +23,8 @@ namespace HundredTiles.Runtime
             return false;
         }
         public static string FailureReason;
+        public static bool CitySessionActive(bool currentlyLoading,bool simulationDataLoaded)
+        {return currentlyLoading || simulationDataLoaded;}
         static void Progress(string text)
         {
             string folder=System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Colossal Order/Cities_Skylines/HundredTiles-diagnostics");
@@ -82,7 +84,18 @@ namespace HundredTiles.Runtime
             InitializeManagedDirectory(UnityEngine.Application.dataPath);
             // Guard precedes participant registration, reflection and all patches.
             if(!PatchPlan.Embedded().CanActivate && !IsIsolatedTrial())throw new InvalidOperationException("Activation blocked: remaining spatial/render boundaries and Unity save/reload validation are incomplete.");
-            if(ColossalFramework.Singleton<TerrainManager>.exists)throw new InvalidOperationException("Enable HundredTiles before game startup. Restart the game after enabling this mod.");
+            // TerrainManager can exist on the main menu after the managers have
+            // been created. That does not mean a city is loaded. Only refuse
+            // late activation while a city load is in progress or its simulation
+            // data is already present; this still prevents changing grids in a
+            // live city while allowing delayed IUserMod callbacks on the menu.
+            if(ColossalFramework.Singleton<LoadingManager>.exists)
+            {
+                var loading=ColossalFramework.Singleton<LoadingManager>.instance;
+                UnityEngine.Debug.Log("[HundredTiles] Activation phase: terrain manager="+ColossalFramework.Singleton<TerrainManager>.exists+", city loading="+loading.m_currentlyLoading+", city data loaded="+loading.m_simulationDataLoaded+".");
+                if(CitySessionActive(loading.m_currentlyLoading,loading.m_simulationDataLoaded))
+                    throw new InvalidOperationException("Enable HundredTiles before loading a city. Fully exit and restart the game after enabling this mod.");
+            }
             var hooks=Connections();
             Progress("Connections resolved");
             Compatibility.AddHooks(hooks);
