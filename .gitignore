@@ -24,3 +24,9 @@ recovery/**/mutated/
 recovery/**/backup-*/
 recovery/**/*.dll
 recovery/**/*.exe
+
+WorkshopCompatibility/*.dll
+WorkshopCompatibility/*.exe
+WorkshopCompatibility/staged/
+WorkshopCompatibility/reference/
+WorkshopCompatibility/*-results.txt

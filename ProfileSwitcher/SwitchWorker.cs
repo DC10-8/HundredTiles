@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Collections.Generic;
 class SwitchWorker {
  static int failAfter=-1;
- static readonly string[] Names={"CitiesHarmony.API.dll","HundredTiles.Core.dll","HundredTiles.ExperimentalPatch.dll","HundredTiles.Runtime.dll","HundredTiles.SaveBridge.dll","HundredTiles.Utilities.dll","HundredTiles.Profiles.dll"};
+ static readonly string[] Names={"CitiesHarmony.API.dll","HundredTiles.Core.dll","HundredTiles.ExperimentalPatch.dll","HundredTiles.Runtime.dll","HundredTiles.SaveBridge.dll","HundredTiles.Utilities.dll","HundredTiles.Profiles.dll","HundredTiles.WorkshopCompatibility.dll"};
  static string Hash(string path){using(var h=SHA256.Create())return BitConverter.ToString(h.ComputeHash(File.ReadAllBytes(path))).Replace("-","");}
  static bool Same(string root,string token){string path=Path.Combine(root,"request.txt");return File.Exists(path) && File.ReadAllLines(path)[0]==token;}
  static bool Alive(int pid,long ticks){try{var p=Process.GetProcessById(pid);return !p.HasExited && p.StartTime.ToUniversalTime().Ticks==ticks;}catch(ArgumentException){return false;}}

@@ -14,7 +14,11 @@ $initial='324'
 if(Test-Path (Join-Path $local 'HundredTiles.Core.dll')){
  $hash=(Get-FileHash (Join-Path $local 'HundredTiles.Core.dll')).Hash
  if($hash -eq (Get-FileHash (Join-Path $package 'profiles\100\HundredTiles.Core.dll')).Hash){$initial='100'}
- elseif($hash -ne (Get-FileHash (Join-Path $package 'profiles\324\HundredTiles.Core.dll')).Hash){throw 'Existing core does not match either preserved profile. Installation stopped.'}
+ elseif($hash -ne (Get-FileHash (Join-Path $package 'profiles\324\HundredTiles.Core.dll')).Hash){
+  $map=Join-Path $package 'core-profiles.tsv';$mapped=$false
+  if(Test-Path $map){foreach($line in Get-Content $map){$row=$line.Split("`t");if($row.Count -eq 2 -and $row[0] -eq $hash -and $row[1] -in @('100','324')){$initial=$row[1];$mapped=$true;break}}}
+  if(!$mapped){throw 'Existing core does not match a reviewed profile. Installation stopped.'}
+ }
 }
 $targets=@($local)
 if(Test-Path (Join-Path $workshop 'HundredTiles.Runtime.dll')){$targets+=@($workshop)}
