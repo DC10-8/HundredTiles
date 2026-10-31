@@ -9,3 +9,18 @@ Directory.Build.user.props
 *.user
 *.crp
 *.log
+
+# Preserved binaries and local recovery artifacts are not public source.
+ProfileSwitcher/bundles/
+ProfileSwitcher/harmony/
+ProfileSwitcher/reference100/
+ProfileSwitcher/Mod100.il
+ProfileSwitcher/tests/Cities.exe
+ProfileSwitcher/*.dll
+ProfileSwitcher/*.exe
+recovery/**/installed-dlls/
+recovery/**/staged/
+recovery/**/mutated/
+recovery/**/backup-*/
+recovery/**/*.dll
+recovery/**/*.exe

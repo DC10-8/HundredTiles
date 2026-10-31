@@ -1,5 +1,7 @@
 # HundredTiles — Cities: Skylines 1
 
+**2026-11-01 recovery update:** [profile selector / fog helper source](ProfileSwitcher/README.md) and [RealTimeSync repair and source-recovery status](docs/Recovery-20261101.md) are available. The deleted complete October 31 source is not fully restored; the normal source build is not a verified rebuild of the recovery DLLs.
+
 This branch includes an 18×18 (324-tile) beta. The default build remains 100 tiles. Use `Build.ps1 -MapProfile 324` and `Package.ps1 -MapProfile 324` for the reviewed 324 city runtime. See the [324 instructions and supported scope](docs/Release-324-Beta.ja.md) and [native verification record](docs/324-development.ja.md).
 
 **Experimental release.** Long-term large-city operation and arbitrary mod combinations are unverified. Use copied saves and keep an external backup. See [safety and build verification](docs/Safety-and-build.md) for confirmed checks and limits.

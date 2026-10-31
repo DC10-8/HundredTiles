@@ -26,3 +26,8 @@ jobs:
       - name: Build hash-pinned Renew API patcher
         run: dotnet build NetworkRenewPatcher -c Release -p:RestoreLockedMode=true
 
+
+      - name: Profile switch worker cancellation and rollback (mock files only)
+        run: |
+          dotnet restore ProfileSwitcher/Checks/SwitchWorker.Checks.csproj --locked-mode
+          dotnet run --project ProfileSwitcher/Checks/SwitchWorker.Checks.csproj -c Release --no-restore -- selftest
