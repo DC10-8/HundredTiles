@@ -1,5 +1,7 @@
 # HundredTiles 1.0
 
+**2026-11-01更新:** [100／324／エディタの切替・靄対策のソース](https://github.com/DC10-8/HundredTiles/tree/development/324-tiles/ProfileSwitcher)と[RealTimeSync修正・ソース復旧状況](https://github.com/DC10-8/HundredTiles/blob/development/324-tiles/docs/Recovery-20261101.md)を `development/324-tiles` に公開しました。削除された10月31日の完全なソースは未復元で、通常のソースビルドは復旧版DLLの再現ビルドではありません。
+
 **試験公開版です。** 大都市での長時間運転や任意のMOD構成は未検証です。元のセーブを外部へバックアップし、コピーで使用してください。[安全性・再現検証の状況](docs/Safety-and-build.ja.md)に確認済み範囲と未検証事項を記載しています。
 
 Cities: Skylines 1の都市領域を、標準サイズの1,920mタイルで10×10、最大100タイルへ拡張します。領域の幅は19,200m、面積は368.64km²です。元の都市座標を維持し、正のX・Z方向へ1列・1行を追加します。

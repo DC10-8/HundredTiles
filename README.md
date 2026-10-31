@@ -1,5 +1,7 @@
 # HundredTiles — Cities: Skylines 1
 
+**2026-11-01 update:** The [profile selector and fog-fix sources](https://github.com/DC10-8/HundredTiles/tree/development/324-tiles/ProfileSwitcher) and [RealTimeSync repair / recovery status](https://github.com/DC10-8/HundredTiles/blob/development/324-tiles/docs/Recovery-20261101.md) are published on `development/324-tiles`. The deleted complete October 31 source is not fully restored; the normal source build is not a verified rebuild of the recovery DLLs.
+
 **Experimental release.** Long-term large-city operation and arbitrary mod combinations are unverified. Use copied saves and keep an external backup. See [safety and build verification](docs/Safety-and-build.md) for confirmed checks and limits.
 
 Standard-sized 10×10 city area (100 tiles). Keeps original coordinates and adds 19 tiles to the east and north. Windows Steam game build 1.21.1-f9 is the reviewed build.
