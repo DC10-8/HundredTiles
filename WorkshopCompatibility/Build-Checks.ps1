@@ -10,3 +10,7 @@ $framework=Join-Path $env:USERPROFILE '.nuget\packages\microsoft.netframework.re
 $nativeReferences=@('mscorlib.dll','System.dll','System.Core.dll')|ForEach-Object {'/reference:'+(Join-Path $framework $_)}
 & $csc /nologo /nostdlib /noconfig /target:exe ('/out:'+(Join-Path $PSScriptRoot 'NativeChecks.dll')) $nativeReferences $references (Join-Path $PSScriptRoot 'NativeChecks.cs')
 if($LASTEXITCODE -ne 0){throw 'Native harness build failed'}
+& $csc /nologo ('/out:'+(Join-Path $PSScriptRoot 'FpsBodyChecks.exe')) ('/reference:'+(Join-Path $PSScriptRoot 'HundredTiles.WorkshopCompatibility.dll')) (Join-Path $PSScriptRoot 'FpsBodyChecks.cs')
+if($LASTEXITCODE -ne 0){throw 'FPS regression check build failed'}
+& $csc /nologo /nostdlib /noconfig /target:exe ('/out:'+(Join-Path $PSScriptRoot 'FpsEntry.dll')) $nativeReferences (Join-Path $PSScriptRoot 'FpsEntry.cs')
+if($LASTEXITCODE -ne 0){throw 'Isolated FPS bootstrap build failed'}

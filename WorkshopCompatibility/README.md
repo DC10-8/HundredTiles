@@ -24,3 +24,5 @@ Build notes:
 This is incremental repair source for the preserved runtime. The older Runtime project in this recovered checkout is not asserted to reproduce the later preserved runtime. Do not replace the installed runtime by rebuilding that older project without reconciling its later changes. Binary inputs and native test saves are excluded from Git.
 
 Official reference sources: https://github.com/algernon-A/TreeControl, https://github.com/algernon-A/MoreCitizenUnits, https://github.com/keallu/CSL-HideIt, https://github.com/boformer/NetworkSkins. Exact revisions are in upstream-commits.tsv. These reference builds are not asserted to reproduce the Workshop binaries; manifests now identify the downloaded official builds.
+
+FPS Booster hotfix: the verifier also recognizes its reviewed runtime lifecycle renames/prefixes, preserving the complete original-body comparison and pinned BehaviourUpdater check. This combination now has a native 100-tile reload test; see VERIFICATION.md. FpsFixture and FpsBodyChecks cover positive and negative verifier cases; FpsEntry is an isolated preloader bootstrap.

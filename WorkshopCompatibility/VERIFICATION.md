@@ -25,3 +25,10 @@ The initial far-tree checks placed trees at height 80 below terrain height 320. 
 
 
 Deployment: both local and Workshop-local DLL copies were verified against all eight package hashes after installation. Active profile remains 100. Automatic backup was created outside the Mods directory. Steam Workshop itself has not been uploaded or published by this operation.
+
+## FPS Booster hotfix — 2026-11-01 JST
+The initial seven-mod tests did not include FPS Booster. Its runtime rename of HideIt.ModManager.Update caused the new verifier to reject the unchanged official DLL. The verifier now recognizes the three reviewed FpsBooster lifecycle names and existing reviewed lifecycle prefixes, while requiring the complete original semantic body hash and the pinned BehaviourUpdater binary.
+
+Regression tests: valid rename accepted; changed body, unknown rename and modified BehaviourUpdater rejected. Both 100/324 ordinary 35-pair composition checks still pass.
+
+Native verification used the actual PatchLoader, FPS Booster 0.9.2.34173, BehaviourUpdater SHA-256 0D3DC3B601E3E6157008BD8BF0CB931FC99005D1B3450EB19027FEBB7F4A4C0E and all seven official mods. A complete independent game copy loaded the 100-tile save successfully with 484 production patch targets installed and no observed managed exception. The input save hash remained 245636158F9B7DBAAF01974D50FD710A35F0F45F907EDAFA52BB466D40393D35. The earlier incomplete asset-copy run was excluded from successful-load evidence.

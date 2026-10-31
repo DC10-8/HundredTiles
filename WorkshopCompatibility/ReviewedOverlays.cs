@@ -14,7 +14,16 @@ namespace HundredTiles.WorkshopCompatibility {
   static readonly HashSet<Assembly> verified=new HashSet<Assembly>();
   static string Disk(Assembly assembly){if(!string.IsNullOrEmpty(assembly.Location))return assembly.Location;foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())foreach(var a in plugin.GetAssemblies())if(a==assembly)return Path.Combine(plugin.modPath,assembly.GetName().Name+".dll");throw new InvalidOperationException("Compatibility module disk file missing.");}
   static string Hash(string path){using(var h=SHA256.Create())return BitConverter.ToString(h.ComputeHash(File.ReadAllBytes(path))).Replace("-","");}
-  public static void VerifyModule(Assembly assembly){if(verified.Contains(assembly))return;string name=assembly.GetName().Name;using(var stream=typeof(ReviewedOverlays).Assembly.GetManifestResourceStream(name+".tsv")){if(stream==null)throw new InvalidOperationException("No reviewed overlay module.");using(var reader=new StreamReader(stream)){string[] header=reader.ReadLine().Split('\t');if(header[1]!=name || header[2]!=Hash(Disk(assembly)))throw new InvalidOperationException("Reviewed overlay build changed: "+name);string line;while((line=reader.ReadLine())!=null){var row=line.Split('\t');var type=assembly.GetType(row[2],true);bool found=false;foreach(var method in type.GetMethods(BindingFlags.Instance|BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.DeclaredOnly))if(method.Name==row[3] && method.GetMethodBody()!=null && ReviewedMethod.SemanticHash(method)==row[4]){found=true;break;}if(!found)throw new InvalidOperationException("Overlay helper changed: "+row[2]+"."+row[3]);}}}verified.Add(assembly);}
+  static void VerifyUpdater(){Assembly runtime=null;foreach(var candidate in AppDomain.CurrentDomain.GetAssemblies())if(candidate.GetName().Name=="HundredTiles.Runtime")runtime=candidate;if(runtime==null)throw new InvalidOperationException("Runtime verifier missing.");var type=runtime.GetType("HundredTiles.Runtime.LandscapingCompatibility",true);type.GetMethod("VerifyBehaviourUpdater",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic).Invoke(null,null);}
+  public static bool MatchesBody(string originalName,string expected,MethodInfo method){
+   bool renamed=(originalName=="Update" || originalName=="LateUpdate" || originalName=="FixedUpdate") && method.Name=="FpsBooster"+originalName && !method.IsStatic && method.ReturnType==typeof(void) && method.GetParameters().Length==0;
+   if(method.Name!=originalName && !renamed)return false;
+   if(method.GetMethodBody()==null)return false;
+   if(ReviewedMethod.SemanticHash(method)==expected){if(renamed)VerifyUpdater();return true;}
+   string hash;if(method.Name==originalName && ReviewedMethod.TryFpsLifecycleHash(method,out hash) && hash==expected){VerifyUpdater();return true;}
+   return false;
+  }
+  public static void VerifyModule(Assembly assembly){if(verified.Contains(assembly))return;string name=assembly.GetName().Name;using(var stream=typeof(ReviewedOverlays).Assembly.GetManifestResourceStream(name+".tsv")){if(stream==null)throw new InvalidOperationException("No reviewed overlay module.");using(var reader=new StreamReader(stream)){string[] header=reader.ReadLine().Split('\t');if(header[1]!=name || header[2]!=Hash(Disk(assembly)))throw new InvalidOperationException("Reviewed overlay build changed: "+name);string line;while((line=reader.ReadLine())!=null){var row=line.Split('\t');var type=assembly.GetType(row[2],true);bool found=false;foreach(var method in type.GetMethods(BindingFlags.Instance|BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.DeclaredOnly))if(MatchesBody(row[3],row[4],method)){found=true;break;}if(!found)throw new InvalidOperationException("Overlay helper changed: "+row[2]+"."+row[3]);}}}verified.Add(assembly);}
   public static int Evaluate(string owner,MethodBase target,Patches patches){string name=null,type=null,method=null,phase=null;
    if(owner=="com.github.algernon-A.csl.visibilitycontrol"){
     name="VisibilityControl";phase="postfix";
@@ -63,3 +72,5 @@ if(pm.Module.Assembly.GetName().Name!=name)return 0;VerifyModule(pm.Module.Assem
   }
  }
 }
+
+
