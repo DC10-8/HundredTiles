@@ -7,7 +7,8 @@ namespace HundredTiles.WorkshopCompatibility {
  // textures or initialised cells stop activation with their names. VerifyBeforeLoad re-checks every live manager before a city loads.
  public static class EarlyManagers {
   public sealed class Field { public string Name; public int Vanilla, Expanded; public Field(string name,int vanilla,int expanded){Name=name;Vanilla=vanilla;Expanded=expanded;} }
-  public sealed class Spec { public string Type; public bool Resizable; public Field[] Fields; public Spec(string type,bool resizable,params Field[] fields){Type=type;Resizable=resizable;Fields=fields;} }
+  // Release: elements answering this method are released and dropped instead of refusing; Reset: bool fields cleared afterwards.
+  public sealed class Spec { public string Type; public bool Resizable; public Field[] Fields; public string Release; public string[] Reset=new string[0]; public Spec(string type,bool resizable,params Field[] fields){Type=type;Resizable=resizable;Fields=fields;} }
   static Field F(string name,int vanilla,int expanded){return new Field(name,vanilla,expanded);}
   // Sizes are the Awake edits in ReviewedPlan.tsv (100 tiles).
   public static readonly Spec[] Specs={
@@ -18,7 +19,9 @@ namespace HundredTiles.WorkshopCompatibility {
    new Spec("TreeManager",true,F("m_treeGrid",291600,360000)),
    new Spec("VehicleManager",true,F("m_vehicleGrid",291600,360000),F("m_vehicleGrid2",2916,3600),F("m_parkedGrid",291600,360000)),
    new Spec("CitizenManager",true,F("m_citizenGrid",4665600,5760000)),
-   new Spec("RenderManager",true,F("m_groups",2025,2500),F("m_megaGroups",81,100),F("m_updatedGroups1",32,40)),
+   // Render groups can exist in the main menu (UpdateGroup creates them on demand). Without a city they hold no object data,
+   // and their positions use the 45x45 layout, so they are released (as RenderManager.OnDestroy does) and rebuilt on load.
+   new Spec("RenderManager",true,F("m_groups",2025,2500),F("m_megaGroups",81,100),F("m_updatedGroups1",32,40)){Release="ReleaseGroup",Reset=new[]{"m_groupsUpdated1"}},
    new Spec("NotificationManager",true,F("m_groupData",25*25*77,50*50*77),F("m_groupData2",25*25*77,50*50*77),F("m_groupDataCount",625,2500)),
    new Spec("DistrictManager",false,F("m_districtGrid",262144,1000000)),
    new Spec("ElectricityManager",false,F("m_electricityGrid",65536,258064)),
@@ -31,19 +34,22 @@ namespace HundredTiles.WorkshopCompatibility {
   const BindingFlags Instance=BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic;
 
   public static void Prepare(){var resized=new List<string>();var blocked=new List<string>();
-   foreach(Spec spec in Specs){object manager=Existing(spec.Type);if(manager==null)continue;string problem=PrepareInstance(manager,spec);
-    if(problem==null)resized.Add(spec.Type);else if(problem.Length!=0)blocked.Add(problem);}
+   foreach(Spec spec in Specs){object manager=Existing(spec.Type);if(manager==null)continue;int released;string problem=PrepareInstance(manager,spec,out released);
+    if(problem==null)resized.Add(released==0?spec.Type:spec.Type+" ("+released+" empty groups released)");else if(problem.Length!=0)blocked.Add(problem);}
    if(resized.Count!=0)Debug.Log("[HundredTiles] Managers created before HundredTiles were resized to 100 tiles: "+string.Join(", ",resized.ToArray()));
    if(blocked.Count!=0)throw new InvalidOperationException(Message(blocked));}
 
   // null: resized now; "": already expanded; otherwise the reason it cannot be fixed.
-  public static string PrepareInstance(object manager,Spec spec){Type type=manager.GetType();var arrays=new Array[spec.Fields.Length];bool vanilla=false,expanded=true;
+  public static string PrepareInstance(object manager,Spec spec,out int released){released=0;Type type=manager.GetType();var arrays=new Array[spec.Fields.Length];bool vanilla=false,expanded=true;
    for(int i=0;i<spec.Fields.Length;i++){Field f=spec.Fields[i];FieldInfo info=type.GetField(f.Name,Instance);arrays[i]=info==null?null:info.GetValue(manager) as Array;int length=arrays[i]==null?-1:arrays[i].Length;
     if(length!=f.Expanded)expanded=false;if(length==f.Vanilla)vanilla=true;else if(length!=f.Expanded)return spec.Type+"."+f.Name+" length "+length+" (expected "+f.Vanilla+" or "+f.Expanded+")";}
    if(expanded)return "";
    if(!spec.Resizable)return spec.Type+" (created before HundredTiles)";
-   for(int i=0;i<spec.Fields.Length;i++)if(arrays[i].Length==spec.Fields[i].Vanilla && !IsEmpty(arrays[i]))return spec.Type+"."+spec.Fields[i].Name+" already holds data";
-   for(int i=0;i<spec.Fields.Length;i++){Field f=spec.Fields[i];if(arrays[i].Length==f.Expanded)continue;type.GetField(f.Name,Instance).SetValue(manager,Array.CreateInstance(arrays[i].GetType().GetElementType(),f.Expanded));}
+   if(spec.Release==null)for(int i=0;i<spec.Fields.Length;i++)if(arrays[i].Length==spec.Fields[i].Vanilla && !IsEmpty(arrays[i]))return spec.Type+"."+spec.Fields[i].Name+" already holds data";
+   if(spec.Release!=null)for(int i=0;i<spec.Fields.Length;i++){Type element=arrays[i].GetType().GetElementType();MethodInfo release=element.IsValueType?null:element.GetMethod(spec.Release,Type.EmptyTypes);if(release==null)continue;
+    foreach(object item in arrays[i])if(item!=null){release.Invoke(item,null);released++;}}
+   for(int i=0;i<spec.Fields.Length;i++){Field f=spec.Fields[i];if(arrays[i].Length==f.Expanded && spec.Release==null)continue;type.GetField(f.Name,Instance).SetValue(manager,Array.CreateInstance(arrays[i].GetType().GetElementType(),f.Expanded));}
+   foreach(string name in spec.Reset)type.GetField(name,Instance).SetValue(manager,false);
    return vanilla?null:"";}
 
   public static void VerifyBeforeLoad(){Type installer=Type.GetType("HundredTiles.Runtime.Installer, HundredTiles.Runtime");PropertyInfo installed=installer==null?null:installer.GetProperty("IsInstalled",BindingFlags.Public|BindingFlags.Static);
