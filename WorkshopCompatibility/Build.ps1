@@ -6,5 +6,6 @@ $references+=@('ColossalManaged.dll','UnityEngine.dll','Assembly-CSharp.dll') | 
 $references+=@('HundredTiles.Core.dll','HundredTiles.SaveBridge.dll','HundredTiles.ExperimentalPatch.dll') | ForEach-Object {'/reference:'+(Join-Path $ModReferences $_)}
 $references+=('/reference:'+$Harmony)
 $resources=Get-ChildItem $PSScriptRoot -Filter '*.tsv' | Where-Object {$_.Name -ne 'upstream-commits.tsv'} | ForEach-Object {'/resource:'+$_.FullName+','+$_.Name}
-& (Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe') /nologo /unsafe /target:library /nostdlib /noconfig $references $resources ('/out:'+(Join-Path $PSScriptRoot 'HundredTiles.WorkshopCompatibility.dll')) (Join-Path $PSScriptRoot 'ReviewedOverlays.cs') (Join-Path $PSScriptRoot 'ExpandedObjects.cs') (Join-Path $PSScriptRoot 'SpatialAdapters.cs') (Join-Path $PSScriptRoot 'CleanupAdapters.cs')
+& (Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe') /nologo /unsafe /target:library /nostdlib /noconfig $references $resources ('/out:'+(Join-Path $PSScriptRoot 'HundredTiles.WorkshopCompatibility.dll')) (Join-Path $PSScriptRoot 'ReviewedOverlays.cs') (Join-Path $PSScriptRoot 'ExpandedObjects.cs') (Join-Path $PSScriptRoot 'SpatialAdapters.cs') (Join-Path $PSScriptRoot 'CleanupAdapters.cs') (Join-Path $PSScriptRoot 'SerializerRuntime.cs')
 if($LASTEXITCODE -ne 0){throw 'Workshop compatibility build failed.'}
+
