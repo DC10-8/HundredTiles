@@ -28,15 +28,25 @@ namespace HundredTiles.WorkshopCompatibility {
   static bool IsGrid(FieldInfo field){return field!=null && field.FieldType.IsArray && field.DeclaringType!=null && field.DeclaringType.Assembly==typeof(NetManager).Assembly && field.Name.StartsWith("m_") && (field.Name.EndsWith("Grid") || field.Name.EndsWith("Grid2"));}
 
   // Every method body is decoded instruction by instruction; a field operand that cannot be resolved counts as a grid read.
-  public static List<string> GridReaders(Assembly assembly,ICollection<string> allowed){LoadOpCodes();var found=new List<string>();Type[] types;try{types=assembly.GetTypes();}catch(ReflectionTypeLoadException ex){types=ex.Types;}
-   foreach(var type in types){if(type==null)continue;var methods=new List<MethodBase>();methods.AddRange(type.GetMethods(All));methods.AddRange(type.GetConstructors(All));
-    foreach(var method in methods){MethodBody body;try{body=method.GetMethodBody();}catch{continue;}if(body==null)continue;byte[] il=body.GetILAsByteArray();bool reads=false;int i=0;
-     Type[] typeArgs=type.IsGenericType?type.GetGenericArguments():null;Type[] methodArgs=method.IsGenericMethod?method.GetGenericArguments():null;
-     while(i<il.Length && !reads){OpCode op=il[i]==0xFE?two[il[i+1]]:one[il[i]];i+=op.Size;int size=Operand(op.OperandType,il,i);
-      if(op.OperandType==OperandType.InlineField){FieldInfo field=null;try{field=method.Module.ResolveField(BitConverter.ToInt32(il,i),typeArgs,methodArgs);}catch{reads=true;}if(IsGrid(field))reads=true;}
-      i+=size;}
-     string key=type.FullName+"::"+method.Name;if(reads && !allowed.Contains(key) && !found.Contains(key))found.Add(key);}}
+  // Mono 2.0 crashes the process, rather than throwing, when asked for the body of a method whose locals use a type from a
+  // missing assembly (seen with mods that reference an optional, uninstalled mod). Bodies are read only when every
+  // referenced assembly resolves.
+  public static string MissingReference(Assembly assembly){foreach(var reference in assembly.GetReferencedAssemblies()){bool loaded=false;foreach(var a in AppDomain.CurrentDomain.GetAssemblies())if(a.GetName().Name==reference.Name){loaded=true;break;}
+    if(loaded)continue;try{Assembly.Load(reference);}catch{return reference.Name;}}return null;}
+  public static List<string> GridReaders(Assembly assembly,ICollection<string> allowed){var found=new List<string>();string missing=MissingReference(assembly);if(missing!=null){found.Add("(missing reference "+missing+")");return found;}
+   foreach(var method in Methods(assembly)){bool unresolved;bool reads=false;foreach(var field in FieldsRead(method,out unresolved))if(IsGrid(field))reads=true;
+    string key=method.DeclaringType.FullName+"::"+method.Name;if((reads || unresolved) && !allowed.Contains(key) && !found.Contains(key))found.Add(key);}
    return found;}
+  public static IEnumerable<MethodBase> Methods(Assembly assembly){Type[] types;try{types=assembly.GetTypes();}catch(ReflectionTypeLoadException ex){types=ex.Types;}
+   foreach(var type in types){if(type==null)continue;MethodInfo[] methods;ConstructorInfo[] ctors;try{methods=type.GetMethods(All);ctors=type.GetConstructors(All);}catch{continue;}foreach(var m in methods)yield return m;foreach(var c in ctors)yield return c;}}
+  public static bool IsManagerGrid(FieldInfo field){return IsGrid(field);}
+  // Fields a method body loads or addresses; unresolved is set when an operand could not be resolved.
+  public static List<FieldInfo> FieldsRead(MethodBase method,out bool unresolved){LoadOpCodes();unresolved=false;var fields=new List<FieldInfo>();MethodBody body;try{body=method.GetMethodBody();}catch{return fields;}if(body==null)return fields;
+   byte[] il=body.GetILAsByteArray();int i=0;Type type=method.DeclaringType;Type[] typeArgs=type!=null && type.IsGenericType?type.GetGenericArguments():null;Type[] methodArgs=method.IsGenericMethod?method.GetGenericArguments():null;
+   while(i<il.Length){OpCode op=il[i]==0xFE?two[il[i+1]]:one[il[i]];i+=op.Size;int size=Operand(op.OperandType,il,i);
+    if(op.OperandType==OperandType.InlineField){try{var f=method.Module.ResolveField(BitConverter.ToInt32(il,i),typeArgs,methodArgs);if(f!=null && !fields.Contains(f))fields.Add(f);}catch{unresolved=true;}}
+    i+=size;}
+   return fields;}
   static int Operand(OperandType kind,byte[] il,int at){switch(kind){
    case OperandType.InlineNone:return 0;
    case OperandType.ShortInlineBrTarget:case OperandType.ShortInlineI:case OperandType.ShortInlineVar:return 1;

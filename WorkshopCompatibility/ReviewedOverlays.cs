@@ -24,7 +24,16 @@ namespace HundredTiles.WorkshopCompatibility {
    return false;
   }
   public static void VerifyModule(Assembly assembly){if(verified.Contains(assembly))return;string name=assembly.GetName().Name;using(var stream=typeof(ReviewedOverlays).Assembly.GetManifestResourceStream(name+".tsv")){if(stream==null)throw new InvalidOperationException("No reviewed overlay module.");using(var reader=new StreamReader(stream)){string[] header=reader.ReadLine().Split('\t');if(header[1]!=name || header[2]!=Hash(Disk(assembly)))throw new InvalidOperationException("Reviewed overlay build changed: "+name);string line;while((line=reader.ReadLine())!=null){var row=line.Split('\t');var type=assembly.GetType(row[2],true);bool found=false;foreach(var method in type.GetMethods(BindingFlags.Instance|BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.DeclaredOnly))if(MatchesBody(row[3],row[4],method)){found=true;break;}if(!found)throw new InvalidOperationException("Overlay helper changed: "+row[2]+"."+row[3]);}}}verified.Add(assembly);}
-  public static int Evaluate(string owner,MethodBase target,Patches patches){string name=null,type=null,method=null,phase=null;
+  // Startup and save decision for another owner's patches on a HundredTiles target. Reviewed rules decide first; anything else is
+  // allowed and logged once, except a transpiler or skip-capable prefix on a serialization method, which can corrupt saves.
+  static readonly HashSet<string> logged=new HashSet<string>();
+  public static int Evaluate(string owner,MethodBase target,Patches patches){int reviewed;try{reviewed=EvaluateReviewed(owner,target,patches);}catch(Exception){reviewed=0;}
+   if(reviewed==1)return 1;if(Serialization(target) && CanReplace(owner,patches))return reviewed;
+   string key=owner+" on "+target.DeclaringType.FullName+"."+target.Name;lock(logged)if(logged.Add(key))UnityEngine.Debug.Log("[HundredTiles] Unreviewed patch allowed: "+key);
+   return 1;}
+  public static bool Serialization(MethodBase target){string n=target.Name;return target.DeclaringType==typeof(ColossalFramework.IO.DataSerializer) || n=="Serialize" || n=="Deserialize" || n=="AfterDeserialize" || n=="Managers_UpdateData";}
+  static bool CanReplace(string owner,Patches patches){foreach(var p in patches.Transpilers)if(p.owner==owner)return true;foreach(var p in patches.Finalizers)if(p.owner==owner)return true;foreach(var p in patches.Prefixes)if(p.owner==owner && p.PatchMethod.ReturnType==typeof(bool))return true;return false;}
+  public static int EvaluateReviewed(string owner,MethodBase target,Patches patches){string name=null,type=null,method=null,phase=null;
    int ipt=Ipt3Adapter.Evaluate(owner,target,patches);if(ipt>=0)return ipt;
    int adapted=ModAdapters.Evaluate(owner,target,patches);if(adapted>=0)return adapted;
    if(owner=="com.github.algernon-A.csl.visibilitycontrol"){

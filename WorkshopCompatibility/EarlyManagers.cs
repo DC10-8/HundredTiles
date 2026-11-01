@@ -57,7 +57,9 @@ namespace HundredTiles.WorkshopCompatibility {
   public static void VerifyBeforeLoad(){Type installer=Type.GetType("HundredTiles.Runtime.Installer, HundredTiles.Runtime");PropertyInfo installed=installer==null?null:installer.GetProperty("IsInstalled",BindingFlags.Public|BindingFlags.Static);
    if(installed==null || !(bool)installed.GetValue(null,null))return;var wrong=new List<string>();
    foreach(Spec spec in Specs){object manager=Existing(spec.Type);if(manager!=null)wrong.AddRange(Mismatches(manager,spec));}
-   if(wrong.Count!=0)throw new InvalidOperationException(Message(wrong));}
+   if(wrong.Count!=0)throw new InvalidOperationException(Message(wrong));
+   // Arrays are at the expanded size now, so other mods' grid code can be remapped safely.
+   AutoAdapter.ApplyOnce();}
 
   public static List<string> Mismatches(object manager,Spec spec){var wrong=new List<string>();Type type=manager.GetType();
    foreach(Field f in spec.Fields){FieldInfo info=type.GetField(f.Name,Instance);Array array=info==null?null:info.GetValue(manager) as Array;int length=array==null?-1:array.Length;if(length!=f.Expanded)wrong.Add(spec.Type+"."+f.Name+" length "+length+" (expected "+f.Expanded+")");}
