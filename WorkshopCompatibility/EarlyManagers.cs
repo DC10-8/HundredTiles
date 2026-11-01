@@ -1,4 +1,4 @@
-using System;using System.Collections.Generic;using System.Reflection;using ColossalFramework;using UnityEngine;
+using System;using System.Collections.Generic;using System.Reflection;using ColossalFramework;using HundredTiles.Core;using UnityEngine;
 namespace HundredTiles.WorkshopCompatibility {
  // HundredTiles enlarges manager arrays by editing each manager's Awake. Awake runs once, so a manager that another MOD
  // created before HundredTiles installed keeps vanilla-sized arrays, and expanded-grid code later indexes past their end
@@ -9,28 +9,30 @@ namespace HundredTiles.WorkshopCompatibility {
   public sealed class Field { public string Name; public int Vanilla, Expanded; public Field(string name,int vanilla,int expanded){Name=name;Vanilla=vanilla;Expanded=expanded;} }
   // Release: elements answering this method are released and dropped instead of refusing; Reset: bool fields cleared afterwards.
   public sealed class Spec { public string Type; public bool Resizable; public Field[] Fields; public string Release; public string[] Reset=new string[0]; public Spec(string type,bool resizable,params Field[] fields){Type=type;Resizable=resizable;Fields=fields;} }
-  static Field F(string name,int vanilla,int expanded){return new Field(name,vanilla,expanded);}
-  // Sizes are the Awake edits in ReviewedPlan.tsv (100 tiles).
-  public static readonly Spec[] Specs={
-   new Spec("NetManager",true,F("m_nodeGrid",72900,90000),F("m_segmentGrid",72900,90000),F("m_tileNodesCount",1050,4200)),
-   new Spec("BuildingManager",true,F("m_buildingGrid",72900,90000),F("m_buildingGrid2",2025,2500)),
-   new Spec("PropManager",true,F("m_propGrid",72900,90000)),
-   new Spec("ZoneManager",true,F("m_zoneGrid",22500,90000)),
-   new Spec("TreeManager",true,F("m_treeGrid",291600,360000)),
-   new Spec("VehicleManager",true,F("m_vehicleGrid",291600,360000),F("m_vehicleGrid2",2916,3600),F("m_parkedGrid",291600,360000)),
-   new Spec("CitizenManager",true,F("m_citizenGrid",4665600,5760000)),
+  // Sizes are the Awake edits of the embedded plan for each profile: ReviewedPlan.tsv (10x10) and ReviewedPlan324.tsv (18x18).
+  static int profile;
+  static Field F(string name,int vanilla,int expanded100,int expanded324){return new Field(name,vanilla,profile==18?expanded324:expanded100);}
+  public static Spec[] Specs {get{return For((int)typeof(PackedObjectPosition).Assembly.GetType("HundredTiles.Core.ExpandedMap").GetField("GridSize").GetRawConstantValue());}}
+  public static Spec[] For(int gridSize){if(gridSize!=10 && gridSize!=18)throw new InvalidOperationException("No reviewed manager sizes for grid "+gridSize+".");profile=gridSize;return new[]{
+   new Spec("NetManager",true,F("m_nodeGrid",72900,90000,291600),F("m_segmentGrid",72900,90000,291600),F("m_tileNodesCount",1050,4200,13608)),
+   new Spec("BuildingManager",true,F("m_buildingGrid",72900,90000,291600),F("m_buildingGrid2",2025,2500,8100)),
+   new Spec("PropManager",true,F("m_propGrid",72900,90000,291600)),
+   new Spec("ZoneManager",true,F("m_zoneGrid",22500,90000,291600)),
+   new Spec("TreeManager",true,F("m_treeGrid",291600,360000,1166400)),
+   new Spec("VehicleManager",true,F("m_vehicleGrid",291600,360000,1166400),F("m_vehicleGrid2",2916,3600,11664),F("m_parkedGrid",291600,360000,1166400)),
+   new Spec("CitizenManager",true,F("m_citizenGrid",4665600,5760000,18662400)),
    // Render groups can exist in the main menu (UpdateGroup creates them on demand). Without a city they hold no object data,
    // and their positions use the 45x45 layout, so they are released (as RenderManager.OnDestroy does) and rebuilt on load.
-   new Spec("RenderManager",true,F("m_groups",2025,2500),F("m_megaGroups",81,100),F("m_updatedGroups1",32,40)){Release="ReleaseGroup",Reset=new[]{"m_groupsUpdated1"}},
-   new Spec("NotificationManager",true,F("m_groupData",25*25*77,50*50*77),F("m_groupData2",25*25*77,50*50*77),F("m_groupDataCount",625,2500)),
-   new Spec("DistrictManager",false,F("m_districtGrid",262144,1000000)),
-   new Spec("ElectricityManager",false,F("m_electricityGrid",65536,258064)),
-   new Spec("WaterManager",false,F("m_waterGrid",65536,258064)),
-   new Spec("ImmaterialResourceManager",false,F("m_localFinalResources",2293760,8750000)),
-   new Spec("NaturalResourceManager",false,F("m_naturalResources",262144,323761)),
-   new Spec("GameAreaManager",false,F("m_areaGrid",25,100)),
-   new Spec("TerrainManager",false,F("m_rawHeights",1168561,1442401)),
-  };
+   new Spec("RenderManager",true,F("m_groups",2025,2500,8100),F("m_megaGroups",81,100,324),F("m_updatedGroups1",32,40,127)){Release="ReleaseGroup",Reset=new[]{"m_groupsUpdated1"}},
+   new Spec("NotificationManager",true,F("m_groupData",25*25*77,50*50*77,90*90*77),F("m_groupData2",25*25*77,50*50*77,90*90*77),F("m_groupDataCount",625,2500,8100)),
+   new Spec("DistrictManager",false,F("m_districtGrid",262144,1000000,3240000)),
+   new Spec("ElectricityManager",false,F("m_electricityGrid",65536,258064,826281)),
+   new Spec("WaterManager",false,F("m_waterGrid",65536,258064,826281)),
+   new Spec("ImmaterialResourceManager",false,F("m_localFinalResources",2293760,8750000,28350000)),
+   new Spec("NaturalResourceManager",false,F("m_naturalResources",262144,323761,1048576)),
+   new Spec("GameAreaManager",false,F("m_areaGrid",25,100,324)),
+   new Spec("TerrainManager",false,F("m_rawHeights",1168561,1442401,4669921)),
+  };}
   const BindingFlags Instance=BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic;
 
   public static void Prepare(){var resized=new List<string>();var blocked=new List<string>();
