@@ -1,3 +1,7 @@
+# Surface line patch arrays (2026-11-02)
+
+`PatchArrays.cs` widens `new TransportLine.TempUpdateMeshData[81]` to GridSize squared in `PathVisualizer.RefreshPath`, `NetAdjust.CalculatePath` and any enabled mod with the same allocation. The expanded `TerrainManager.GetPatchIndex` returns up to GridSize squared minus 1. Selecting a ship past patch 80 therefore raised "Array index is out of range" on the simulation thread every step, with `TransportLine.CalculatePathSegmentCount` under `PathVisualizer.RefreshPath`. It runs once from `AutoAdapter.ApplyOnce`; a failure is logged and does not stop the game. Allocation search and the rewrite were checked offline on both builds. Not confirmed in game.
+
 # Seven-mod compatibility update — 2026-11-01 JST
 
 Exact official Workshop builds were reviewed and tested. The repaired DLL bundle was installed locally with an automatic backup; the user's 100-tile selection was retained. Player saves were not modified.
