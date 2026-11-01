@@ -38,7 +38,9 @@ namespace HundredTiles.WorkshopCompatibility {
 
   public static void Prepare(IList<HookSpec> hooks){Assembly ipt=null;foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())if(assembly.GetName().Name==Module)ipt=assembly;if(ipt==null)return;
    // An unreviewed IPT3 build must not stop HundredTiles from starting; its patches simply stay unapproved, so saving remains blocked.
-   try{ReviewedOverlays.VerifyModule(ipt);}catch(Exception ex){Debug.LogWarning("[HundredTiles] Improved Public Transport adapter not applied: "+ex.Message);return;}
+   var readers=new List<string>();foreach(var g in Grids)readers.Add(g[0]+"::"+g[1]);var build=ReviewedBuild.Verify(ipt,readers);
+   if(!build.Ok){Debug.LogWarning("[HundredTiles] Improved Public Transport adapter not applied: "+build.Detail);return;}
+   Debug.Log("[HundredTiles] Improved Public Transport reviewed: "+build.Detail);
    foreach(var grid in Grids){var type=ipt.GetType(grid[0],true);MethodInfo method=type.GetMethod(grid[1],BindingFlags.Instance|BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.DeclaredOnly);
     if(method==null)throw new InvalidOperationException("Improved Public Transport grid method missing: "+grid[0]+"."+grid[1]);hooks.Add(new HookSpec{Target=method,Transpiler=typeof(Ipt3Adapter).GetMethod(grid[2])});}
    adapted=true;Debug.Log("[HundredTiles] Improved Public Transport adapter applied: "+Grids.Length+" grid methods.");}
@@ -55,7 +57,7 @@ namespace HundredTiles.WorkshopCompatibility {
    foreach(var pair in new[]{new KeyValuePair<string,IEnumerable<Patch>>("prefix",patches.Prefixes),new KeyValuePair<string,IEnumerable<Patch>>("postfix",patches.Postfixes),new KeyValuePair<string,IEnumerable<Patch>>("transpiler",patches.Transpilers),new KeyValuePair<string,IEnumerable<Patch>>("finalizer",patches.Finalizers)})
     foreach(var patch in pair.Value)if(patch.owner==owner){var pm=patch.PatchMethod;if(pm.Module.Assembly.GetName().Name!=Module)return 0;bool ok=false;
      foreach(var row in Reviewed)if(pm.DeclaringType.FullName==row[0] && pm.Name==row[1] && pair.Key==row[2] && (row[3]=="*"?loading:row[3]=="VehicleAI"?step:loading && target.DeclaringType.Name==row[3]))ok=true;
-     if(!ok)return 0;ReviewedOverlays.VerifyModule(pm.Module.Assembly);found=true;}
+     if(!ok)return 0;found=true;}
    return found?1:0;}
  }
 }

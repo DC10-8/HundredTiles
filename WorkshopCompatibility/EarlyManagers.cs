@@ -38,7 +38,7 @@ namespace HundredTiles.WorkshopCompatibility {
   public static void Prepare(){var resized=new List<string>();var blocked=new List<string>();
    foreach(Spec spec in Specs){object manager=Existing(spec.Type);if(manager==null)continue;int released;string problem=PrepareInstance(manager,spec,out released);
     if(problem==null)resized.Add(released==0?spec.Type:spec.Type+" ("+released+" empty groups released)");else if(problem.Length!=0)blocked.Add(problem);}
-   if(resized.Count!=0)Debug.Log("[HundredTiles] Managers created before HundredTiles were resized to 100 tiles: "+string.Join(", ",resized.ToArray()));
+   if(resized.Count!=0)Debug.Log("[HundredTiles] Managers created before HundredTiles were resized to "+profile*profile+" tiles: "+string.Join(", ",resized.ToArray()));
    if(blocked.Count!=0)throw new InvalidOperationException(Message(blocked));}
 
   // null: resized now; "": already expanded; otherwise the reason it cannot be fixed.

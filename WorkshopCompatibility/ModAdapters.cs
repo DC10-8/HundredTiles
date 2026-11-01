@@ -10,7 +10,8 @@ namespace HundredTiles.WorkshopCompatibility {
  // - Intersection Marking Tool and Campus Parks transpile HundredTiles targets without grid code. HundredTiles' transpiler
  //   requires the original IL, so they are allowed only when it runs before theirs.
  public static class ModAdapters {
-  sealed class Mod { public string Assembly, Owner; public string[][] Grids=new string[0][]; public string[][] Calls=new string[0][]; public string[][] Patches; public bool Adapted; }
+  // Reviewed: grid readers left unchanged on purpose (they do not touch save data).
+  sealed class Mod { public string Assembly, Owner; public string[][] Grids=new string[0][]; public string[][] Calls=new string[0][]; public string[] Reviewed=new string[0]; public string[][] Patches; public bool Adapted; }
   const string Any="*";
   // Grids: type, method, kind (citizen|net|vehicle2), expected constants. Patches: type, method, phase, target type, target method.
   static readonly Mod[] Mods={
@@ -33,6 +34,8 @@ namespace HundredTiles.WorkshopCompatibility {
      new[]{"TransferManagerCore.CheckPassengersPatches","PassengerTrainAICheckPassengers","postfix","PassengerTrainAI","CheckPassengers"},
      new[]{"TransferManagerCore.PathDistancePatches","UpdateNotifications","postfix","BuildingManager","UpdateNotifications"}}},
    new Mod{Assembly="IntersectionMarkingTool",Owner="IntersectionMarkingTool",
+    // Its selection ray cast walks the vanilla segment grid inside a generic type; patching it would be shared across instantiations.
+    Reviewed=new[]{"ModsCommon.BaseSelectToolMode`1::RayCast"},
     Patches=new[]{
      new[]{"IMT.Mod","NetNode_UpdateNodeRenderer_Transpiler","transpiler","NetManager","UpdateNodeRenderer"},
      new[]{"IMT.Mod","NetSegment_UpdateSegmentRenderer_Transpiler","transpiler","NetManager","UpdateSegmentRenderer"}}},
@@ -50,10 +53,11 @@ namespace HundredTiles.WorkshopCompatibility {
    if(found==null)throw new InvalidOperationException("Adapter target missing: "+type+"."+name);return found;}
 
   public static void Prepare(IList<HookSpec> hooks){foreach(var mod in Mods){Assembly assembly=null;foreach(var a in AppDomain.CurrentDomain.GetAssemblies())if(a.GetName().Name==mod.Assembly)assembly=a;if(assembly==null)continue;
-    try{ReviewedOverlays.VerifyModule(assembly);}catch(Exception ex){Debug.LogWarning("[HundredTiles] "+mod.Assembly+" adapter not applied: "+ex.Message);continue;}
+    var readers=new List<string>(mod.Reviewed);foreach(var g in mod.Grids)readers.Add(g[0]+"::"+g[1]);var build=ReviewedBuild.Verify(assembly,readers);
+    if(!build.Ok){Debug.LogWarning("[HundredTiles] "+mod.Assembly+" adapter not applied: "+build.Detail);continue;}
     foreach(var g in mod.Grids){var method=Single(assembly,g[0],g[1]);expected[method]=int.Parse(g[3]);hooks.Add(new HookSpec{Target=method,Transpiler=typeof(ModAdapters).GetMethod(g[2]=="citizen"?"CitizenGrid":g[2]=="net"?"NetGrid":"VehicleGrid2")});}
     foreach(var c in mod.Calls)hooks.Add(new HookSpec{Target=Single(assembly,c[0],c[1]),Transpiler=typeof(ModAdapters).GetMethod("TaxiArea")});
-    mod.Adapted=true;Debug.Log("[HundredTiles] "+mod.Assembly+" adapter applied: "+mod.Grids.Length+" grid methods, "+mod.Calls.Length+" area checks.");}}
+    mod.Adapted=true;Debug.Log("[HundredTiles] "+mod.Assembly+" adapter applied ("+build.Detail+"): "+mod.Grids.Length+" grid methods, "+mod.Calls.Length+" area checks.");}}
 
   // Vanilla sides: citizen 2160 (8 m), node/segment/building 270 (64 m), vehicle grid2 54 (320 m).
   public static IEnumerable<CodeInstruction> CitizenGrid(IEnumerable<CodeInstruction> instructions,MethodBase __originalMethod){return GridRemap.Sides(instructions,2160,GridSize*240,expected[__originalMethod],__originalMethod.DeclaringType.Name+"."+__originalMethod.Name+" citizen");}
@@ -72,7 +76,7 @@ namespace HundredTiles.WorkshopCompatibility {
    foreach(var pair in new[]{new KeyValuePair<string,IEnumerable<Patch>>("prefix",patches.Prefixes),new KeyValuePair<string,IEnumerable<Patch>>("postfix",patches.Postfixes),new KeyValuePair<string,IEnumerable<Patch>>("transpiler",patches.Transpilers),new KeyValuePair<string,IEnumerable<Patch>>("finalizer",patches.Finalizers)})
     foreach(var patch in pair.Value)if(patch.owner==owner){var pm=patch.PatchMethod;if(pm.Module.Assembly.GetName().Name!=mod.Assembly)return 0;bool ok=false;
      foreach(var row in mod.Patches)if(pm.DeclaringType.FullName==row[0] && pm.Name==row[1] && pair.Key==row[2] && target.DeclaringType.Name==row[3] && (row[4]==Any || target.Name==row[4]))ok=true;
-     if(!ok || (pair.Key=="transpiler" && !RunsAfterHundredTiles(patch,patches)))return 0;ReviewedOverlays.VerifyModule(pm.Module.Assembly);found=true;}
+     if(!ok || (pair.Key=="transpiler" && !RunsAfterHundredTiles(patch,patches)))return 0;found=true;}
    return found?1:0;}
  }
 }
