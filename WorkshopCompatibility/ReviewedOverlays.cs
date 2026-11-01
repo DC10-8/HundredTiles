@@ -28,8 +28,10 @@ namespace HundredTiles.WorkshopCompatibility {
   // allowed and logged once, except a transpiler or skip-capable prefix on a serialization method, which can corrupt saves.
   static readonly HashSet<string> logged=new HashSet<string>();
   public static int Evaluate(string owner,MethodBase target,Patches patches){int reviewed;try{reviewed=EvaluateReviewed(owner,target,patches);}catch(Exception){reviewed=0;}
-   if(reviewed==1)return 1;if(Serialization(target) && CanReplace(owner,patches))return reviewed;
-   string key=owner+" on "+target.DeclaringType.FullName+"."+target.Name;lock(logged)if(logged.Add(key))UnityEngine.Debug.Log("[HundredTiles] Unreviewed patch allowed: "+key);
+   if(reviewed==1)return 1;
+   if(Serialization(target) && CanReplace(owner,patches)){int known=reviewed==0?2:ChangedMods.KnownOwner(owner,target,patches);if(known==1)return 1;if(known<0)return reviewed;
+    string changed=owner+" on "+target.DeclaringType.FullName+"."+target.Name;lock(logged)if(logged.Add(changed))ChangedMods.Warn(changed+": this mod changes save code and differs from the reviewed build. It was allowed; keep a backup of your saves.");return 1;}
+   string key=owner+" on "+target.DeclaringType.FullName+"."+target.Name;lock(logged)if(logged.Add(key))try{UnityEngine.Debug.Log("[HundredTiles] Unreviewed patch allowed: "+key);}catch(Exception){}
    return 1;}
   public static bool Serialization(MethodBase target){string n=target.Name;return target.DeclaringType==typeof(ColossalFramework.IO.DataSerializer) || n=="Serialize" || n=="Deserialize" || n=="AfterDeserialize" || n=="Managers_UpdateData";}
   static bool CanReplace(string owner,Patches patches){foreach(var p in patches.Transpilers)if(p.owner==owner)return true;foreach(var p in patches.Finalizers)if(p.owner==owner)return true;foreach(var p in patches.Prefixes)if(p.owner==owner && p.PatchMethod.ReturnType==typeof(bool))return true;return false;}

@@ -2,6 +2,17 @@
 
 Runtime's per-mod compatibility code threw when a mod's code differed from the reviewed build, so a Workshop update of one mod stopped every city load ("Compatibility code changed: RightOfWay"). Patcher mode `changed-mods` routes `ReviewedCompatibility.Verify` and `Add`, and each per-mod `AddHooks` in `Compatibility.AddHooks`, through `ChangedMods.cs`. A mod that fails loses its reviewed hooks, any hooks it had queued are removed, a warning is logged and startup continues. `NetworkRecalculationCompatibility` and `NetworkCapacityCompatibility.Configure` stay strict because they decide capacities that must match the save.
 
+The same patcher mode covers the other update stops:
+- `NetworkCapacityCompatibility.Configure` falls back to the mod's own `ExpansionEnabled`, or to the live segment buffer.
+- `NetworkRecalculationCompatibility` keeps its deferral while the two `Invoke` calls exist.
+- The inline AutoHistoricalPlop check is replaced by `ChangedMods.AddHistorical`.
+- `Harmony.Patch` in `Installer.Install` goes through `ChangedMods.Patch`, so a reviewed adapter that fails on a mod's code is skipped. Game targets stay strict. Failed targets are removed from the hook list in `SaveSafety.Validate`; otherwise saving would be blocked with "HundredTiles patch was removed".
+- `ReviewedOverlays.Evaluate` allows, with a warning, a mod HundredTiles already knows that replaces save code. This carries some save risk, so the warning asks for a backup.
+
+Still stops: a manager that cannot be rebuilt was created early, a game target fails, or a never-reviewed owner replaces save code.
+
+Simulated offline on both builds with fake updated mods; every path above continues, and a game target and a never-reviewed owner stay strict.
+
 `AutoAdapter` now also adapts small static helpers in the same class as a grid reader that return int and contain the n-1 clamp constant, such as `YieldScanner.CellIndex`. Without this the walk stays inside the vanilla-sized cells.
 
 Checked offline against RightOfWay 0.3.0.0 on both builds: the reviewed `Verify` reproduces the error, the guard skips the hooks, and `CellIndex` clamps at 599 / 1079 with its origin unchanged. Not confirmed in game.
