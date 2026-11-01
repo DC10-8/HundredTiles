@@ -6,6 +6,19 @@ This is the source of the recovery-era profile selector, not a reconstruction of
 
 Options show City (324 tiles), City (100 tiles), and Editor in Japanese/English. The current process keeps its existing dimensions. Selecting a different city profile starts a hidden worker that waits until Cities: Skylines has completely exited, verifies the selected bundle, backs up all destination DLLs, and replaces the complete set. A fast restart leaves the request waiting until the next complete exit. Pending choices show a waiting label and block unlock operations and city loads with mismatched DLL dimensions.
 
+### Unified package (current distribution)
+
+`Loader.cs` builds `HundredTiles.Loader.dll`. The distributed folder holds only `HundredTiles.Loader.dll` and `CitiesHarmony.API.dll` as DLLs, plus both builds as `HundredTilesProfiles\{100,324}\*.bin` with `files.tsv`. The 100 and 324 builds share assembly names, so a process can load only one of them. The game creates the loader as the mod's `IUserMod`, before any `OnEnabled`. The loader reads `selected.txt` (for the editor choice, it uses `loaded.txt`) and checks every file of that build. It then loads the seven HundredTiles assemblies from bytes, as the game loads mods, and adds them to its own `PluginInfo`, so the game finds their loading and threading extensions. Finally it forwards `Name`, `Description`, `OnEnabled`, `OnDisabled` and `OnSettingsUI` to `HundredTiles.Runtime.Mod`. If the selected build fails its checksum, the loader loads the other build. Switching tile count is choosing in options and restarting the game, and no file is replaced. `Selector` detects the loader and takes this path ahead of the helper and `QuitSwitch`.
+
+Checked offline under Unity 5.6.7f1 Mono for both builds:
+- all seven assemblies load from bytes, the Core tile count matches the selected build, and every non-generic method JIT-prepares (100: 779, 324: 808, no failures)
+- `Runtime.Mod` is created
+- no second copy of a HundredTiles assembly is loaded
+
+The game's own plugin path, the options panel and city loading have not been checked in game.
+
+### Quit-time switch (previous single-build copies)
+
 A Workshop download has no worker EXE or stored bundles. It carries both builds in `HundredTilesProfiles\100` and `HundredTilesProfiles\324` beside the DLLs, each file renamed to `.bin` with a `files.tsv` of their SHA256. The game loads every `*.dll` below a mod folder, so the renamed files are not loaded. `QuitSwitch.cs` switches such a copy in `OnApplicationQuit`. The game loads mod DLLs from bytes, so the files are not locked. It hot-reloads a mod whose DLL changes while running, though, so the files can only be replaced at quit. The switch covers every installed HundredTiles copy the game lists, backs them up, and rolls all of them back if a copy or checksum fails. If the game quits without the switch running, the choice stays pending and is armed again on the next start. Upload the mod folder with `HundredTilesProfiles` included, or Workshop users will again see only "this build".
 
 This does not shrink or convert a 324-tile save to 100 tiles. Use the corresponding profile for each save. The 100 profile is the retained October 31 100-tile binary, with selector wiring and reviewed RealTimeSync/AreaPOBuilder data updated; it does not contain all 324-specific changes.

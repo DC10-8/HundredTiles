@@ -8,5 +8,7 @@ $references=@('mscorlib.dll','System.dll','System.Core.dll') | ForEach-Object {'
 $references+=@('ColossalManaged.dll','UnityEngine.dll','Assembly-CSharp.dll','ICities.dll') | ForEach-Object {'/reference:'+(Join-Path $GameManaged $_)}
 & $csc /nologo /target:library /nostdlib /noconfig $references ('/out:'+(Join-Path $PSScriptRoot 'HundredTiles.Profiles.dll')) (Join-Path $PSScriptRoot 'Selector.cs') (Join-Path $PSScriptRoot 'QuitSwitch.cs') (Join-Path $PSScriptRoot 'ProfileFogLoading.cs')
 if($LASTEXITCODE -ne 0){throw 'Profile helper build failed.'}
+& $csc /nologo /target:library /nostdlib /noconfig $references ('/out:'+(Join-Path $PSScriptRoot 'HundredTiles.Loader.dll')) (Join-Path $PSScriptRoot 'Loader.cs')
+if($LASTEXITCODE -ne 0){throw 'Loader build failed.'}
 & $csc /nologo ('/out:'+(Join-Path $PSScriptRoot 'HundredTiles.ProfileSwitch.exe')) (Join-Path $PSScriptRoot 'SwitchWorker.cs')
 if($LASTEXITCODE -ne 0){throw 'Switch worker build failed.'}
