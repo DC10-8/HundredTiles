@@ -37,6 +37,7 @@ namespace HundredTiles.WorkshopCompatibility {
    if(assembly.GetName().Name=="HideIt"){ReviewedOverlays.VerifyModule(assembly);foreach(string name in new[]{"HideIt.NaturalResourceManagerUpdateTexturePatch","HideIt.NaturalResourceManagerUpdateTextureBPatch","HideIt.InfoViewManager"}){var type=assembly.GetType(name,true);var methods=new List<MethodBase>();methods.AddRange(type.GetMethods(BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Static|BindingFlags.Instance|BindingFlags.DeclaredOnly));methods.AddRange(type.GetConstructors(BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Static|BindingFlags.Instance));foreach(var method in methods)if(method.GetMethodBody()!=null){bool grid=false;foreach(var ins in PatchProcessor.GetOriginalInstructions(method))if((ins.opcode==OpCodes.Ldc_I4 || ins.opcode==OpCodes.Ldc_I4_S) && ins.operand!=null && (Convert.ToInt32(ins.operand)==512 || Convert.ToInt32(ins.operand)==511))grid=true;if(grid)hooks.Add(new HookSpec{Target=method,Transpiler=typeof(SpatialAdapters).GetMethod("ResourceGrid"),Prefix=method.Name=="Prefix"?typeof(SpatialAdapters).GetMethod("ResourceManager"):null});}}}
   }
    Ipt3Adapter.Prepare(hooks);
+   ModAdapters.Prepare(hooks);
   }
  }
 }

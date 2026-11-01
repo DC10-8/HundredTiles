@@ -43,17 +43,10 @@ namespace HundredTiles.WorkshopCompatibility {
     if(method==null)throw new InvalidOperationException("Improved Public Transport grid method missing: "+grid[0]+"."+grid[1]);hooks.Add(new HookSpec{Target=method,Transpiler=typeof(Ipt3Adapter).GetMethod(grid[2])});}
    adapted=true;Debug.Log("[HundredTiles] Improved Public Transport adapter applied: "+Grids.Length+" grid methods.");}
 
-  // Vanilla citizen grid: 2160 cells of 8 m, origin offset 1080. Node grid: 270 cells of 64 m, origin offset 135.
-  public static IEnumerable<CodeInstruction> CitizenGrid(IEnumerable<CodeInstruction> instructions){int side=GridSize*240;return Remap(instructions,1080,2159,2160,side,"citizen");}
-  public static IEnumerable<CodeInstruction> NodeGrid(IEnumerable<CodeInstruction> instructions){int side=GridSize*30;return Remap(instructions,135,269,270,side,"node");}
-  public static List<CodeInstruction> Remap(IEnumerable<CodeInstruction> instructions,int half,int last,int size,int side,string kind){int changes=0;var output=new List<CodeInstruction>();
-   foreach(var source in instructions){var ins=new CodeInstruction(source);
-    if(ins.opcode==OpCodes.Ldc_R4 && (float)ins.operand==half){ins.operand=(float)(side/2);changes++;}
-    else if(ins.opcode==OpCodes.Ldc_R8 && (double)ins.operand==half){ins.operand=(double)(side/2);changes++;}
-    else if(ins.opcode==OpCodes.Ldc_I4 && (int)ins.operand==last){ins.operand=side-1;changes++;}
-    else if(ins.opcode==OpCodes.Ldc_I4 && (int)ins.operand==size){ins.operand=side;changes++;}
-    output.Add(ins);}
-   if(changes!=7)throw new InvalidOperationException("Improved Public Transport "+kind+" grid shape changed ("+changes+" constants).");return output;}
+  // HundredTiles keeps the vanilla origin (WorldMin -8640) and grows the map toward +x/+z, so a grid keeps its origin offset
+  // (1080 for the 8 m citizen grid, 135 for the 64 m node grid) and only its side changes: 2159/2160 and 269/270.
+  public static IEnumerable<CodeInstruction> CitizenGrid(IEnumerable<CodeInstruction> instructions){return GridRemap.Sides(instructions,2160,GridSize*240,3,"Improved Public Transport citizen");}
+  public static IEnumerable<CodeInstruction> NodeGrid(IEnumerable<CodeInstruction> instructions){return GridRemap.Sides(instructions,270,GridSize*30,5,"Improved Public Transport node");}
 
   // -1: not an IPT3 owner; 1: every patch of this owner on the target is reviewed; 0: refuse.
   public static int Evaluate(string owner,MethodBase target,Patches patches){if(Array.IndexOf(Owners,owner)<0)return -1;if(!adapted)return 0;
