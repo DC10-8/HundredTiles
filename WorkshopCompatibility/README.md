@@ -1,3 +1,11 @@
+# Mods that changed since review (2026-11-02)
+
+Runtime's per-mod compatibility code threw when a mod's code differed from the reviewed build, so a Workshop update of one mod stopped every city load ("Compatibility code changed: RightOfWay"). Patcher mode `changed-mods` routes `ReviewedCompatibility.Verify` and `Add`, and each per-mod `AddHooks` in `Compatibility.AddHooks`, through `ChangedMods.cs`. A mod that fails loses its reviewed hooks, any hooks it had queued are removed, a warning is logged and startup continues. `NetworkRecalculationCompatibility` and `NetworkCapacityCompatibility.Configure` stay strict because they decide capacities that must match the save.
+
+`AutoAdapter` now also adapts small static helpers in the same class as a grid reader that return int and contain the n-1 clamp constant, such as `YieldScanner.CellIndex`. Without this the walk stays inside the vanilla-sized cells.
+
+Checked offline against RightOfWay 0.3.0.0 on both builds: the reviewed `Verify` reproduces the error, the guard skips the hooks, and `CellIndex` clamps at 599 / 1079 with its origin unchanged. Not confirmed in game.
+
 # Surface line patch arrays (2026-11-02)
 
 `PatchArrays.cs` widens `new TransportLine.TempUpdateMeshData[81]` to GridSize squared in `PathVisualizer.RefreshPath`, `NetAdjust.CalculatePath` and any enabled mod with the same allocation. The expanded `TerrainManager.GetPatchIndex` returns up to GridSize squared minus 1. Selecting a ship past patch 80 therefore raised "Array index is out of range" on the simulation thread every step, with `TransportLine.CalculatePathSegmentCount` under `PathVisualizer.RefreshPath`. It runs once from `AutoAdapter.ApplyOnce`; a failure is logged and does not stop the game. Allocation search and the rewrite were checked offline on both builds. Not confirmed in game.

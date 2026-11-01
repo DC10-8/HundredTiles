@@ -13,11 +13,19 @@ void AddEarlyManagerChecks(ModuleDefinition m){
  var install=Find("Installer","Install");if(!Calls(install,"Prepare")){var connections=install.Body.Instructions.Single(i=>i.OpCode==OpCodes.Call && i.Operand is MethodReference r && r.Name=="Connections" && r.DeclaringType.Name=="Installer");install.Body.GetILProcessor().InsertBefore(connections,Instruction.Create(OpCodes.Call,m.ImportReference(H("EarlyManagers","Prepare"))));}
  var gate=Find("SessionGate","BeforeLoad");if(!Calls(gate,"VerifyBeforeLoad")){var cityMode=gate.Body.Instructions.Single(i=>i.OpCode==OpCodes.Call && i.Operand is MethodReference r && r.Name=="CityMode" && r.DeclaringType.Name=="BoundaryHooks");if(!gate.Body.ExceptionHandlers.Any(h=>h.HandlerType==ExceptionHandlerType.Catch && h.TryStart.Offset<=cityMode.Offset && cityMode.Offset<h.TryEnd.Offset))throw new InvalidOperationException("BoundaryHooks.CityMode is not inside BeforeLoad's try block.");gate.Body.GetILProcessor().InsertAfter(cityMode,Instruction.Create(OpCodes.Call,m.ImportReference(H("EarlyManagers","VerifyBeforeLoad"))));}
 }
-foreach(string file in (mode=="serializer-only"?new[]{"HundredTiles.SaveBridge.dll"}:mode=="early-managers"?new[]{"HundredTiles.Runtime.dll"}:new[]{"HundredTiles.Core.dll","HundredTiles.SaveBridge.dll","HundredTiles.Runtime.dll"})){
+// Routes Runtime's per-mod verification through ChangedMods, so a mod that changed loses its reviewed hooks instead of stopping the game. Idempotent. NetworkRecalculationCompatibility stays strict because it decides capacities that must match the save.
+void AddChangedModGuards(ModuleDefinition m){
+ MethodDefinition Find(string type)=>m.Types.Single(t=>t.FullName=="HundredTiles.Runtime."+type).Methods.Single(x=>x.Name=="AddHooks");
+ foreach(var i in Find("ReviewedCompatibility").Body.Instructions)if(i.OpCode==OpCodes.Call && i.Operand is MethodReference r && r.DeclaringType.Name=="ReviewedCompatibility" && (r.Name=="Verify" || r.Name=="Add"))i.Operand=m.ImportReference(H("ChangedMods",r.Name));
+ var add=Find("Compatibility");var il=add.Body.GetILProcessor();
+ foreach(var i in add.Body.Instructions.ToArray())if(i.OpCode==OpCodes.Call && i.Operand is MethodReference r && r.Name=="AddHooks" && r.Parameters.Count==2 && r.DeclaringType.Name!="ChangedMods" && r.DeclaringType.Name!="NetworkRecalculationCompatibility"){il.InsertBefore(i,Instruction.Create(OpCodes.Ldstr,r.DeclaringType.FullName));i.Operand=m.ImportReference(H("ChangedMods","AddHooks"));}
+}
+foreach(string file in (mode=="serializer-only"?new[]{"HundredTiles.SaveBridge.dll"}:mode=="early-managers" || mode=="changed-mods"?new[]{"HundredTiles.Runtime.dll"}:new[]{"HundredTiles.Core.dll","HundredTiles.SaveBridge.dll","HundredTiles.Runtime.dll"})){
  string path=Path.Combine(root,file);using var m=ModuleDefinition.ReadModule(path,new ReaderParameters{AssemblyResolver=resolver,InMemory=true});
  if(file=="HundredTiles.Core.dll"){var type=m.Types.Single(t=>t.FullName=="HundredTiles.Core.ObjectPositionCodec");foreach(string name in new[]{"Encode","Decode"})Replace(m,type.Methods.Single(x=>x.Name==name),H("ExpandedObjects",name));}
  if(file=="HundredTiles.SaveBridge.dll"){Replace(m,m.Types.Single(t=>t.FullName=="HundredTiles.SaveBridge.SerializerHooks").Methods.Single(x=>x.Name=="VerifyRuntime"),H("SerializerRuntime","Verify"));var type=m.Types.Single(t=>t.FullName=="HundredTiles.SaveBridge.ObjectSaveBridge");Replace(m,type.Methods.Single(x=>x.Name=="ValidateTarget"),H("SpatialAdapters","ValidateObjectTarget"));}
- if(file=="HundredTiles.Runtime.dll" && mode=="early-managers")AddEarlyManagerChecks(m);
+ if(file=="HundredTiles.Runtime.dll" && mode=="changed-mods")AddChangedModGuards(m);
+ else if(file=="HundredTiles.Runtime.dll" && mode=="early-managers")AddEarlyManagerChecks(m);
  else if(file=="HundredTiles.Runtime.dll"){
   AddEarlyManagerChecks(m);
   var type=m.Types.Single(t=>t.FullName=="HundredTiles.Runtime.Compatibility");var method=type.Methods.Single(x=>x.Name=="Allowed");var il=method.Body.GetILProcessor();var first=method.Body.Instructions[0];var result=new VariableDefinition(m.TypeSystem.Int32);method.Body.Variables.Add(result);method.Body.InitLocals=true;

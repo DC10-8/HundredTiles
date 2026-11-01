@@ -43,11 +43,21 @@ namespace HundredTiles.WorkshopCompatibility {
       if(method.DeclaringType.IsGenericType || method.IsGenericMethod || method.DeclaringType.ContainsGenericParameters){other.Add(name+" (generic type: not adapted)");continue;}
       if(AlreadyAdapted(method))continue;
       int hits;try{hits=Count(method,map);}catch(Exception ex){other.Add(name+" (unreadable: "+ex.GetType().Name+")");continue;}if(hits==0){other.Add(name+" (no vanilla side constants)");continue;}
-      try{lock(maps)maps[method]=map;new Harmony(Owner).Patch(method,transpiler:new HarmonyMethod(typeof(AutoAdapter).GetMethod("Transpile")));adapted++;changed.Add(name+" x"+hits);}
+      try{lock(maps)maps[method]=map;new Harmony(Owner).Patch(method,transpiler:new HarmonyMethod(typeof(AutoAdapter).GetMethod("Transpile")));adapted++;changed.Add(name+" x"+hits);adapted+=AdaptHelpers(method,map,changed,other);}
       catch(Exception ex){failed++;other.Add(name+" (patch failed: "+ex.GetType().Name+")");}}
      if(changed.Count!=0 || other.Count!=0)report.Append("\n  ").Append(assembly.GetName().Name).Append(": ").Append(changed.Count==0?"":"adapted "+string.Join(", ",changed.ToArray())).Append(other.Count==0?"":(changed.Count==0?"":"; ")+string.Join(", ",other.ToArray()));}
     return "[HundredTiles] Automatic grid adaptation for "+g*g+" tiles: "+adapted+" methods adapted, "+failed+" failed, "+watch.ElapsedMilliseconds+" ms."+report;}
 
+  // A grid reader often clamps its cell through a small helper in the same class (Mathf.Clamp(..., 0, 539)). The helper
+  // reads no grid, so it gets only the n-1 constants; left alone, it keeps the walk inside the vanilla-sized cells.
+  static int AdaptHelpers(MethodBase method,Dictionary<int,int> map,List<string> changed,List<string> other){var clamp=new Dictionary<int,int>();foreach(var kv in map)if(map.ContainsKey(kv.Key+1))clamp[kv.Key]=kv.Value;int n=0;var seen=new List<MethodBase>();
+   foreach(var ins in PatchProcessor.GetOriginalInstructions(method)){var callee=ins.operand as MethodInfo;
+    if(callee==null || (ins.opcode!=OpCodes.Call && ins.opcode!=OpCodes.Callvirt) || callee.DeclaringType!=method.DeclaringType || !callee.IsStatic || callee.ReturnType!=typeof(int) || callee.IsGenericMethod || seen.Contains(callee))continue;seen.Add(callee);
+    string name=callee.DeclaringType.FullName+"."+callee.Name;
+    try{bool unresolved;bool grid=false;foreach(var f in ReviewedBuild.FieldsRead(callee,out unresolved))if(ReviewedBuild.IsManagerGrid(f))grid=true;if(grid || AlreadyAdapted(callee))continue;int hits=Count(callee,clamp);if(hits==0)continue;
+     lock(maps)maps[callee]=clamp;new Harmony(Owner).Patch(callee,transpiler:new HarmonyMethod(typeof(AutoAdapter).GetMethod("Transpile")));n++;changed.Add(name+" x"+hits);}
+    catch(Exception ex){other.Add(name+" (helper not adapted: "+ex.GetType().Name+")");}}
+   return n;}
   static bool AlreadyAdapted(MethodBase method){var info=Harmony.GetPatchInfo(method);if(info==null)return false;foreach(var p in info.Transpilers)if(p.owner=="HundredTiles.Runtime" || p.owner==Owner)return true;return false;}
   static int Count(MethodBase method,Dictionary<int,int> map){int n=0;foreach(var ins in PatchProcessor.GetOriginalInstructions(method))if(Remappable(ins,map))n++;return n;}
   static bool Remappable(CodeInstruction ins,Dictionary<int,int> map){return (ins.opcode==OpCodes.Ldc_I4 || ins.opcode==OpCodes.Ldc_I4_S) && ins.operand!=null && map.ContainsKey(Convert.ToInt32(ins.operand));}
