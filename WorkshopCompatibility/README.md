@@ -1,3 +1,7 @@
+# District brush origin (2026-11-02)
+
+`DistrictBrush.cs` corrects `DistrictTool.ApplyBrush`. It computes the grid origin as width*0.5, and the plan only widens that local, so on the expanded grid the origin was Side/2 instead of 450. A stroke landed 50 cells (960 m) off toward +x/+z on 100 tiles and 450 cells (8640 m) on 324. The transpiler runs after the plan transpiler and replaces the six origin loads with the constant 900, keeping the width for the bounds. Cells already painted in the wrong place are not moved. Checked offline on both builds with a real Harmony patch under Unity's Mono. Not confirmed in game.
+
 # Mods that changed since review (2026-11-02)
 
 Runtime's per-mod compatibility code threw when a mod's code differed from the reviewed build, so a Workshop update of one mod stopped every city load ("Compatibility code changed: RightOfWay"). Patcher mode `changed-mods` routes `ReviewedCompatibility.Verify` and `Add`, and each per-mod `AddHooks` in `Compatibility.AddHooks`, through `ChangedMods.cs`. A mod that fails loses its reviewed hooks, any hooks it had queued are removed, a warning is logged and startup continues. `NetworkRecalculationCompatibility` and `NetworkCapacityCompatibility.Configure` stay strict because they decide capacities that must match the save.
