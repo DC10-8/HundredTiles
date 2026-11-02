@@ -1,3 +1,7 @@
+# 324 overlay offset (2026-11-02)
+
+`ReviewedPlan324.tsv` set the texture offset of the district and park overlay, the immaterial resource mapping and the natural resource mapping to 0 instead of 0.25. `Build-324Plan.ps1` wrote `[single].25`, which PowerShell reads as a member access that returns null, so it became 0. With 0, every cell was drawn 8640 m toward +x/+z and the map's negative half sampled the clamped texture edge. The eight entries and the script are corrected. Apply to integrated copies with `Patcher <dir> plan-324 <ReviewedPlan324.tsv>`, which replaces only that resource in ExperimentalPatch. Checked offline with `PlannedTranspiler.Transform` on the real game methods: the installed 324 build has no 0.25 load and the patched one does. Not confirmed in game.
+
 # Save list during saving (2026-11-02)
 
 `SaveListGuard.cs` holds `LoadPanel.Refresh` and `SavePanel.Refresh` while `SavePanel.isSaving` is true and runs each held panel once, on the main thread, after `SavePanel.OnSavingComplete`. Overwriting a save swaps the file before the file watcher replaces the loaded package, so a refresh in that gap read the old offsets against the new file and showed "'name' failed to load." with `EndOfStreamException`. This is a game race, not HundredTiles code; the cause is inferred from one log and the decompiled code, not reproduced. Patching, holding and releasing were checked offline on both builds with Unity's Mono and Unity logging muted. The dispatched refresh itself needs the game and has not been run.
