@@ -1,3 +1,7 @@
+# Save list during saving (2026-11-02)
+
+`SaveListGuard.cs` holds `LoadPanel.Refresh` and `SavePanel.Refresh` while `SavePanel.isSaving` is true and runs each held panel once, on the main thread, after `SavePanel.OnSavingComplete`. Overwriting a save swaps the file before the file watcher replaces the loaded package, so a refresh in that gap read the old offsets against the new file and showed "'name' failed to load." with `EndOfStreamException`. This is a game race, not HundredTiles code; the cause is inferred from one log and the decompiled code, not reproduced. Patching, holding and releasing were checked offline on both builds with Unity's Mono and Unity logging muted. The dispatched refresh itself needs the game and has not been run.
+
 # District brush origin (2026-11-02)
 
 `DistrictBrush.cs` corrects `DistrictTool.ApplyBrush`. It computes the grid origin as width*0.5, and the plan only widens that local, so on the expanded grid the origin was Side/2 instead of 450. A stroke landed 50 cells (960 m) off toward +x/+z on 100 tiles and 450 cells (8640 m) on 324. The transpiler runs after the plan transpiler and replaces the six origin loads with the constant 900, keeping the width for the bounds. Cells already painted in the wrong place are not moved. Checked offline on both builds with a real Harmony patch under Unity's Mono. Not confirmed in game.

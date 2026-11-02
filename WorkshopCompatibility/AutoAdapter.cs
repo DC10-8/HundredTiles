@@ -29,7 +29,9 @@ namespace HundredTiles.WorkshopCompatibility {
    try{var mods=new List<Assembly>();foreach(var plugin in Singleton<PluginManager>.instance.GetPluginsInfo())if(plugin.isEnabled)foreach(var a in plugin.GetAssemblies())if(!mods.Contains(a) && !Skipped(a.GetName().Name))mods.Add(a);Debug.Log(PatchArrays.Apply(mods));}
    catch(Exception ex){Debug.LogWarning("[HundredTiles] Surface line patch arrays not widened: "+ex);}
    try{Debug.Log(DistrictBrush.Apply());}
-   catch(Exception ex){Debug.LogWarning("[HundredTiles] District brush origin not corrected: "+ex);}}
+   catch(Exception ex){Debug.LogWarning("[HundredTiles] District brush origin not corrected: "+ex);}
+   try{Debug.Log(SaveListGuard.Apply());}
+   catch(Exception ex){Debug.LogWarning("[HundredTiles] Save list refresh not guarded: "+ex);}}
 
   public static string Adapt(IEnumerable<Assembly> assemblies){var watch=System.Diagnostics.Stopwatch.StartNew();int g=GridSize;var report=new StringBuilder();int adapted=0,failed=0;
     foreach(var assembly in assemblies){if(Skipped(assembly.GetName().Name))continue;
